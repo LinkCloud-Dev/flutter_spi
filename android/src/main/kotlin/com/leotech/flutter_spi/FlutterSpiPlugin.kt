@@ -22,10 +22,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   /// when the Flutter Engine is detached from the Activity
   private lateinit var channel : MethodChannel
   private lateinit var context: Context
-//  private lateinit var activity: Activity
 
   lateinit var mSpi: Spi
-//  lateinit var eventEmitter: DeviceEventManagerModule.RCTDeviceEventEmitter
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi")
@@ -37,9 +35,23 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "init") {
-      init(call.argument("posId")!!, call.argument("eftposAddress")!!, call.argument("secrets"), result)
+      init(call.argument("posId")!!, call.argument("sn")!!, call.argument("eftposAddress")!!, call.argument("secrets"), result)
     } else if (call.method == "start") {
       start(result)
+    } else if (call.method == "setAcquirerCode") {
+      setAcquirerCode(call.argument("setAcquirerCode")!!, result)
+    } else if (call.method == "setDeviceApiKey") {
+      setDeviceApiKey(call.argument("setDeviceApiKey")!!, result)
+    } else if (call.method == "setSerialNumber") {
+      setSerialNumber(call.argument("serialNumber")!!, result)
+    } else if (call.method == "getSerialNumber") {
+      getSerialNumber(result)
+    } else if (call.method == "setAutoAddressResolution") {
+      setAutoAddressResolution(call.argument("autoAddressResolutionEnable")!!, result)
+    } else if (call.method == "isAutoAddressResolutionEnabled") {
+      isAutoAddressResolutionEnabled(result)
+    } else if (call.method == "setTestMode") {
+      setTestMode(call.argument("testMode")!!, result)
     } else if (call.method == "setPosId") {
       setPosId(call.argument("posId")!!, result)
     } else if (call.method == "setEftposAddress") {
@@ -109,9 +121,15 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     channel.setMethodCallHandler(null)
   }
 
-  fun init(posId: String, eftposAddress: String, secrets: HashMap<String, String>?, result: Result) {
-//    eventEmitter = reactApplicationContext
-//            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)!!
+  private fun invokeFlutterMethod(flutterMethod: String, message: Any?) {
+    channel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
+      override fun success(o: Any?) {}
+      override fun error(s: String, s1: String?, o: Any?) {}
+      override fun notImplemented() {}
+    })
+  }
+
+  fun init(posId: String, sn: String, eftposAddress: String, secrets: HashMap<String, String>?, result: Result) {
     var initialized = true
     try {
       mSpi
@@ -124,13 +142,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     try {
-      mSpi = Spi(posId, eftposAddress, Secrets(secrets?.get("encKey"), secrets?.get("hmacKey")))
+      mSpi = Spi(posId, sn, eftposAddress, Secrets(secrets?.get("encKey"), secrets?.get("hmacKey")))
       val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
       mSpi.setPosInfo("LinkPOS", pInfo.versionName)
       setStatusChangedHandler()
       setPairingFlowStateChangedHandler()
       setTxFlowStateChangedHandler()
       setSecretsChangedHandler()
+      setDeviceAddressChangedHandler()
       result.success(null)
     } catch (e: CompatibilityException) {
       result.error("INIT_ERROR", "Init Error.", null)
@@ -142,7 +161,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    */
   private fun setStatusChangedHandler() {
     mSpi.setStatusChangedHandler {
-//      eventEmitter.emit(statusChangedEvent, it?.name)
+      invokeFlutterMethod("statusChanged", it?.name)
     }
   }
 
@@ -151,7 +170,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    */
   private fun setPairingFlowStateChangedHandler() {
     mSpi.setPairingFlowStateChangedHandler {
-//      eventEmitter.emit(pairingFlowStateChangedEvent, it?.let(PairingFlowStateMapper::toMap))
+      invokeFlutterMethod("pairingFlowStateChanged", mapPairingFlowState(it))
     }
   }
 
@@ -160,7 +179,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    */
   private fun setTxFlowStateChangedHandler() {
     mSpi.setTxFlowStateChangedHandler {
-//      eventEmitter.emit(txFlowStateChangedEvent, it?.let(TransactionFlowStateMapper::toMap))
+      invokeFlutterMethod("txFlowStateChanged", mapTransactionState(it))
     }
   }
 
@@ -173,7 +192,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    */
   private fun setSecretsChangedHandler() {
     mSpi.setSecretsChangedHandler {
-//      eventEmitter.emit(secretsChangedEvent, it?.let(SecretsMapper::toMap))
+      invokeFlutterMethod("secretsChanged", mapSecrets(it))
+    }
+  }
+
+  /**
+   * Subscribe to this event when you want to know if the address of the device have changed
+   */
+
+  private fun setDeviceAddressChangedHandler() {
+    mSpi.setDeviceAddressChangedHandler {
+      invokeFlutterMethod("deviceAddressChanged", it.address)
     }
   }
 
@@ -187,6 +216,85 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   fun start(result: Result) {
     try {
       mSpi.start()
+      result.success(null)
+    }catch (e: CompatibilityException) {
+      result.error("ERROR", "Error.", null)
+    }
+  }
+
+  /**
+   * Set the acquirer code of your bank, please contact Assembly's Integration Engineers for acquirer code.
+   */
+  fun setAcquirerCode(acquirerCode: String, result: Result) {
+    try {
+      mSpi.setAcquirerCode(acquirerCode)
+      result.success(null)
+    }catch (e: CompatibilityException) {
+      result.error("ERROR", "Error.", null)
+    }
+  }
+
+  /**
+   * Set the api key used for auto address discovery feature, please contact Assembly's Integration Engineers for Api key.
+   */
+  fun setDeviceApiKey(deviceApiKey: String, result: Result) {
+    try {
+      mSpi.setDeviceApiKey(deviceApiKey)
+      result.success(null)
+    }catch (e: CompatibilityException) {
+      result.error("ERROR", "Error.", null)
+    }
+  }
+
+  /**
+   * Allows you to set the serial number of the Eftpos
+   */
+  fun setSerialNumber(serialNumber: String, result: Result) {
+    try {
+      mSpi.setSerialNumber(serialNumber)
+      result.success(null)
+    }catch (e: CompatibilityException) {
+      result.error("ERROR", "Error.", null)
+    }
+  }
+
+  fun getSerialNumber(result: Result) {
+    try {
+      result.success(mSpi.getSerialNumber())
+    }catch (e: CompatibilityException) {
+      result.error("ERROR", "Error.", null)
+    }
+  }
+
+  /**
+   * Allows you to set the auto address discovery feature.
+   */
+  fun setAutoAddressResolution(autoAddressResolutionEnable: Boolean, result: Result) {
+    try {
+      mSpi.setAutoAddressResolution(autoAddressResolutionEnable)
+      result.success(null)
+    }catch (e: CompatibilityException) {
+      result.error("ERROR", "Error.", null)
+    }
+  }
+
+  fun isAutoAddressResolutionEnabled(result: Result) {
+    try {
+      result.success(mSpi.isAutoAddressResolutionEnabled())
+    }catch (e: CompatibilityException) {
+      result.error("ERROR", "Error.", null)
+    }
+  }
+
+
+  /**
+   * Call this method to set the client library test mode.
+   * Set it to true only while you are developing the integration.
+   * It defaults to false. For a real merchant, always leave it set to false.
+   */
+  fun setTestMode(testMode: Boolean, result: Result) {
+    try {
+      mSpi.setTestMode(testMode)
       result.success(null)
     }catch (e: CompatibilityException) {
       result.error("ERROR", "Error.", null)
@@ -310,10 +418,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       result.error("ERROR", "Error.", null)
     }
   }
-
-  //endregion
-
-  //region Flow management methods
 
   /**
    * Call this one when a flow is finished and you want to go back to idle state.
@@ -650,6 +754,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }catch (e: CompatibilityException) {
       result.error("ERROR", "Error.", null)
     }
+  }
+
+  fun mapSecrets(obj: Secrets):  HashMap<String, Any> {
+    var map : HashMap<String, Any>
+            = HashMap<String, Any> ()
+    map.put("encKey", obj.encKey)
+    map.put("hmacKey", obj.hmacKey)
+    return map
   }
 
   fun mapPairingFlowState(obj: PairingFlowState): HashMap<String, Any> {
