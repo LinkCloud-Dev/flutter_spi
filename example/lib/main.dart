@@ -15,7 +15,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  String sn = '';
+  String spiVersion = '';
 
   @override
   void initState() {
@@ -29,7 +29,7 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       platformVersion = await FlutterSpi.platformVersion;
-      sn = await FlutterSpi.sn;
+      spiVersion = await FlutterSpi.getVersion;
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -42,6 +42,22 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _platformVersion = platformVersion;
     });
+  }
+
+  Future<void> start() async {
+    try {
+      await FlutterSpi.start;
+    } on PlatformException {
+      print('error');
+    }
+  }
+
+  Future<void> setPosId(String posId) async {
+    try {
+      await FlutterSpi.setPosId(posId);
+    } on PlatformException {
+      print('error');
+    }
   }
 
   @override
@@ -57,8 +73,8 @@ class _MyAppState extends State<MyApp> {
               child: Text('Running on: $_platformVersion\n'),
             ),
             Center(
-              child: Text('SN: $sn\n'),
-            )
+              child: Text('SPI Version: $spiVersion\n'),
+            ),
           ],
         ),
       ),

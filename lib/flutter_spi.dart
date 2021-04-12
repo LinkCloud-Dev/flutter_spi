@@ -10,8 +10,16 @@ class FlutterSpi {
     return version;
   }
 
-  static Future<String> get sn async {
-    final String serialNumber = await _channel.invokeMethod('getDeviceSN');
-    return serialNumber;
+  static Future<String> get getVersion async {
+    final String spiVersion = await _channel.invokeMethod('getVersion');
+    return spiVersion;
+  }
+
+  static Future<void> get start async {
+    await _channel.invokeMethod('start');
+  }
+
+  static Future<void> setPosId(String posId) async {
+    await _channel.invokeMethod('setPosId', {"posId": posId});
   }
 }

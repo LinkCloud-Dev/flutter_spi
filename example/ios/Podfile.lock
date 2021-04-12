@@ -1,0 +1,37 @@
+PODS:
+  - Flutter (1.0.0)
+  - flutter_spi (0.0.1):
+    - Flutter
+    - SPIClient-iOS (~> 2.6.6)
+  - RNCryptor-objc (3.0.6)
+  - SocketRocket (0.5.1)
+  - SPIClient-iOS (2.6.6):
+    - RNCryptor-objc
+    - SocketRocket
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - flutter_spi (from `.symlinks/plugins/flutter_spi/ios`)
+
+SPEC REPOS:
+  trunk:
+    - RNCryptor-objc
+    - SocketRocket
+    - SPIClient-iOS
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  flutter_spi:
+    :path: ".symlinks/plugins/flutter_spi/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 434fef37c0980e73bb6479ef766c45957d4b510c
+  flutter_spi: e862a16c9009f24ace4aaf0d344b96d4e498879e
+  RNCryptor-objc: d1b228f9c02e2173df063f0617684c134aed890e
+  SocketRocket: d57c7159b83c3c6655745cd15302aa24b6bae531
+  SPIClient-iOS: eae13185141088909b4b40586f1255c20a50df09
+
+PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+
+COCOAPODS: 1.10.1
