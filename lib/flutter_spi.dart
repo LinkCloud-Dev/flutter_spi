@@ -59,6 +59,10 @@ class FlutterSpi {
         .invokeMethod('setSerialNumber', {"serialNumber": serialNumber});
   }
 
+  static Future<String> get getSerialNumber async {
+    return await _channel.invokeMethod('getSerialNumber');
+  }
+
   static Future<void> setAutoAddressResolution(
       bool autoAddressResolutionEnable) async {
     await _channel.invokeMethod('setAutoAddressResolution',
@@ -206,13 +210,6 @@ class FlutterSpi {
 
   static Future<void> initiateGetLastTx() async {
     await _channel.invokeMethod('initiateGetLastTx');
-  }
-
-  static Future<void> initiateRecovery(String posRefId, String txType) async {
-    await _channel.invokeMethod('initiateRecovery', {
-      "posRefId": posRefId,
-      "txType": txType,
-    });
   }
 
   static Future<void> dispose() async {
