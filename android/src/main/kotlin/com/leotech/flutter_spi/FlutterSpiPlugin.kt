@@ -20,7 +20,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
-  private lateinit var channel : MethodChannel
+  private lateinit var channel: MethodChannel
   private lateinit var context: Context
 
   lateinit var mSpi: Spi
@@ -39,9 +39,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     } else if (call.method == "start") {
       start(result)
     } else if (call.method == "setAcquirerCode") {
-      setAcquirerCode(call.argument("setAcquirerCode")!!, result)
+      setAcquirerCode(call.argument("acquirerCode")!!, result)
     } else if (call.method == "setDeviceApiKey") {
-      setDeviceApiKey(call.argument("setDeviceApiKey")!!, result)
+      setDeviceApiKey(call.argument("deviceApiKey")!!, result)
     } else if (call.method == "setSerialNumber") {
       setSerialNumber(call.argument("serialNumber")!!, result)
     } else if (call.method == "getSerialNumber") {
