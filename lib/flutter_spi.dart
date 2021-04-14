@@ -1,13 +1,230 @@
 import 'dart:async';
 
+import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/services.dart';
 
-enum NativeMethodCalls {
+class SpiMessage {
+  String id;
+  String event;
+  dynamic data;
+
+  SpiMessage({
+    this.id,
+    this.event,
+    this.data,
+  });
+
+  factory SpiMessage.fromMap(Map<String, dynamic> obj) {
+    return SpiMessage(
+      id: obj['id'],
+      event: obj['event'],
+      data: obj['data'],
+    );
+  }
+}
+
+class Secrets {
+  String encKey;
+  String hmacKey;
+
+  Secrets({
+    this.encKey,
+    this.hmacKey,
+  });
+
+  factory Secrets.fromMap(Map<String, String> obj) {
+    return Secrets(
+      encKey: obj['encKey'],
+      hmacKey: obj['hmacKey'],
+    );
+  }
+}
+
+class SpiConfig {
+  bool promptForCustomerCopyOnEftpos;
+  bool signatureFlowOnEftpos;
+
+  SpiConfig({
+    this.promptForCustomerCopyOnEftpos,
+    this.signatureFlowOnEftpos,
+  });
+
+  factory SpiConfig.fromMap(Map<String, bool> obj) {
+    return SpiConfig(
+      promptForCustomerCopyOnEftpos: obj['epromptForCustomerCopyOnEftposncKey'],
+      signatureFlowOnEftpos: obj['signatureFlowOnEftpos'],
+    );
+  }
+}
+
+class SignatureRequired {
+  String requestId;
+  String posRefId;
+  String receiptToSign;
+
+  SignatureRequired({
+    this.requestId,
+    this.posRefId,
+    this.receiptToSign,
+  });
+
+  factory SignatureRequired.fromMap(Map<String, String> obj) {
+    return SignatureRequired(
+      requestId: obj['requestId'],
+      posRefId: obj['posRefId'],
+      receiptToSign: obj['receiptToSign'],
+    );
+  }
+}
+
+class PhoneForAuthRequired {
+  String requestId;
+  String posRefId;
+  String phoneNumber;
+  String merchantId;
+
+  PhoneForAuthRequired({
+    this.requestId,
+    this.posRefId,
+    this.phoneNumber,
+    this.merchantId,
+  });
+
+  factory PhoneForAuthRequired.fromMap(Map<String, String> obj) {
+    return PhoneForAuthRequired(
+      requestId: obj['requestId'],
+      posRefId: obj['posRefId'],
+      phoneNumber: obj['phoneNumber'],
+      merchantId: obj['merchantId'],
+    );
+  }
+}
+
+class PairingFlowState {
+  String message;
+  bool awaitingCheckFromEftpos;
+  bool awaitingCheckFromPos;
+  String confirmationCode;
+  bool finished;
+  bool successful;
+
+  PairingFlowState(
+      {this.message,
+      this.awaitingCheckFromEftpos,
+      this.awaitingCheckFromPos,
+      this.confirmationCode,
+      this.finished,
+      this.successful});
+
+  factory PairingFlowState.fromMap(Map<String, dynamic> obj) {
+    return PairingFlowState(
+      message: obj['message'],
+      awaitingCheckFromEftpos: obj['awaitingCheckFromEftpos'],
+      awaitingCheckFromPos: obj['awaitingCheckFromPos'],
+      confirmationCode: obj['confirmationCode'],
+      finished: obj['finished'],
+      successful: obj['successful'],
+    );
+  }
+}
+
+class TransactionFlowState {
+  String posRefId;
+  SpiTransactionType type;
+  String displayMessage;
+  int amountCents;
+  bool isRequestSent;
+  String requestTime;
+  String lastStateRequestTime;
+  bool attemptingToCancel;
+  bool awaitingSignatureCheck;
+  bool awaitingPhoneForAuth;
+  bool finished;
+  String success;
+  SpiMessage response;
+  SignatureRequired signatureRequiredMessage;
+  PhoneForAuthRequired phoneForAuthRequiredMessage;
+  String cancelAttemptTime;
+  SpiMessage request;
+  bool awaitingGltResponse;
+
+  TransactionFlowState({
+    this.posRefId,
+    this.type,
+    this.displayMessage,
+    this.amountCents,
+    this.isRequestSent,
+    this.requestTime,
+    this.lastStateRequestTime,
+    this.attemptingToCancel,
+    this.awaitingSignatureCheck,
+    this.awaitingPhoneForAuth,
+    this.finished,
+    this.success,
+    this.response,
+    this.signatureRequiredMessage,
+    this.phoneForAuthRequiredMessage,
+    this.cancelAttemptTime,
+    this.request,
+    this.awaitingGltResponse,
+  });
+
+  factory TransactionFlowState.fromMap(Map<String, dynamic> obj) {
+    return TransactionFlowState(
+      posRefId: obj['posRefId'],
+      type: EnumToString.fromString(SpiTransactionType.values, obj['type']),
+      displayMessage: obj['displayMessage'],
+      amountCents: obj['amountCents'],
+      isRequestSent: obj['isRequestSent'],
+      requestTime: obj['requestTime'],
+      lastStateRequestTime: obj['lastStateRequestTime'],
+      attemptingToCancel: obj['attemptingToCancel'],
+      awaitingSignatureCheck: obj['awaitingSignatureCheck'],
+      awaitingPhoneForAuth: obj['awaitingPhoneForAuth'],
+      finished: obj['finished'],
+      success: obj['success'],
+      response: SpiMessage.fromMap(obj['response']),
+      signatureRequiredMessage:
+          SignatureRequired.fromMap(obj['signatureRequiredMessage']),
+      phoneForAuthRequiredMessage:
+          PhoneForAuthRequired.fromMap(obj['phoneForAuthRequiredMessage']),
+      cancelAttemptTime: obj['cancelAttemptTime'],
+      request: SpiMessage.fromMap(obj['request']),
+      awaitingGltResponse: obj['awaitingGltResponse'],
+    );
+  }
+}
+
+enum SpiStatus {
+  UNPAIRED,
+  PAIRED_CONNECTING,
+  PAIRED_CONNECTED,
+}
+
+enum SpiFlow {
+  IDLE,
+  PAIRING,
+  TRANSACTION,
+}
+
+enum SpiTransactionType {
+  PURCHASE,
+  REFUND,
+  CASHOUT_ONLY,
+  MOTO,
+  SETTLE,
+  SETTLEMENT_ENQUIRY,
+  GET_LAST_TRANSACTION,
+  PREAUTH,
+  ACCOUNT_VERIFY
+}
+
+enum SpiMethodCallEvents {
   statusChanged,
   pairingFlowStateChanged,
   txFlowStateChanged,
   secretsChanged,
-  deviceAddressChanged,
+  deviceAddressChanged
 }
 
 class FlutterSpi {

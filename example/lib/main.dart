@@ -1,79 +1,58 @@
+import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
-import 'package:flutter_spi/flutter_spi.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_spi_example/spi_model.dart';
+import 'package:flutter_spi_example/spi_pair.dart';
 
 void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  @override
-  _MyAppState createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  String spiVersion = '';
-
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      platformVersion = await FlutterSpi.platformVersion;
-      spiVersion = await FlutterSpi.getVersion;
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
-  }
-
-  Future<void> start() async {
-    try {
-      await FlutterSpi.start;
-    } on PlatformException {
-      print('error');
-    }
-  }
-
-  Future<void> setPosId(String posId) async {
-    try {
-      await FlutterSpi.setPosId(posId);
-    } on PlatformException {
-      print('error');
-    }
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Column(
+    return ChangeNotifierProvider(
+      create: (context) => SpiModel(),
+      child: MaterialApp(
+        title: 'Spi Demo',
+        initialRoute: '/',
+        routes: {
+          '/': (context) => Home(),
+          '/pair': (context) => Pair(),
+        },
+      ),
+    );
+  }
+}
+
+class Home extends StatelessWidget {
+  const Home({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    var spi = Provider.of<SpiModel>(context, listen: true);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Spi Demo'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Center(
-              child: Text('Running on: $_platformVersion\n'),
+            Container(
+              margin: EdgeInsets.all(15),
+              child:
+                  Text('STATUS: ${EnumToString.convertToString(spi.status)}'),
             ),
-            Center(
-              child: Text('SPI Version: $spiVersion\n'),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/pair'),
+              child: Text('Pair'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/pair'),
+              child: Text('Pay Transaction'),
             ),
           ],
         ),

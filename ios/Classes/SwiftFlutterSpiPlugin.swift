@@ -6,22 +6,6 @@ enum SpiError: Error {
     case unknown
 }
 
-
-extension SPIMessageSuccessState {
-    var name: String {
-        switch self {
-        case .failed:
-            return "failed"
-        case .success:
-            return "success"
-        case .unknown:
-            return "unknown"
-        default:
-            return ""
-        }
-    }
-}
-
 extension SPIStatus {
     var name: String {
         switch self {
@@ -56,23 +40,23 @@ extension SPITransactionType {
     var name: String {
         switch self {
         case .getLastTransaction:
-            return "Get Last Transaction"
+            return "GET_LAST_TRANSACTION"
         case .purchase:
-            return "Purchase"
+            return "PURCHASE"
         case .refund:
-            return "Refund"
+            return "REFUND"
         case .settle:
-            return "Settle"
+            return "SETTLE"
         case .cashoutOnly:
-            return "Cashout Only"
+            return "CASHOUT_ONLY"
         case .MOTO:
             return "MOTO"
         case .settleEnquiry:
-            return "Settle Enquiry"
+            return "SETTLEMENT_ENQUIRY"
         case .preAuth:
-            return "Pre Auth"
+            return "PREAUTH"
         case .accountVerify:
-            return "Account Verify"
+            return "ACCOUNT_VERIFY"
         default:
             return ""
         }
