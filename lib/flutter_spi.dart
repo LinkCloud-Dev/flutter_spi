@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 class SpiMessage {
   String id;
   String event;
-  dynamic data;
+  Map<String, dynamic> data;
 
   SpiMessage({
     this.id,

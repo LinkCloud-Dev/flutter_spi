@@ -151,4 +151,21 @@ class SpiModel extends ChangeNotifier {
     prefs.setString('eftPosAddress', eftPosAddress);
     prefs.setString('secrets', jsonEncode(secrets.toJSON()));
   }
+
+  Future<void> initiatePurchaseTx(String transactionId, int purchaseAmount,
+      int tipAmount, int cashoutAmount, bool promptForCashout) async {
+    await FlutterSpi.initiatePurchaseTx(transactionId, purchaseAmount,
+        tipAmount, cashoutAmount, promptForCashout);
+  }
+
+  void resetTransaction() {
+    transactionFlowState = null;
+  }
+
+  Future<void> retryTransaction(String transactionId, int purchaseAmount,
+      int tipAmount, int cashoutAmount, bool promptForCashout) async {
+    transactionFlowState = null;
+    await FlutterSpi.initiatePurchaseTx(transactionId, purchaseAmount,
+        tipAmount, cashoutAmount, promptForCashout);
+  }
 }
