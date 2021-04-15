@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/services.dart';
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter_spi/flutter_spi.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SpiModel extends ChangeNotifier {
   SpiStatus status;
@@ -24,6 +27,26 @@ class SpiModel extends ChangeNotifier {
     this.autoAddress = false,
     this.secrets,
   });
+
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    posId = prefs.getString('posId');
+    eftPosId = prefs.getString('eftPosId');
+    eftPosAddress = prefs.getString('eftPosAddress');
+    final persistedSecrets = prefs.getString('secrets');
+    if (persistedSecrets != null) {
+      secrets = Secrets.fromMap(jsonDecode(persistedSecrets));
+    }
+
+    // start spi
+    if (posId != null &&
+        eftPosId != null &&
+        eftPosAddress != null &&
+        secrets != null) {
+      await FlutterSpi.init(posId, eftPosId, eftPosAddress,
+          secrets: secrets.toJSON());
+    }
+  }
 
   void updatePosId(String value) {
     posId = value;
@@ -63,7 +86,8 @@ class SpiModel extends ChangeNotifier {
         break;
       case SpiMethodCallEvents.secretsChanged:
         secrets = Secrets.fromMap(methodCall.arguments);
-        // TODO: should persist spi pair info
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('secrets', jsonEncode(secrets.toJSON()));
         break;
       case SpiMethodCallEvents.txFlowStateChanged:
         transactionFlowState =
@@ -100,10 +124,31 @@ class SpiModel extends ChangeNotifier {
   }
 
   Future<void> pair() async {
+    await save();
+    // await FlutterSpi.init(posId, eftPosId, eftPosAddress);
     await FlutterSpi.pair();
   }
 
   Future<void> unpair() async {
     await FlutterSpi.unpair();
+    secrets = null;
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove('secrets');
+  }
+
+  Future<void> cancelPair() async {
+    await FlutterSpi.pairingCancel();
+  }
+
+  Future<void> confirmPairingCode() async {
+    await FlutterSpi.pairingConfirmCode();
+  }
+
+  Future<void> persistentStoreData() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('posId', posId);
+    prefs.setString('eftPosId', eftPosId);
+    prefs.setString('eftPosAddress', eftPosAddress);
+    prefs.setString('secrets', jsonEncode(secrets.toJSON()));
   }
 }

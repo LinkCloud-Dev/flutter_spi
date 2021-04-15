@@ -1,5 +1,6 @@
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spi/flutter_spi.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/spi_pair.dart';
@@ -27,8 +28,25 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class Home extends StatelessWidget {
+class Home extends StatefulWidget {
   const Home({Key key}) : super(key: key);
+
+  @override
+  _HomeState createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  @override
+  void initState() {
+    _initSpi();
+    super.initState();
+  }
+
+  void _initSpi() async {
+    var spi = Provider.of<SpiModel>(context, listen: false);
+    spi.init();
+    FlutterSpi.handleMethodCall(spi.subscribeSpiEvents);
+  }
 
   @override
   Widget build(BuildContext context) {

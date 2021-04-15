@@ -4,11 +4,38 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi.dart';
+import 'package:flutter_spi_example/paring_dialog.dart';
 import 'package:flutter_spi_example/spi_model.dart';
+import 'package:flutter_spi_example/unpair_dialog.dart';
 import 'package:provider/provider.dart';
 
 class Pair extends StatelessWidget {
   const Pair({Key key}) : super(key: key);
+
+  void _pair(BuildContext context) {
+    var spi = Provider.of<SpiModel>(context, listen: false);
+    spi.pair();
+    _showDialog<String>(
+      context: context,
+      child: PairingDialog(),
+    );
+  }
+
+  void _unpair(BuildContext context) {
+    var spi = Provider.of<SpiModel>(context, listen: false);
+    spi.unpair();
+    _showDialog<String>(
+      context: context,
+      child: UnpairDialog(),
+    );
+  }
+
+  Future<void> _showDialog<T>({BuildContext context, Widget child}) async {
+    await showDialog<T>(
+      context: context,
+      builder: (context) => child,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,9 +130,9 @@ class Pair extends StatelessWidget {
             ElevatedButton(onPressed: () => spi.save(), child: Text('SAVE')),
             spi.status == SpiStatus.UNPAIRED
                 ? ElevatedButton(
-                    onPressed: () => spi.pair(), child: Text('PAIR'))
+                    onPressed: () => _pair(context), child: Text('PAIR'))
                 : ElevatedButton(
-                    onPressed: () => spi.unpair(), child: Text('UNPAIR'))
+                    onPressed: () => _unpair(context), child: Text('UNPAIR'))
           ],
         ),
       ),

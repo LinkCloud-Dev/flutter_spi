@@ -38,6 +38,13 @@ class Secrets {
       hmacKey: obj['hmacKey'],
     );
   }
+
+  Map<String, dynamic> toJSON() {
+    return <String, String>{
+      'encKey': encKey,
+      'hmacKey': hmacKey,
+    };
+  }
 }
 
 class SpiConfig {
