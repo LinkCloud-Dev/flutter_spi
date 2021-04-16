@@ -1,6 +1,7 @@
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spi/flutter_spi.dart';
+import 'package:flutter_spi_example/spi_transaction.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/spi_pair.dart';
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/': (context) => Home(),
           '/pair': (context) => Pair(),
+          '/purcharse': (context) => Transaction(),
         },
       ),
     );
@@ -69,8 +71,8 @@ class _HomeState extends State<Home> {
               child: Text('Pair'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/pair'),
-              child: Text('Pay Transaction'),
+              onPressed: () => Navigator.pushNamed(context, '/purcharse'),
+              child: Text('Purcharse'),
             ),
           ],
         ),
