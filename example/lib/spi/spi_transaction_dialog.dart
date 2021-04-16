@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_spi/flutter_spi.dart';
 import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/transactions_ui/attempting_cancel_tx.dart';
@@ -8,8 +9,6 @@ import 'package:flutter_spi_example/transactions_ui/tx_successful.dart';
 import 'package:flutter_spi_example/transactions_ui/tx_unknown.dart';
 import 'package:flutter_spi_example/transactions_ui/waiting_conn.dart';
 import 'package:flutter_spi_example/transactions_ui/waiting_tx.dart';
-import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 enum TxUiState {
   WaitingTx,
@@ -21,16 +20,16 @@ enum TxUiState {
   UnknownTx,
 }
 
-class RefundTransactionDialog extends StatelessWidget {
+class TransactionDialog extends StatelessWidget {
   final int amount;
-  RefundTransactionDialog({
+  TransactionDialog({
     Key key,
     @required this.amount,
   }) : super(key: key);
 
   Future<void> _retry(BuildContext context) async {
     var spi = Provider.of<SpiModel>(context, listen: false);
-    await spi.retryRefundTransaction(Uuid().v4(), 100);
+    await spi.retryTransaction('111122223333', 100, 0, 0, false);
   }
 
   @override
@@ -69,7 +68,7 @@ class RefundTransactionDialog extends StatelessWidget {
     return SimpleDialog(
       contentPadding: EdgeInsets.all(0),
       titlePadding: EdgeInsets.fromLTRB(40, 0, 40, 0),
-      title: Text('EFTPOS - REFUND'),
+      title: Text('EFTPOS - Order XYZ'),
       children: [
         Container(
           width: MediaQuery.of(context).size.width * 0.5,

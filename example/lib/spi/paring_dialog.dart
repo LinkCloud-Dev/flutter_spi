@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_spi_example/spi_model.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_spi_example/spi_model.dart';
 
 class PairingDialog extends StatelessWidget {
   PairingDialog({

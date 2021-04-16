@@ -1,13 +1,13 @@
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
-
 import 'package:flutter/services.dart';
-import 'package:flutter_spi/flutter_spi.dart';
-import 'package:flutter_spi_example/paring_dialog.dart';
-import 'package:flutter_spi_example/spi_model.dart';
-import 'package:flutter_spi_example/unpair_dialog.dart';
 import 'package:provider/provider.dart';
+
+import 'package:flutter_spi/flutter_spi.dart';
+import 'package:flutter_spi_example/spi/paring_dialog.dart';
+import 'package:flutter_spi_example/spi_model.dart';
+import 'package:flutter_spi_example/spi/unpair_dialog.dart';
 
 class Pair extends StatelessWidget {
   const Pair({Key key}) : super(key: key);

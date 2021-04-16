@@ -1,11 +1,12 @@
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spi_example/spi_refund_dialog.dart';
-import 'package:uuid/uuid.dart';
-import 'package:flutter_spi/flutter_spi.dart';
-import 'package:flutter_spi_example/spi_settle_dialog.dart';
-import 'package:flutter_spi_example/spi_transaction_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+
+import 'package:flutter_spi/flutter_spi.dart';
+import 'package:flutter_spi_example/spi/spi_refund_dialog.dart';
+import 'package:flutter_spi_example/spi/spi_settle_dialog.dart';
+import 'package:flutter_spi_example/spi/spi_transaction_dialog.dart';
 import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/spi_pair.dart';
 
