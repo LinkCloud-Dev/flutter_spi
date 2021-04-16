@@ -168,4 +168,12 @@ class SpiModel extends ChangeNotifier {
     await FlutterSpi.initiatePurchaseTx(transactionId, purchaseAmount,
         tipAmount, cashoutAmount, promptForCashout);
   }
+
+  Future<void> retryRefundTransaction(
+    String transactionId,
+    int refundAmount,
+  ) async {
+    transactionFlowState = null;
+    await FlutterSpi.initiateRefundTx(transactionId, refundAmount);
+  }
 }

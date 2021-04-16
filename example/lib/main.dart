@@ -1,7 +1,10 @@
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spi_example/spi_refund_dialog.dart';
+import 'package:uuid/uuid.dart';
 import 'package:flutter_spi/flutter_spi.dart';
-import 'package:flutter_spi_example/spi_transaction.dart';
+import 'package:flutter_spi_example/spi_settle_dialog.dart';
+import 'package:flutter_spi_example/spi_transaction_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/spi_pair.dart';
@@ -23,7 +26,6 @@ class MyApp extends StatelessWidget {
         routes: {
           '/': (context) => Home(),
           '/pair': (context) => Pair(),
-          '/purcharse': (context) => Transaction(),
         },
       ),
     );
@@ -50,6 +52,56 @@ class _HomeState extends State<Home> {
     FlutterSpi.handleMethodCall(spi.subscribeSpiEvents);
   }
 
+  Future<void> _startTransaction(int amount, BuildContext context) async {
+    var spi = Provider.of<SpiModel>(context, listen: false);
+    if (spi.status == SpiStatus.UNPAIRED) {
+      print('Please Pair EFTPOS.');
+      return;
+    }
+    await spi.initiatePurchaseTx('111122223333', 100, 0, 0, false);
+    _showDialog<String>(
+      context: context,
+      child: TransactionDialog(
+        amount: amount,
+      ),
+    );
+  }
+
+  Future<void> _initSettleTx(BuildContext context) async {
+    var spi = Provider.of<SpiModel>(context, listen: false);
+    if (spi.status == SpiStatus.UNPAIRED) {
+      print('Please Pair EFTPOS.');
+      return;
+    }
+    await FlutterSpi.initiateSettleTx(Uuid().v4());
+    _showDialog<String>(
+      context: context,
+      child: SettleDialog(),
+    );
+  }
+
+  Future<void> _initRefundTx(int amount, BuildContext context) async {
+    var spi = Provider.of<SpiModel>(context, listen: false);
+    if (spi.status == SpiStatus.UNPAIRED) {
+      print('Please Pair EFTPOS.');
+      return;
+    }
+    await FlutterSpi.initiateRefundTx(Uuid().v4(), amount);
+    _showDialog<String>(
+      context: context,
+      child: RefundTransactionDialog(
+        amount: amount,
+      ),
+    );
+  }
+
+  Future<void> _showDialog<T>({BuildContext context, Widget child}) async {
+    await showDialog<T>(
+      context: context,
+      builder: (context) => child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: true);
@@ -71,8 +123,16 @@ class _HomeState extends State<Home> {
               child: Text('Pair'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/purcharse'),
-              child: Text('Purcharse'),
+              onPressed: () => _startTransaction(100, context),
+              child: Text('Charge \$1.00'),
+            ),
+            ElevatedButton(
+              onPressed: () => _initSettleTx(context),
+              child: Text('Settle'),
+            ),
+            ElevatedButton(
+              onPressed: () => _initRefundTx(100, context),
+              child: Text('Refund \$1.00'),
             ),
           ],
         ),

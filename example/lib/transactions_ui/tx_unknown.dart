@@ -5,17 +5,14 @@ import '../spi_model.dart';
 
 class TxUnknown extends StatelessWidget {
   final int amount;
-  const TxUnknown({Key key, @required this.amount}) : super(key: key);
+  final Function retry;
+  const TxUnknown({Key key, @required this.amount, @required this.retry})
+      : super(key: key);
 
   void _cancel(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: false);
     spi.resetTransaction();
     // TOTO: process businiess logic
-  }
-
-  Future<void> _retry(BuildContext context) async {
-    var spi = Provider.of<SpiModel>(context, listen: false);
-    await spi.retryTransaction('111122223333', 100, 0, 0, false);
   }
 
   Future<void> _overrideAsPaid(BuildContext context) async {
@@ -46,7 +43,7 @@ class TxUnknown extends StatelessWidget {
           Text('Check whether customer actually paid.'),
           Text('What would you link to do next?'),
           ElevatedButton(
-              onPressed: () => _retry(context),
+              onPressed: () => retry(context),
               child: Text('Retry Transaction')),
           ElevatedButton(
               onPressed: () => _overrideAsPaid(context),
