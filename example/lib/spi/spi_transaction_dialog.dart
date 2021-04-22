@@ -36,8 +36,10 @@ class TransactionDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: true);
 
-    Widget content = WaitingTx(amount: amount);
-    if (!spi.transactionFlowState.finished) {
+    Widget content;
+    if (spi.transactionFlowState == null) {
+      content = WaitingTx(amount: amount);
+    } else if (!spi.transactionFlowState.finished) {
       if (spi.status == SpiStatus.PAIRED_CONNECTING) {
         content = WaitingConnection(amount: amount);
       }

@@ -10,10 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SpiModel extends ChangeNotifier {
   SpiStatus status;
   String posId;
-  String eftPosId;
   String eftPosAddress;
-  bool testMode;
-  bool autoAddress;
   Secrets secrets;
   PairingFlowState pairingFlowState;
   TransactionFlowState transactionFlowState;
@@ -21,106 +18,94 @@ class SpiModel extends ChangeNotifier {
   SpiModel({
     this.status = SpiStatus.UNPAIRED,
     this.posId,
-    this.eftPosId,
     this.eftPosAddress,
-    this.testMode = false,
-    this.autoAddress = false,
     this.secrets,
   });
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     posId = prefs.getString('posId');
-    eftPosId = prefs.getString('eftPosId');
-    eftPosAddress = prefs.getString('eftPosAddress');
+    if (posId == null) {
+      posId = await FlutterSpi.getDeviceSN;
+    }
+    eftPosAddress = prefs.getString('eftPosAddress') ?? '192.168.1.99';
     final persistedSecrets = prefs.getString('secrets');
     if (persistedSecrets != null) {
       secrets = Secrets.fromMap(jsonDecode(persistedSecrets));
     }
-
     // start spi
-    if (posId != null &&
-        eftPosId != null &&
-        eftPosAddress != null &&
-        secrets != null) {
-      await FlutterSpi.init(posId, eftPosId, eftPosAddress,
-          secrets: secrets.toJSON());
-    }
+    await FlutterSpi.init(posId, eftPosAddress,
+        secrets: secrets != null ? secrets.toJSON() : null);
+    await FlutterSpi.start();
   }
 
   void updatePosId(String value) {
     posId = value;
   }
 
-  void updateEftPosId(String value) {
-    eftPosId = value;
-  }
-
   void updateEftPosAddress(String value) {
     eftPosAddress = value;
   }
 
-  void updateTestMode(bool value) {
-    testMode = value;
-  }
-
-  void updateAutoAddress(bool value) {
-    autoAddress = value;
-  }
-
   Future<void> subscribeSpiEvents(MethodCall methodCall) async {
-    SpiMethodCallEvents eventType =
-        EnumToString.fromString(SpiMethodCallEvents.values, methodCall.method);
-    switch (eventType) {
-      case SpiMethodCallEvents.statusChanged:
-        status =
-            EnumToString.fromString(SpiStatus.values, methodCall.arguments);
-        notifyListeners();
-        break;
-      case SpiMethodCallEvents.pairingFlowStateChanged:
-        pairingFlowState = PairingFlowState.fromMap(methodCall.arguments);
-        notifyListeners();
-        if (pairingFlowState.finished) {
-          await FlutterSpi.ackFlowEndedAndBackToIdle();
-        }
-        break;
-      case SpiMethodCallEvents.secretsChanged:
-        secrets = Secrets.fromMap(methodCall.arguments);
-        final prefs = await SharedPreferences.getInstance();
-        prefs.setString('secrets', jsonEncode(secrets.toJSON()));
-        break;
-      case SpiMethodCallEvents.txFlowStateChanged:
-        transactionFlowState =
-            TransactionFlowState.fromMap(methodCall.arguments);
-        notifyListeners();
-        if (transactionFlowState.awaitingSignatureCheck) {
-          // TODO: print receipt to sign on paper & update UI for customer signature
-          print(transactionFlowState.signatureRequiredMessage.receiptToSign);
+    try {
+      SpiMethodCallEvents eventType = EnumToString.fromString(
+          SpiMethodCallEvents.values, methodCall.method);
+      switch (eventType) {
+        case SpiMethodCallEvents.statusChanged:
+          status =
+              EnumToString.fromString(SpiStatus.values, methodCall.arguments);
+          notifyListeners();
           break;
-        }
-        if (transactionFlowState.finished) {
-          await FlutterSpi.ackFlowEndedAndBackToIdle();
-        }
-        // TODO: should print merchant copy
-        if (transactionFlowState.success == 'SUCCESS') {
-          // TODO handle transaction success.
-          print('Transaction Success.');
-        }
-        break;
-      case SpiMethodCallEvents.deviceAddressChanged:
-        // TODO:  handle device address changed
-        break;
-      default:
+        case SpiMethodCallEvents.pairingFlowStateChanged:
+          pairingFlowState = PairingFlowState.fromMap(methodCall.arguments);
+          notifyListeners();
+          if (pairingFlowState.finished) {
+            await FlutterSpi.ackFlowEndedAndBackToIdle();
+          }
+          break;
+        case SpiMethodCallEvents.secretsChanged:
+          secrets = Secrets.fromMap(methodCall.arguments);
+          final prefs = await SharedPreferences.getInstance();
+          if (secrets == null) {
+            prefs.remove('secrets');
+          } else {
+            prefs.setString('secrets', jsonEncode(secrets.toJSON()));
+          }
+          break;
+        case SpiMethodCallEvents.txFlowStateChanged:
+          transactionFlowState =
+              TransactionFlowState.fromMap(methodCall.arguments);
+          notifyListeners();
+          if (transactionFlowState.awaitingSignatureCheck) {
+            // TODO: print receipt to sign on paper & update UI for customer signature
+            print(transactionFlowState.signatureRequiredMessage.receiptToSign);
+            break;
+          }
+          if (transactionFlowState.finished) {
+            await FlutterSpi.ackFlowEndedAndBackToIdle();
+          }
+          // TODO: should print merchant copy
+          if (transactionFlowState.success == 'SUCCESS') {
+            // TODO handle transaction success.
+            print('Transaction Success.');
+          }
+          break;
+        default:
+      }
+    } catch (e) {
+      print(e);
     }
   }
 
   Future<void> save() async {
-    await FlutterSpi.setTestMode(testMode);
-    await FlutterSpi.setAutoAddressResolution(autoAddress);
+    // await FlutterSpi.setTestMode(testMode);
+    // await FlutterSpi.setAutoAddressResolution(autoAddress);
     if (posId.isNotEmpty) await FlutterSpi.setPosId(posId);
-    if (eftPosId.isNotEmpty) await FlutterSpi.setSerialNumber(eftPosId);
+    // if (eftPosId.isNotEmpty) await FlutterSpi.setSerialNumber(eftPosId);
     if (eftPosAddress.isNotEmpty)
       await FlutterSpi.setEftposAddress(eftPosAddress);
+    print('Save Success.');
   }
 
   Future<void> pair() async {
@@ -147,7 +132,6 @@ class SpiModel extends ChangeNotifier {
   Future<void> persistentStoreData() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('posId', posId);
-    prefs.setString('eftPosId', eftPosId);
     prefs.setString('eftPosAddress', eftPosAddress);
     prefs.setString('secrets', jsonEncode(secrets.toJSON()));
   }

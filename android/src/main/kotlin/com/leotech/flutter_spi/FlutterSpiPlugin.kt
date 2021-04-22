@@ -1,8 +1,10 @@
 package com.leotech.flutter_spi
 
+import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
-import android.content.Context
+import android.os.Handler
+import android.util.Log
 import androidx.annotation.NonNull
 import com.assemblypayments.spi.Spi
 import com.assemblypayments.spi.Spi.CompatibilityException
@@ -35,23 +37,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "init") {
-      init(call.argument("posId")!!, call.argument("sn")!!, call.argument("eftposAddress")!!, call.argument("secrets"), result)
+      init(call.argument("posId")!!, call.argument("eftposAddress")!!, call.argument("secrets"), result)
     } else if (call.method == "start") {
       start(result)
-    } else if (call.method == "setAcquirerCode") {
-      setAcquirerCode(call.argument("acquirerCode")!!, result)
-    } else if (call.method == "setDeviceApiKey") {
-      setDeviceApiKey(call.argument("deviceApiKey")!!, result)
-    } else if (call.method == "setSerialNumber") {
-      setSerialNumber(call.argument("serialNumber")!!, result)
-    } else if (call.method == "getSerialNumber") {
-      getSerialNumber(result)
-    } else if (call.method == "setAutoAddressResolution") {
-      setAutoAddressResolution(call.argument("autoAddressResolutionEnable")!!, result)
-    } else if (call.method == "isAutoAddressResolutionEnabled") {
-      isAutoAddressResolutionEnabled(result)
-    } else if (call.method == "setTestMode") {
-      setTestMode(call.argument("testMode")!!, result)
     } else if (call.method == "setPosId") {
       setPosId(call.argument("posId")!!, result)
     } else if (call.method == "setEftposAddress") {
@@ -122,14 +110,23 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun invokeFlutterMethod(flutterMethod: String, message: Any?) {
-    channel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
-      override fun success(o: Any?) {}
-      override fun error(s: String, s1: String?, o: Any?) {}
-      override fun notImplemented() {}
-    })
+     val mainHandler = Handler(context.mainLooper)
+      mainHandler.post {
+        channel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
+          override fun success(o: Any?) {
+            Log.d("SUCCESS", "invokeMethod: success")
+          }
+          override fun error(s: String, s1: String?, o: Any?) {
+            Log.d("ERROR", "invokeMethod: error")
+          }
+          override fun notImplemented() {
+            Log.d("ERROR", "notImplemented")
+          }
+        })
+      }
   }
 
-  fun init(posId: String, sn: String, eftposAddress: String, secrets: HashMap<String, String>?, result: Result) {
+  fun init(posId: String, eftposAddress: String, secrets: HashMap<String, String>?, result: Result) {
     var initialized = true
     try {
       mSpi
@@ -142,14 +139,13 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     try {
-      mSpi = Spi(posId, sn, eftposAddress, Secrets(secrets?.get("encKey"), secrets?.get("hmacKey")))
+      mSpi = Spi(posId, eftposAddress, if (secrets.isNullOrEmpty()) null else Secrets(secrets!!.get("encKey"), secrets!!.get("hmacKey")))
       val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
       mSpi.setPosInfo("LinkPOS", pInfo.versionName)
       setStatusChangedHandler()
       setPairingFlowStateChangedHandler()
       setTxFlowStateChangedHandler()
       setSecretsChangedHandler()
-      setDeviceAddressChangedHandler()
       result.success(null)
     } catch (e: CompatibilityException) {
       result.error("INIT_ERROR", "Init Error.", null)
@@ -197,16 +193,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   /**
-   * Subscribe to this event when you want to know if the address of the device have changed
-   */
-
-  private fun setDeviceAddressChangedHandler() {
-    mSpi.setDeviceAddressChangedHandler {
-      invokeFlutterMethod("deviceAddressChanged", it.address)
-    }
-  }
-
-  /**
    * Call this method after constructing an instance of the class and subscribing to events.
    * It will start background maintenance threads.
    *
@@ -214,91 +200,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * Most importantly, it connects to the EFTPOS server if it has secrets.
    */
   fun start(result: Result) {
-    try {
-      mSpi.start()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
-  }
-
-  /**
-   * Set the acquirer code of your bank, please contact Assembly's Integration Engineers for acquirer code.
-   */
-  fun setAcquirerCode(acquirerCode: String, result: Result) {
-    try {
-      mSpi.setAcquirerCode(acquirerCode)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
-  }
-
-  /**
-   * Set the api key used for auto address discovery feature, please contact Assembly's Integration Engineers for Api key.
-   */
-  fun setDeviceApiKey(deviceApiKey: String, result: Result) {
-    try {
-      mSpi.setDeviceApiKey(deviceApiKey)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
-  }
-
-  /**
-   * Allows you to set the serial number of the Eftpos
-   */
-  fun setSerialNumber(serialNumber: String, result: Result) {
-    try {
-      mSpi.setSerialNumber(serialNumber)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
-  }
-
-  fun getSerialNumber(result: Result) {
-    try {
-      result.success(mSpi.getSerialNumber())
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
-  }
-
-  /**
-   * Allows you to set the auto address discovery feature.
-   */
-  fun setAutoAddressResolution(autoAddressResolutionEnable: Boolean, result: Result) {
-    try {
-      mSpi.setAutoAddressResolution(autoAddressResolutionEnable)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
-  }
-
-  fun isAutoAddressResolutionEnabled(result: Result) {
-    try {
-      result.success(mSpi.isAutoAddressResolutionEnabled())
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
-  }
-
-
-  /**
-   * Call this method to set the client library test mode.
-   * Set it to true only while you are developing the integration.
-   * It defaults to false. For a real merchant, always leave it set to false.
-   */
-  fun setTestMode(testMode: Boolean, result: Result) {
-    try {
-      mSpi.setTestMode(testMode)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    mSpi.start()
+    result.success(null)
   }
 
   /**
@@ -306,13 +209,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * Can only be called in the unpaired state.
    */
   fun setPosId(id: String, result: Result) {
-    try {
-      mSpi.setPosId(id)
-      result.success(null)
-
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.setPosId(id), result)
   }
 
   /**
@@ -321,13 +218,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * of the PIN pad.
    */
   fun setEftposAddress(address: String, result: Result) {
-    try {
-      mSpi.setEftposAddress(address)
-      result.success(null)
-
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.setEftposAddress(address), result)
   }
 
   /**
@@ -340,13 +231,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @param posVersion  Version string of the POS itself.
    */
   fun setPosInfo(posVendorId: String, posVersion: String, result: Result) {
-    try {
-      mSpi.setPosInfo(posVendorId, posVersion)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
-
+    mSpi.setPosInfo(posVendorId, posVersion)
+    result.success(null)
   }
 
 
@@ -356,11 +242,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(Full version (e.g. '2.0.1') or, when running locally, protocol version (e.g. '2.0.0-PROTOCOL').
    */
   fun getVersion(result: Result) {
-    try {
-      result.success(Spi.getVersion())
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.success(Spi.getVersion())
   }
 
   /**
@@ -369,11 +251,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(Status value [SpiStatus].
    */
   fun getCurrentStatus(result: Result) {
-    try {
-      result.success(mSpi.currentStatus.name)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.success(mSpi.currentStatus.name)
   }
 
   /**
@@ -382,41 +260,25 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(Current flow value [SpiFlow].
    */
   fun getCurrentFlow(result: Result) {
-    try {
-      result.success(mSpi.currentFlow.name)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.success(mSpi.currentFlow.name)
   }
 
   /**
    * When current flow is [SpiFlow.PAIRING], this represents the state of the pairing process.
    */
   fun getCurrentPairingFlowState(result: Result) {
-    try {
-      result.success(mapPairingFlowState(mSpi.currentPairingFlowState))
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.success(mapPairingFlowState(mSpi.currentPairingFlowState))
   }
 
   /**
    * When current flow is [SpiFlow.TRANSACTION], this represents the state of the transaction process.
    */
   fun getCurrentTxFlowState(result: Result) {
-    try {
-      result.success(mapTransactionState(mSpi.currentTxFlowState))
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.success(mapTransactionState(mSpi.currentTxFlowState))
   }
 
   fun getConfig(result: Result) {
-    try {
-      result.success(mapSpiConfig(mSpi.config))
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.success(mapSpiConfig(mSpi.config))
   }
 
   /**
@@ -430,12 +292,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * `false` means current flow was not finished yet.
    */
   fun ackFlowEndedAndBackToIdle(result: Result) {
-    try {
-      mSpi.ackFlowEndedAndBackToIdle()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.ackFlowEndedAndBackToIdle(), result)
   }
 
 
@@ -451,36 +308,23 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(Whether pairing has initiated or not.
    */
   fun pair(result: Result) {
-    try {
-      mSpi.pair()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.pair(), result)
   }
 
   /**
    * Call this when your user clicks 'Yes' to confirm the pairing code on your screen matches the one on the EFTPOS.
    */
   fun pairingConfirmCode(result: Result) {
-    try {
-      mSpi.pairingConfirmCode()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    mSpi.pairingConfirmCode()
+    result.success(null)
   }
 
   /**
    * Call this if your user clicks 'Cancel' or 'No' during the pairing process.
    */
   fun pairingCancel(result: Result) {
-    try {
-      mSpi.pairingCancel()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    mSpi.pairingCancel()
+    result.success(null)
   }
 
   /**
@@ -494,12 +338,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * Call this only if you are not yet in the [SpiStatus.UNPAIRED] state.
    */
   fun unpair(result: Result) {
-    try {
-      mSpi.unpair()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.unpair(), result)
   }
 
 
@@ -515,12 +354,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    */
 
   fun initiatePurchaseTx(posRefId: String, purchaseAmount: Int, tipAmount: Int, cashoutAmount: Int, promptForCashout: Boolean, result: Result) {
-    try {
-      mSpi.initiatePurchaseTx(posRefId, purchaseAmount, tipAmount, cashoutAmount, promptForCashout, TransactionOptions())
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.initiatePurchaseTx(posRefId, purchaseAmount, tipAmount, cashoutAmount, promptForCashout, TransactionOptions()), result)
   }
 
   /**
@@ -534,12 +368,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(Initiation result [InitiateTxResult].
    */
   fun initiateRefundTx(posRefId: String, refundAmount: Int, result: Result) {
-    try {
-      mSpi.initiateRefundTx(posRefId, refundAmount)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.initiateRefundTx(posRefId, refundAmount), result)
   }
 
   /**
@@ -549,12 +378,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(MidTxResult - false only if you called it in the wrong state.
    */
   fun acceptSignature(accepted: Boolean, result: Result) {
-    try {
-      mSpi.acceptSignature(accepted)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.acceptSignature(accepted), result)
   }
 
   /**
@@ -567,12 +391,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(Whether code has a valid format or not.
    */
   fun submitAuthCode(authCode: String, result: Result) {
-    try {
-      mSpi.submitAuthCode(authCode)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.submitAuthCode(authCode), result)
   }
 
   /**
@@ -587,12 +406,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(MidTxResult - false only if you called it in the wrong state.
    */
   fun cancelTransaction(result: Result) {
-    try {
-      mSpi.cancelTransaction()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.cancelTransaction(), result)
   }
 
   /**
@@ -605,12 +419,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @param amountCents Amount in cents to cash out.
    */
   fun initiateCashoutOnlyTx(posRefId: String, amountCents: Int, result: Result) {
-    try {
-      mSpi.initiateCashoutOnlyTx(posRefId, amountCents)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.initiateCashoutOnlyTx(posRefId, amountCents), result)
   }
 
   /**
@@ -620,12 +429,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @param amountCents Amount in cents
    */
   fun initiateMotoPurchaseTx(posRefId: String, amountCents: Int, result: Result) {
-    try {
-      mSpi.initiateMotoPurchaseTx(posRefId, amountCents)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.initiateMotoPurchaseTx(posRefId, amountCents), result)
   }
 
   /**
@@ -635,24 +439,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * Be subscribed to [.setTxFlowStateChangedHandler] to get updates on the process.
    */
   fun initiateSettleTx(id: String, result: Result) {
-    try {
-      mSpi.initiateSettleTx(id)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.initiateSettleTx(id), result)
   }
 
   /**
    * Initiates settlement enquiry operation.
    */
   fun initiateSettlementEnquiry(posRefId: String, result: Result) {
-    try {
-      mSpi.initiateSettlementEnquiry(posRefId)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.initiateSettlementEnquiry(posRefId), result)
   }
 
   /**
@@ -663,12 +457,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * Be subscribed to [.setTxFlowStateChangedHandler] to get updates on the process.
    */
   fun initiateGetLastTx(result: Result) {
-    try {
-      mSpi.initiateGetLastTx()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult(mSpi.initiateGetLastTx(), result)
   }
 
   /**
@@ -682,15 +471,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @param txType   The transaction type.
    */
   fun initiateRecovery(posRefId: String, txType: String, result: Result) {
-    try {
-      mSpi.initiateRecovery(
-              posRefId,
-              TransactionType.valueOf(txType)
-      )
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    result.handleResult( mSpi.initiateRecovery(
+            posRefId,
+            TransactionType.valueOf(txType)
+    ), result)
   }
   /**
    * Stops all running processes and resets to state before starting.
@@ -698,12 +482,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * Call this method when finished with SPI, e.g. when closing the application.
    */
   fun dispose(result: Result) {
-    try {
-      mSpi.dispose()
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    mSpi.dispose()
+    result.success(null)
   }
 
   fun getDeviceSN(result: Result) {
@@ -730,33 +510,22 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   fun setPromptForCustomerCopyOnEftpos(promptForCustomerCopyOnEftpos: Boolean, result: Result) {
-    try {
-      mSpi.config.isPromptForCustomerCopyOnEftpos = promptForCustomerCopyOnEftpos
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    mSpi.config.isPromptForCustomerCopyOnEftpos = promptForCustomerCopyOnEftpos
+    result.success(null)
   }
 
   fun setSignatureFlowOnEftpos(signatureFlowOnEftpos: Boolean, result: Result) {
-    try {
-      mSpi.config.isSignatureFlowOnEftpos = signatureFlowOnEftpos
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    mSpi.config.isSignatureFlowOnEftpos = signatureFlowOnEftpos
+    result.success(null)
   }
 
   fun setPrintMerchantCopy(printMerchantCopy: Boolean, result: Result) {
-    try {
-      mSpi.config.setPrintMerchantCopy(printMerchantCopy)
-      result.success(null)
-    }catch (e: CompatibilityException) {
-      result.error("ERROR", "Error.", null)
-    }
+    mSpi.config.setPrintMerchantCopy(printMerchantCopy)
+    result.success(null)
   }
 
-  fun mapSecrets(obj: Secrets):  HashMap<String, Any> {
+  fun mapSecrets(obj: Secrets?):  HashMap<String, Any>? {
+    if (obj == null) return null
     var map : HashMap<String, Any>
             = HashMap<String, Any> ()
     map.put("encKey", obj.encKey)
@@ -808,12 +577,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     return map
   }
 
-  fun mapMessage(obj: Message): HashMap<String, Any> {
-    var map : HashMap<String, Any>
-            = HashMap<String, Any> ()
-    map.put("id", obj.id)
-    map.put("event", obj.eventName)
-    map.put("data", hashMapToWritableMap(obj.data))
+  fun mapMessage(obj: Message?): HashMap<String, Any?> {
+    var map : HashMap<String, Any?>
+            = HashMap<String, Any?> ()
+    map.put("id", obj?.id)
+    map.put("event", obj?.eventName)
+    map.put("data", hashMapToWritableMap(obj?.data))
     return map
   }
 
@@ -849,22 +618,65 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     return result
   }
 
-  fun mapSignatureRequest(obj: SignatureRequired): HashMap<String, Any> {
-    var map : HashMap<String, Any>
-            = HashMap<String, Any> ()
-    map.put("requestId", obj.requestId)
-    map.put("posRefId", obj.posRefId)
-    map.put("receiptToSign", obj.merchantReceipt)
+  fun mapSignatureRequest(obj: SignatureRequired?): HashMap<String, Any?> {
+    var map : HashMap<String, Any?>
+            = HashMap<String, Any?> ()
+    map.put("requestId", obj?.requestId)
+    map.put("posRefId", obj?.posRefId)
+    map.put("receiptToSign", obj?.merchantReceipt)
     return map
   }
 
-  fun mapPhoneForAuthRequired(obj: PhoneForAuthRequired):  HashMap<String, Any> {
-    var map : HashMap<String, Any>
-            = HashMap<String, Any> ()
-    map.put("requestId", obj.requestId)
-    map.put("posRefId", obj.posRefId)
-    map.put("phoneNumber", obj.phoneNumber)
-    map.put("merchantId", obj.merchantId)
+  fun mapPhoneForAuthRequired(obj: PhoneForAuthRequired?):  HashMap<String, Any?> {
+    var map : HashMap<String, Any?>
+            = HashMap<String, Any?> ()
+    map.put("requestId", obj?.requestId)
+    map.put("posRefId", obj?.posRefId)
+    map.put("phoneNumber", obj?.phoneNumber)
+    map.put("merchantId", obj?.merchantId)
     return map
   }
+
+
+  companion object {
+
+    private const val statusChangedEvent = "StatusChanged"
+    private const val pairingFlowStateChangedEvent = "PairingFlowStateChanged"
+    private const val txFlowStateChangedEvent = "TxFlowStateChanged"
+    private const val secretsChangedEvent = "SecretsChanged"
+
+    private fun Result.handleResult(success: Boolean, result: Result) {
+      if (success) {
+        result.success(null)
+      } else {
+        result.error("ERROR", "Error.", null)
+      }
+    }
+
+    private fun Result.handleResult(initiateTxResult: InitiateTxResult, result: Result) {
+      if (initiateTxResult.isInitiated) {
+        result.success(null)
+      } else {
+        result.error("ERROR", "Error.", null)
+      }
+    }
+
+    private fun Result.handleResult(midTxResult: MidTxResult, result: Result) {
+      if (midTxResult.isValid) {
+        result.success(null)
+      } else {
+        result.error("ERROR", "Error.", null)
+      }
+    }
+
+    private fun Result.handleResult(submitAuthCodeResult: SubmitAuthCodeResult, result: Result) {
+      if (submitAuthCodeResult.isValidFormat) {
+        result.success(null)
+      } else {
+        result.error("ERROR", "Error.", null)
+      }
+    }
+
+  }
 }
+

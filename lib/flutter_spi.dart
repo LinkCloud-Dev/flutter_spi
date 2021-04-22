@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 class SpiMessage {
   String id;
   String event;
-  Map<String, dynamic> data;
+  Map<dynamic, dynamic> data;
 
   SpiMessage({
     this.id,
@@ -14,7 +14,7 @@ class SpiMessage {
     this.data,
   });
 
-  factory SpiMessage.fromMap(Map<String, dynamic> obj) {
+  factory SpiMessage.fromMap(Map<dynamic, dynamic> obj) {
     return SpiMessage(
       id: obj['id'],
       event: obj['event'],
@@ -32,7 +32,8 @@ class Secrets {
     this.hmacKey,
   });
 
-  factory Secrets.fromMap(Map<String, String> obj) {
+  factory Secrets.fromMap(Map<dynamic, dynamic> obj) {
+    if (obj == null) return null;
     return Secrets(
       encKey: obj['encKey'],
       hmacKey: obj['hmacKey'],
@@ -123,7 +124,7 @@ class PairingFlowState {
       this.finished,
       this.successful});
 
-  factory PairingFlowState.fromMap(Map<String, dynamic> obj) {
+  factory PairingFlowState.fromMap(Map<dynamic, dynamic> obj) {
     return PairingFlowState(
       message: obj['message'],
       awaitingCheckFromEftpos: obj['awaitingCheckFromEftpos'],
@@ -176,7 +177,7 @@ class TransactionFlowState {
     this.awaitingGltResponse,
   });
 
-  factory TransactionFlowState.fromMap(Map<String, dynamic> obj) {
+  factory TransactionFlowState.fromMap(Map<dynamic, dynamic> obj) {
     return TransactionFlowState(
       posRefId: obj['posRefId'],
       type: EnumToString.fromString(SpiTransactionType.values, obj['type']),
@@ -231,7 +232,6 @@ enum SpiMethodCallEvents {
   pairingFlowStateChanged,
   txFlowStateChanged,
   secretsChanged,
-  deviceAddressChanged
 }
 
 class FlutterSpi {
@@ -242,23 +242,14 @@ class FlutterSpi {
     return version;
   }
 
-  /*
-    method:
-    statusChanged,
-    pairingFlowStateChanged,
-    txFlowStateChanged,
-    secretsChanged,
-    deviceAddressChanged, 
-   */
   static void handleMethodCall(Function cb) {
     _channel.setMethodCallHandler(cb);
   }
 
-  static Future<void> init(String posId, String sn, String eftposAddress,
+  static Future<void> init(String posId, String eftposAddress,
       {Map<String, String> secrets}) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
-      "sn": sn,
       "eftposAddress": eftposAddress,
       "secrets": secrets,
     });
@@ -268,53 +259,22 @@ class FlutterSpi {
     await _channel.invokeMethod('start');
   }
 
-  static Future<void> setAcquirerCode(String acquirerCode) async {
-    await _channel
-        .invokeMethod('setAcquirerCode', {"acquirerCode": acquirerCode});
-  }
-
-  static Future<void> setDeviceApiKey(String deviceApiKey) async {
-    await _channel
-        .invokeMethod('setDeviceApiKey', {"deviceApiKey": deviceApiKey});
-  }
-
-  static Future<void> setSerialNumber(String serialNumber) async {
-    await _channel
-        .invokeMethod('setSerialNumber', {"serialNumber": serialNumber});
-  }
-
-  static Future<String> get getSerialNumber async {
-    return await _channel.invokeMethod('getSerialNumber');
-  }
-
-  static Future<void> setAutoAddressResolution(
-      bool autoAddressResolutionEnable) async {
-    await _channel.invokeMethod('setAutoAddressResolution',
-        {"autoAddressResolutionEnable": autoAddressResolutionEnable});
-  }
-
-  static Future<bool> get isAutoAddressResolutionEnabled async {
-    final bool result =
-        await _channel.invokeMethod('isAutoAddressResolutionEnabled');
-    return result;
-  }
-
-  static Future<void> setTestMode(bool testMode) async {
-    await _channel.invokeMethod('setTestMode', {"testMode": testMode});
-  }
-
   static Future<void> setPosId(String posId) async {
     await _channel.invokeMethod('setPosId', {"posId": posId});
   }
 
   static Future<void> setEftposAddress(String address) async {
-    await _channel
-        .invokeMethod('sesetEftposAddressPosId', {"address": address});
+    await _channel.invokeMethod('setEftposAddress', {"address": address});
   }
 
   static Future<void> setPosInfo(String posVendorId, String posVersion) async {
     await _channel.invokeMethod(
         'setPosInfo', {"posVendorId": posVendorId, "posVersion": posVersion});
+  }
+
+  static Future<String> get getDeviceSN async {
+    final String sn = await _channel.invokeMethod('getDeviceSN');
+    return sn;
   }
 
   static Future<String> get getVersion async {

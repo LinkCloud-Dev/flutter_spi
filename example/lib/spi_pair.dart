@@ -69,23 +69,6 @@ class Pair extends StatelessWidget {
               keyboardType: TextInputType.text,
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
-                labelText: 'EFTPOS ID',
-              ),
-              maxLines: 1,
-              readOnly: spi.status != SpiStatus.UNPAIRED,
-              initialValue: spi.eftPosId,
-              onChanged: (value) {
-                spi.updatePosId(value);
-              },
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            TextFormField(
-              textInputAction: TextInputAction.next,
-              keyboardType: TextInputType.text,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
                 labelText: 'EFTPOS ADDRESS',
               ),
               maxLines: 1,
@@ -94,32 +77,6 @@ class Pair extends StatelessWidget {
               onChanged: (value) {
                 spi.updateEftPosAddress(value);
               },
-            ),
-            ListTile(
-              title: Text(
-                'Automatic Address:',
-              ),
-              trailing: Switch(
-                value: spi.autoAddress,
-                onChanged: spi.status == SpiStatus.UNPAIRED
-                    ? (value) {
-                        spi.updateAutoAddress(value);
-                      }
-                    : null,
-              ),
-            ),
-            ListTile(
-              title: Text(
-                'TEST MODE:',
-              ),
-              trailing: Switch(
-                value: spi.testMode,
-                onChanged: spi.status == SpiStatus.UNPAIRED
-                    ? (value) {
-                        spi.updateTestMode(value);
-                      }
-                    : null,
-              ),
             ),
             Divider(),
             Text(

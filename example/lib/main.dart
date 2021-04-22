@@ -49,7 +49,7 @@ class _HomeState extends State<Home> {
 
   void _initSpi() async {
     var spi = Provider.of<SpiModel>(context, listen: false);
-    spi.init();
+    await spi.init();
     FlutterSpi.handleMethodCall(spi.subscribeSpiEvents);
   }
 
