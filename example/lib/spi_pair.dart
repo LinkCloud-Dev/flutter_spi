@@ -79,17 +79,28 @@ class Pair extends StatelessWidget {
               },
             ),
             Divider(),
-            Text(
-              'STATUS: ${EnumToString.convertToString(spi.status)}',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            (spi.status == SpiStatus.UNPAIRED && spi.secrets != null)
+                ? Container(
+                    margin: EdgeInsets.all(15),
+                    child: Text('STATUS: DISCONNECTED'),
+                  )
+                : Container(
+                    margin: EdgeInsets.all(15),
+                    child: Text(
+                        'STATUS: ${EnumToString.convertToString(spi.status)}'),
+                  ),
             Divider(),
             ElevatedButton(onPressed: () => spi.save(), child: Text('SAVE')),
-            spi.status == SpiStatus.UNPAIRED
+            (spi.status == SpiStatus.UNPAIRED && spi.secrets == null)
                 ? ElevatedButton(
                     onPressed: () => _pair(context), child: Text('PAIR'))
-                : ElevatedButton(
-                    onPressed: () => _unpair(context), child: Text('UNPAIR'))
+                : SizedBox.shrink(),
+            (spi.secrets != null)
+                ? ElevatedButton(
+                    onPressed: () => _unpair(context),
+                    child: Text('UNPAIR'),
+                  )
+                : SizedBox.shrink(),
           ],
         ),
       ),

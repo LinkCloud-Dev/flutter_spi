@@ -33,6 +33,7 @@ class SpiModel extends ChangeNotifier {
     if (persistedSecrets != null) {
       secrets = Secrets.fromMap(jsonDecode(persistedSecrets));
     }
+    notifyListeners();
     // start spi
     await FlutterSpi.init(posId, eftPosAddress,
         secrets: secrets != null ? secrets.toJSON() : null);
@@ -41,10 +42,12 @@ class SpiModel extends ChangeNotifier {
 
   void updatePosId(String value) {
     posId = value;
+    notifyListeners();
   }
 
   void updateEftPosAddress(String value) {
     eftPosAddress = value;
+    notifyListeners();
   }
 
   Future<void> subscribeSpiEvents(MethodCall methodCall) async {
@@ -66,6 +69,7 @@ class SpiModel extends ChangeNotifier {
           break;
         case SpiMethodCallEvents.secretsChanged:
           secrets = Secrets.fromMap(methodCall.arguments);
+          notifyListeners();
           final prefs = await SharedPreferences.getInstance();
           if (secrets == null) {
             prefs.remove('secrets');
@@ -117,6 +121,7 @@ class SpiModel extends ChangeNotifier {
   Future<void> unpair() async {
     await FlutterSpi.unpair();
     secrets = null;
+    notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     prefs.remove('secrets');
   }
@@ -144,6 +149,7 @@ class SpiModel extends ChangeNotifier {
 
   void resetTransaction() {
     transactionFlowState = null;
+    notifyListeners();
   }
 
   Future<void> retryTransaction(String transactionId, int purchaseAmount,

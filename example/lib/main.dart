@@ -114,11 +114,16 @@ class _HomeState extends State<Home> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              margin: EdgeInsets.all(15),
-              child:
-                  Text('STATUS: ${EnumToString.convertToString(spi.status)}'),
-            ),
+            (spi.status == SpiStatus.UNPAIRED && spi.secrets != null)
+                ? Container(
+                    margin: EdgeInsets.all(15),
+                    child: Text('STATUS: DISCONNECTED'),
+                  )
+                : Container(
+                    margin: EdgeInsets.all(15),
+                    child: Text(
+                        'STATUS: ${EnumToString.convertToString(spi.status)}'),
+                  ),
             ElevatedButton(
               onPressed: () => Navigator.pushNamed(context, '/pair'),
               child: Text('Pair'),
