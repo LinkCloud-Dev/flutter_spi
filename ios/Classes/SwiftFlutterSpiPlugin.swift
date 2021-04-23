@@ -85,42 +85,12 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
             }
             initSpi(
                 posId: args["posId"] as! String,
-                sn: args["sn"] as! String,
                 eftposAddress: args["eftposAddress"] as! String,
                 secrets: args["secrets"] as? [String: String],
                 result: result
             )
         } else if (call.method == "start") {
             start(result: result)
-        } else if (call.method == "setAcquirerCode") {
-            guard let args = call.arguments as? [String:Any] else {
-                throw SpiError.unknown
-            }
-            setAcquirerCode(acquirerCode: args["acquirerCode"] as! String, result: result)
-        } else if (call.method == "setDeviceApiKey") {
-            guard let args = call.arguments as? [String:Any] else {
-                throw SpiError.unknown
-            }
-            setDeviceApiKey(deviceApiKey: args["deviceApiKey"] as! String, result: result)
-        } else if (call.method == "setSerialNumber") {
-            guard let args = call.arguments as? [String:Any] else {
-                throw SpiError.unknown
-            }
-            setSerialNumber(serialNumber: args["serialNumber"] as! String, result: result)
-        } else if (call.method == "getSerialNumber") {
-            getSerialNumber(result: result)
-        } else if (call.method == "setAutoAddressResolution") {
-            guard let args = call.arguments as? [String:Any] else {
-                throw SpiError.unknown
-            }
-            setAutoAddressResolution(autoAddressResolutionEnable: args["autoAddressResolutionEnable"] as! Bool, result: result)
-        } else if (call.method == "isAutoAddressResolutionEnabled") {
-            isAutoAddressResolutionEnabled(result: result)
-        } else if (call.method == "setTestMode") {
-            guard let args = call.arguments as? [String:Any] else {
-                throw SpiError.unknown
-            }
-            setTestMode(testMode: args["testMode"] as! Bool, result: result)
         } else if (call.method == "setPosId") {
             guard let args = call.arguments as? [String:Any] else {
                 throw SpiError.unknown
@@ -128,6 +98,8 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
             setPosId(id: args["posId"] as! String, result: result)
         } else if (call.method == "getVersion") {
             getVersion(result: result)
+        } else if (call.method == "getDeviceSN") {
+            getDeviceSN(result: result)
         } else if (call.method == "setEftposAddress") {
             guard let args = call.arguments as? [String:Any] else {
                 throw SpiError.unknown
@@ -284,9 +256,8 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         spiChannel.invokeMethod(flutterMethod, arguments: message)
     }
     
-    private func initSpi(posId: String, sn: String, eftposAddress: String, secrets: [String: String]?, result: @escaping FlutterResult) {
+    private func initSpi(posId: String, eftposAddress: String, secrets: [String: String]?, result: @escaping FlutterResult) {
         client.posId = posId
-        client.serialNumber = sn
         client.eftposAddress = eftposAddress
         client.posVendorId = "LinkPOS"
         client.posVersion = "1.0.0"
@@ -299,39 +270,6 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     
     private func start(result: @escaping FlutterResult) {
         client.start()
-        result(nil)
-    }
-    
-    private func setAcquirerCode(acquirerCode: String, result: @escaping FlutterResult) {
-        client.acquirerCode = acquirerCode
-        result(nil)
-    }
-    
-    private func setDeviceApiKey(deviceApiKey: String, result: @escaping FlutterResult) {
-        client.deviceApiKey = deviceApiKey
-        result(nil)
-    }
-    
-    private func setSerialNumber(serialNumber: String, result: @escaping FlutterResult) {
-        client.serialNumber = serialNumber
-        result(nil)
-    }
-    
-    private func getSerialNumber(result: @escaping FlutterResult) {
-        result(client.serialNumber)
-    }
-    
-    private func setAutoAddressResolution(autoAddressResolutionEnable: Bool, result: @escaping FlutterResult) {
-        client.autoAddressResolutionEnable = autoAddressResolutionEnable
-        result(nil)
-    }
-
-    private func isAutoAddressResolutionEnabled(result: @escaping FlutterResult) {
-        result(client.autoAddressResolutionEnable)
-    }
-    
-    private func setTestMode(testMode: Bool, result: @escaping FlutterResult) {
-        client.testMode = testMode
         result(nil)
     }
     
@@ -353,6 +291,10 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
 
     private func getVersion(result: @escaping FlutterResult) {
         result(SPIClient.getVersion())
+    }
+    
+    private func getDeviceSN(result: @escaping FlutterResult) {
+        result(UIDevice.current.identifierForVendor!.uuidString)
     }
     
     private func getCurrentStatus(result: @escaping FlutterResult) {
@@ -504,7 +446,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         map["awaitingSignatureCheck"] = state.isAwaitingSignatureCheck
         map["awaitingPhoneForAuth"] = state.isAwaitingPhoneForAuth
         map["finished"] = state.isFinished
-        map["success"] = state.successState.name
+        map["success"] = state.successState.rawValue
         map["response"] = mapMessage(message: state.response)
         map["signatureRequiredMessage"] = mapSignatureRequest(obj: state.signatureRequiredMessage)
         map["phoneForAuthRequiredMessage"] = mapPhoneForAuthRequired(obj: state.phoneForAuthRequiredMessage)
