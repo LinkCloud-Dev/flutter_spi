@@ -9,6 +9,7 @@ import 'package:flutter_spi_example/transactions_ui/tx_successful.dart';
 import 'package:flutter_spi_example/transactions_ui/tx_unknown.dart';
 import 'package:flutter_spi_example/transactions_ui/waiting_conn.dart';
 import 'package:flutter_spi_example/transactions_ui/waiting_tx.dart';
+import 'package:uuid/uuid.dart';
 
 enum TxUiState {
   WaitingTx,
@@ -29,14 +30,14 @@ class TransactionDialog extends StatelessWidget {
 
   Future<void> _retry(BuildContext context) async {
     var spi = Provider.of<SpiModel>(context, listen: false);
-    await spi.retryTransaction('111122223333', 100, 0, 0, false);
+    await spi.retryTransaction(Uuid().v4(), amount, 0, 0, false);
   }
 
   @override
   Widget build(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: true);
 
-    Widget content;
+    Widget content = WaitingTx(amount: amount);
     if (spi.transactionFlowState == null) {
       content = WaitingTx(amount: amount);
     } else if (!spi.transactionFlowState.finished) {
@@ -70,7 +71,12 @@ class TransactionDialog extends StatelessWidget {
     return SimpleDialog(
       contentPadding: EdgeInsets.all(0),
       titlePadding: EdgeInsets.fromLTRB(40, 0, 40, 0),
-      title: Text('EFTPOS - Order XYZ'),
+      title: Container(
+        padding: EdgeInsets.all(20),
+        child: Center(
+          child: Text('EFTPOS - Order XYZ'),
+        ),
+      ),
       children: [
         Container(
           width: MediaQuery.of(context).size.width * 0.5,

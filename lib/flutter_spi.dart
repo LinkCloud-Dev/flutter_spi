@@ -57,7 +57,7 @@ class SpiConfig {
     this.signatureFlowOnEftpos,
   });
 
-  factory SpiConfig.fromMap(Map<String, bool> obj) {
+  factory SpiConfig.fromMap(Map<dynamic, dynamic> obj) {
     return SpiConfig(
       promptForCustomerCopyOnEftpos: obj['epromptForCustomerCopyOnEftposncKey'],
       signatureFlowOnEftpos: obj['signatureFlowOnEftpos'],
@@ -76,7 +76,7 @@ class SignatureRequired {
     this.receiptToSign,
   });
 
-  factory SignatureRequired.fromMap(Map<String, String> obj) {
+  factory SignatureRequired.fromMap(Map<dynamic, dynamic> obj) {
     return SignatureRequired(
       requestId: obj['requestId'],
       posRefId: obj['posRefId'],
@@ -98,7 +98,7 @@ class PhoneForAuthRequired {
     this.merchantId,
   });
 
-  factory PhoneForAuthRequired.fromMap(Map<String, String> obj) {
+  factory PhoneForAuthRequired.fromMap(Map<dynamic, dynamic> obj) {
     return PhoneForAuthRequired(
       requestId: obj['requestId'],
       posRefId: obj['posRefId'],

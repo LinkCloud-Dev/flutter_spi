@@ -59,7 +59,7 @@ class _HomeState extends State<Home> {
       print('Please Pair EFTPOS.');
       return;
     }
-    await spi.initiatePurchaseTx('111122223333', 100, 0, 0, false);
+    await spi.initiatePurchaseTx(Uuid().v4(), amount, 0, 0, false);
     _showDialog<String>(
       context: context,
       child: TransactionDialog(
@@ -96,8 +96,13 @@ class _HomeState extends State<Home> {
     );
   }
 
+  void _endTx(BuildContext context) {
+    FlutterSpi.ackFlowEndedAndBackToIdle();
+  }
+
   Future<void> _showDialog<T>({BuildContext context, Widget child}) async {
     await showDialog<T>(
+      barrierDismissible: false,
       context: context,
       builder: (context) => child,
     );
@@ -129,16 +134,20 @@ class _HomeState extends State<Home> {
               child: Text('Pair'),
             ),
             ElevatedButton(
-              onPressed: () => _startTransaction(100, context),
-              child: Text('Charge \$1.00'),
+              onPressed: () => _startTransaction(1500, context),
+              child: Text('Charge \$15.00'),
             ),
             ElevatedButton(
               onPressed: () => _initSettleTx(context),
               child: Text('Settle'),
             ),
             ElevatedButton(
-              onPressed: () => _initRefundTx(100, context),
-              child: Text('Refund \$1.00'),
+              onPressed: () => _initRefundTx(1500, context),
+              child: Text('Refund \$15.00'),
+            ),
+            ElevatedButton(
+              onPressed: () => _endTx(context),
+              child: Text('End Transaction'),
             ),
           ],
         ),

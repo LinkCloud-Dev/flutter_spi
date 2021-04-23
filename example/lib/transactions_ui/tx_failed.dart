@@ -12,6 +12,7 @@ class TxFaild extends StatelessWidget {
   void _cancel(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: false);
     spi.resetTransaction();
+    Navigator.pop(context);
     // TOTO: process businiess logic
   }
 
@@ -51,9 +52,10 @@ class TxFaild extends StatelessWidget {
                   child: Text('PRINT CUSTOMER COPY'))
               : SizedBox.shrink(),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               ElevatedButton(
-                  onPressed: () => _cancel(context), child: Text('CANCEL')),
+                  onPressed: () => _cancel(context), child: Text('CLOSE')),
               ElevatedButton(
                   onPressed: () => retry(context), child: Text('RETRY')),
             ],

@@ -30,7 +30,7 @@ class RefundTransactionDialog extends StatelessWidget {
 
   Future<void> _retry(BuildContext context) async {
     var spi = Provider.of<SpiModel>(context, listen: false);
-    await spi.retryRefundTransaction(Uuid().v4(), 100);
+    await spi.retryRefundTransaction(Uuid().v4(), amount);
   }
 
   @override

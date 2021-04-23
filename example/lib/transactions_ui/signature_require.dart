@@ -17,6 +17,7 @@ class SignatureRequire extends StatelessWidget {
           Text('Please ask customer to sign receipt'),
           Text('\$${(amount / 100).toStringAsFixed(2)}'),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               ElevatedButton(
                   onPressed: () => _acceptSignature(false),

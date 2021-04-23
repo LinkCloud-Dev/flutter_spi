@@ -32,6 +32,7 @@ class Pair extends StatelessWidget {
 
   Future<void> _showDialog<T>({BuildContext context, Widget child}) async {
     await showDialog<T>(
+      barrierDismissible: false,
       context: context,
       builder: (context) => child,
     );

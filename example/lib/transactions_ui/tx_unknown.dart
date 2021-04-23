@@ -12,12 +12,14 @@ class TxUnknown extends StatelessWidget {
   void _cancel(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: false);
     spi.resetTransaction();
+    Navigator.pop(context);
     // TOTO: process businiess logic
   }
 
   Future<void> _overrideAsPaid(BuildContext context) async {
     var spi = Provider.of<SpiModel>(context, listen: false);
     spi.resetTransaction();
+    Navigator.pop(context);
     // TODO: process business logic
   }
 
@@ -49,7 +51,7 @@ class TxUnknown extends StatelessWidget {
               onPressed: () => _overrideAsPaid(context),
               child: Text('Override as Paid')),
           ElevatedButton(
-              onPressed: () => _cancel(context), child: Text('Canncel')),
+              onPressed: () => _cancel(context), child: Text('Close')),
         ],
       ),
     );

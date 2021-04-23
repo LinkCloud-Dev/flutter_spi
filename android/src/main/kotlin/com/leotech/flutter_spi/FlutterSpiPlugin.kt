@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
 import android.os.Handler
+import android.os.StrictMode
 import android.util.Log
 import androidx.annotation.NonNull
 import com.assemblypayments.spi.Spi
@@ -354,6 +355,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    */
 
   fun initiatePurchaseTx(posRefId: String, purchaseAmount: Int, tipAmount: Int, cashoutAmount: Int, promptForCashout: Boolean, result: Result) {
+    val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+    StrictMode.setThreadPolicy(policy)
     result.handleResult(mSpi.initiatePurchaseTx(posRefId, purchaseAmount, tipAmount, cashoutAmount, promptForCashout, TransactionOptions()), result)
   }
 

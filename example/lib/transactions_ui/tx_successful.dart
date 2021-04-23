@@ -45,11 +45,10 @@ class TxSuccessful extends StatelessWidget {
                   onPressed: () => _printCustomerCopy(customerCopy),
                   child: Text('PRINT CUSTOMER COPY'))
               : SizedBox.shrink(),
-          Row(
-            children: [
-              ElevatedButton(onPressed: () => _ok(context), child: Text('OK')),
-            ],
-          )
+          ElevatedButton(
+            onPressed: () => _ok(context),
+            child: Text('OK'),
+          ),
         ],
       ),
     );

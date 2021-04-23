@@ -143,6 +143,7 @@ class SpiModel extends ChangeNotifier {
 
   Future<void> initiatePurchaseTx(String transactionId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
+    resetTransaction();
     await FlutterSpi.initiatePurchaseTx(transactionId, purchaseAmount,
         tipAmount, cashoutAmount, promptForCashout);
   }
