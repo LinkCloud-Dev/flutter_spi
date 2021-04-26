@@ -149,7 +149,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
             }
             initiateRefundTx(
                 posRefId: args["posRefId"] as! String,
-                refundAmount: args["purchaseAmount"] as! Int,
+                refundAmount: args["refundAmount"] as! Int,
                 result: result
             )
         } else if (call.method == "acceptSignature") {
