@@ -64,9 +64,15 @@ extension SPITransactionType {
 }
 
 public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
+    
+    private static var _instance: SwiftFlutterSpiPlugin = SwiftFlutterSpiPlugin()
 
   var client = SPIClient()
   var spiChannel = FlutterMethodChannel()
+    
+    static var current: SwiftFlutterSpiPlugin {
+        return _instance
+    }
     
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "flutter_spi", binaryMessenger: registrar.messenger())
@@ -237,19 +243,20 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
   }
     
     public func spi(_ spi: SPIClient, statusChanged state: SPIState) {
-        invokeFlutterMethod(flutterMethod:"statusChanged", message: state)
+        SPILogMsg("statusChanged \(state.status.name)")
+        invokeFlutterMethod(flutterMethod:"statusChanged", message: state.status.name)
     }
     public func spi(_ spi: SPIClient, pairingFlowStateChanged state: SPIState) {
-        invokeFlutterMethod(flutterMethod:"pairingFlowStateChanged", message: state)
+        invokeFlutterMethod(flutterMethod:"pairingFlowStateChanged", message: mapPairingFlowState(state: state.pairingFlowState))
     }
     public func spi(_ spi: SPIClient, transactionFlowStateChanged state: SPIState) {
-        invokeFlutterMethod(flutterMethod:"txFlowStateChanged", message: state)
+        invokeFlutterMethod(flutterMethod:"txFlowStateChanged", message: mapTransactionState(state: state.txFlowState))
     }
     public func spi(_ spi: SPIClient!, secretsChanged secrets: SPISecrets?, state: SPIState!) {
-        invokeFlutterMethod(flutterMethod:"secretsChanged", message: secrets)
+        invokeFlutterMethod(flutterMethod:"secretsChanged", message: secrets != nil ? mapSecrets(obj: secrets!) : nil)
     }
     public func spi(_ spi: SPIClient, deviceAddressChanged state: SPIState) {
-        invokeFlutterMethod(flutterMethod:"deviceAddressChanged", message: state)
+        invokeFlutterMethod(flutterMethod:"deviceAddressChanged", message: state.deviceAddressStatus.address)
     }
     
     private func invokeFlutterMethod(flutterMethod: String, message: Any?) {
@@ -259,12 +266,17 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     private func initSpi(posId: String, eftposAddress: String, secrets: [String: String]?, result: @escaping FlutterResult) {
         client.posId = posId
         client.eftposAddress = eftposAddress
+        client.serialNumber = "321-496-507"
+        client.testMode = false
+        client.autoAddressResolutionEnable = false
         client.posVendorId = "LinkPOS"
         client.posVersion = "1.0.0"
+        
         if secrets != nil {
             client.setSecretEncKey(secrets?["encKey"], hmacKey: secrets?["hmacKey"])
         }
         // subscribe spi events
+        client.delegate = self
         result(nil)
     }
     
@@ -344,12 +356,13 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     }
     
     private func initiatePurchaseTx(posRefId: String, purchaseAmount: Int, tipAmount: Int, cashoutAmount: Int, promptForCashout: Bool, result: @escaping FlutterResult) {
-        client.initiatePurchaseTx(posRefId, purchaseAmount: purchaseAmount, tipAmount: tipAmount, cashoutAmount: cashoutAmount, promptForCashout: promptForCashout, completion: nil)
+        client.enablePayAtTable()
+        client.initiatePurchaseTx(posRefId, purchaseAmount: purchaseAmount, tipAmount: tipAmount, cashoutAmount: cashoutAmount, promptForCashout: promptForCashout, completion: printResult)
         result(nil)
     }
     
     private func initiateRefundTx(posRefId: String, refundAmount: Int, result: @escaping FlutterResult) {
-        client.initiateRefundTx(posRefId, amountCents: refundAmount, completion: nil)
+        client.initiateRefundTx(posRefId, amountCents: refundAmount, completion: printResult)
         result(nil)
     }
     
@@ -359,7 +372,10 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     }
     
     private func submitAuthCode(authCode: String, result: @escaping FlutterResult) {
-        client.submitAuthCode(authCode, completion: nil)
+        client.submitAuthCode(authCode, completion: { (result) in
+                              print(String(format: "Valid format: %@)", result?.isValidFormat ?? false))
+            print(String(format: "Message: %@", result?.message ?? "-"))
+                          })
         result(nil)
     }
     
@@ -369,27 +385,27 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     }
     
     private func initiateCashoutOnlyTx(posRefId: String, amountCents: Int, result: @escaping FlutterResult) {
-        client.initiateCashoutOnlyTx(posRefId, amountCents: amountCents, completion: nil)
+        client.initiateCashoutOnlyTx(posRefId, amountCents: amountCents, completion: printResult)
         result(nil)
     }
     
     private func initiateMotoPurchaseTx(posRefId: String, amountCents: Int, result: @escaping FlutterResult) {
-        client.initiateMotoPurchaseTx(posRefId, amountCents: amountCents, completion: nil)
+        client.initiateMotoPurchaseTx(posRefId, amountCents: amountCents, completion: printResult)
         result(nil)
     }
     
     private func initiateSettleTx(id: String, result: @escaping FlutterResult) {
-        client.initiateSettleTx(id, completion: nil)
+        client.initiateSettleTx(id, completion: printResult)
         result(nil)
     }
     
     private func initiateSettlementEnquiry(posRefId: String, result: @escaping FlutterResult) {
-        client.initiateSettlementEnquiry(posRefId, completion: nil)
+        client.initiateSettlementEnquiry(posRefId, completion: printResult)
         result(nil)
     }
     
     private func initiateGetLastTx(result: @escaping FlutterResult) {
-        client.initiateGetLastTx(completion: nil)
+        client.initiateGetLastTx(completion: printResult)
         result(nil)
     }
     
@@ -426,7 +442,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         var map:[String: Any] = [:]
         map["message"] = state.message
         map["awaitingCheckFromEftpos"] = state.isAwaitingCheckFromEftpos
-        map["awaitingCheckFromEftpos"] = state.isAwaitingCheckFromPos
+        map["awaitingCheckFromPos"] = state.isAwaitingCheckFromPos
         map["confirmationCode"] = state.confirmationCode
         map["finished"] = state.isFinished
         map["successful"] = state.isSuccessful
@@ -446,12 +462,12 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         map["awaitingSignatureCheck"] = state.isAwaitingSignatureCheck
         map["awaitingPhoneForAuth"] = state.isAwaitingPhoneForAuth
         map["finished"] = state.isFinished
-        map["success"] = state.successState.rawValue
-        map["response"] = mapMessage(message: state.response)
-        map["signatureRequiredMessage"] = mapSignatureRequest(obj: state.signatureRequiredMessage)
-        map["phoneForAuthRequiredMessage"] = mapPhoneForAuthRequired(obj: state.phoneForAuthRequiredMessage)
-        map["cancelAttemptTime"] = stringFromDate(state.cancelAttemptTime)
-        map["request"] = mapMessage(message: state.request)
+        map["success"] = mapTxStateSuccess(state.successState)
+        map["response"] = state.response != nil ? mapMessage(message: state.response) : nil
+        map["signatureRequiredMessage"] = state.signatureRequiredMessage != nil ? mapSignatureRequest(obj: state.signatureRequiredMessage) : nil
+        map["phoneForAuthRequiredMessage"] = state.phoneForAuthRequiredMessage != nil ? mapPhoneForAuthRequired(obj: state.phoneForAuthRequiredMessage) : nil
+        map["cancelAttemptTime"] = state.cancelAttemptTime != nil ? stringFromDate(state.cancelAttemptTime) : nil
+        map["request"] = state.request != nil ? mapMessage(message: state.request) : nil
         map["awaitingGltResponse"] = state.isAwaitingGltResponse
         
         return map
@@ -493,6 +509,23 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd MMM yyyy HH:mm" //yyyy
         return formatter.string(from: date)
+    }
+    
+    private func mapTxStateSuccess(_ success: SPIMessageSuccessState) -> String {
+        switch success {
+        case SPIMessageSuccessState.success:
+            return "SUCCESS"
+        case SPIMessageSuccessState.failed:
+            return "FAILED"
+        default:
+            return "UNKNOWN"
+        }
+    }
+    
+    func printResult(result: SPIInitiateTxResult?) {
+        DispatchQueue.main.async {
+            SPILogMsg(result?.message)
+        }
     }
 
 }

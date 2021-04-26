@@ -57,6 +57,7 @@ class Pair extends StatelessWidget {
                   labelText: 'POS ID',
                 ),
                 maxLines: 1,
+                maxLength: 16,
                 readOnly: spi.status != SpiStatus.UNPAIRED,
                 initialValue: spi.posId,
                 onChanged: (value) {

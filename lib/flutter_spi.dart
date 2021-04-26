@@ -191,13 +191,17 @@ class TransactionFlowState {
       awaitingPhoneForAuth: obj['awaitingPhoneForAuth'],
       finished: obj['finished'],
       success: obj['success'],
-      response: SpiMessage.fromMap(obj['response']),
-      signatureRequiredMessage:
-          SignatureRequired.fromMap(obj['signatureRequiredMessage']),
-      phoneForAuthRequiredMessage:
-          PhoneForAuthRequired.fromMap(obj['phoneForAuthRequiredMessage']),
+      response:
+          obj['response'] != null ? SpiMessage.fromMap(obj['response']) : null,
+      signatureRequiredMessage: obj['signatureRequiredMessage'] != null
+          ? SignatureRequired.fromMap(obj['signatureRequiredMessage'])
+          : null,
+      phoneForAuthRequiredMessage: obj['phoneForAuthRequiredMessage'] != null
+          ? PhoneForAuthRequired.fromMap(obj['phoneForAuthRequiredMessage'])
+          : null,
       cancelAttemptTime: obj['cancelAttemptTime'],
-      request: SpiMessage.fromMap(obj['request']),
+      request:
+          obj['request'] != null ? SpiMessage.fromMap(obj['request']) : null,
       awaitingGltResponse: obj['awaitingGltResponse'],
     );
   }

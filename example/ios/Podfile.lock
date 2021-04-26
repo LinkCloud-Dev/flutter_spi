@@ -2,12 +2,12 @@ PODS:
   - Flutter (1.0.0)
   - flutter_spi (0.0.1):
     - Flutter
-    - SPIClient-iOS (~> 2.3.11)
+    - SPIClient-iOS (~> 2.6.6)
   - RNCryptor-objc (3.0.6)
   - shared_preferences (0.0.1):
     - Flutter
   - SocketRocket (0.5.1)
-  - SPIClient-iOS (2.3.11):
+  - SPIClient-iOS (2.6.6):
     - RNCryptor-objc
     - SocketRocket
 
@@ -32,11 +32,11 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: 434fef37c0980e73bb6479ef766c45957d4b510c
-  flutter_spi: dd31d65b98543694a6636a16f8da81651d6e41f2
+  flutter_spi: e862a16c9009f24ace4aaf0d344b96d4e498879e
   RNCryptor-objc: d1b228f9c02e2173df063f0617684c134aed890e
   shared_preferences: af6bfa751691cdc24be3045c43ec037377ada40d
   SocketRocket: d57c7159b83c3c6655745cd15302aa24b6bae531
-  SPIClient-iOS: 835e8e5034cdeb5692e1fabda1208b2d5f361e76
+  SPIClient-iOS: eae13185141088909b4b40586f1255c20a50df09
 
 PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
 

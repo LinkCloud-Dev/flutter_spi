@@ -27,6 +27,8 @@ class SpiModel extends ChangeNotifier {
     posId = prefs.getString('posId');
     if (posId == null) {
       posId = await FlutterSpi.getDeviceSN;
+      posId = posId.replaceAll('-', '');
+      if (posId.length > 16) posId = posId.substring(1, 16);
     }
     eftPosAddress = prefs.getString('eftPosAddress') ?? '192.168.1.99';
     final persistedSecrets = prefs.getString('secrets');
