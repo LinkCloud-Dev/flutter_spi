@@ -371,6 +371,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * @promise.resolve(Initiation result [InitiateTxResult].
    */
   fun initiateRefundTx(posRefId: String, refundAmount: Int, result: Result) {
+        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+    StrictMode.setThreadPolicy(policy)
     result.handleResult(mSpi.initiateRefundTx(posRefId, refundAmount), result)
   }
 
@@ -442,6 +444,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * Be subscribed to [.setTxFlowStateChangedHandler] to get updates on the process.
    */
   fun initiateSettleTx(id: String, result: Result) {
+        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+    StrictMode.setThreadPolicy(policy)
     result.handleResult(mSpi.initiateSettleTx(id), result)
   }
 
