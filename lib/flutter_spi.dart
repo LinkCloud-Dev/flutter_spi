@@ -6,11 +6,11 @@ import 'package:flutter/services.dart';
 class SpiMessage {
   String id;
   String event;
-  Map<dynamic, dynamic> data;
+  Map<dynamic, dynamic>? data;
 
   SpiMessage({
-    this.id,
-    this.event,
+    required this.id,
+    required this.event,
     this.data,
   });
 
@@ -28,12 +28,11 @@ class Secrets {
   String hmacKey;
 
   Secrets({
-    this.encKey,
-    this.hmacKey,
+    required this.encKey,
+    required this.hmacKey,
   });
 
   factory Secrets.fromMap(Map<dynamic, dynamic> obj) {
-    if (obj == null) return null;
     return Secrets(
       encKey: obj['encKey'],
       hmacKey: obj['hmacKey'],
@@ -53,8 +52,8 @@ class SpiConfig {
   bool signatureFlowOnEftpos;
 
   SpiConfig({
-    this.promptForCustomerCopyOnEftpos,
-    this.signatureFlowOnEftpos,
+    this.promptForCustomerCopyOnEftpos = false,
+    this.signatureFlowOnEftpos = false,
   });
 
   factory SpiConfig.fromMap(Map<dynamic, dynamic> obj) {
@@ -71,9 +70,9 @@ class SignatureRequired {
   String receiptToSign;
 
   SignatureRequired({
-    this.requestId,
-    this.posRefId,
-    this.receiptToSign,
+    required this.requestId,
+    required this.posRefId,
+    required this.receiptToSign,
   });
 
   factory SignatureRequired.fromMap(Map<dynamic, dynamic> obj) {
@@ -92,10 +91,10 @@ class PhoneForAuthRequired {
   String merchantId;
 
   PhoneForAuthRequired({
-    this.requestId,
-    this.posRefId,
-    this.phoneNumber,
-    this.merchantId,
+    required this.requestId,
+    required this.posRefId,
+    required this.phoneNumber,
+    required this.merchantId,
   });
 
   factory PhoneForAuthRequired.fromMap(Map<dynamic, dynamic> obj) {
@@ -109,20 +108,21 @@ class PhoneForAuthRequired {
 }
 
 class PairingFlowState {
-  String message;
+  String? message;
   bool awaitingCheckFromEftpos;
   bool awaitingCheckFromPos;
-  String confirmationCode;
+  String? confirmationCode;
   bool finished;
   bool successful;
 
-  PairingFlowState(
-      {this.message,
-      this.awaitingCheckFromEftpos,
-      this.awaitingCheckFromPos,
-      this.confirmationCode,
-      this.finished,
-      this.successful});
+  PairingFlowState({
+    this.message,
+    this.awaitingCheckFromEftpos = false,
+    this.awaitingCheckFromPos = false,
+    this.confirmationCode,
+    this.finished = false,
+    this.successful = false,
+  });
 
   factory PairingFlowState.fromMap(Map<dynamic, dynamic> obj) {
     return PairingFlowState(
@@ -139,42 +139,42 @@ class PairingFlowState {
 class TransactionFlowState {
   String posRefId;
   SpiTransactionType type;
-  String displayMessage;
+  String? displayMessage;
   int amountCents;
-  bool isRequestSent;
-  String requestTime;
-  String lastStateRequestTime;
+  bool? isRequestSent;
+  String? requestTime;
+  String? lastStateRequestTime;
   bool attemptingToCancel;
   bool awaitingSignatureCheck;
   bool awaitingPhoneForAuth;
   bool finished;
-  String success;
-  SpiMessage response;
-  SignatureRequired signatureRequiredMessage;
-  PhoneForAuthRequired phoneForAuthRequiredMessage;
-  String cancelAttemptTime;
-  SpiMessage request;
+  String? success;
+  SpiMessage? response;
+  SignatureRequired? signatureRequiredMessage;
+  PhoneForAuthRequired? phoneForAuthRequiredMessage;
+  String? cancelAttemptTime;
+  SpiMessage? request;
   bool awaitingGltResponse;
 
   TransactionFlowState({
-    this.posRefId,
-    this.type,
+    required this.posRefId,
+    required this.type,
     this.displayMessage,
-    this.amountCents,
+    required this.amountCents,
     this.isRequestSent,
     this.requestTime,
     this.lastStateRequestTime,
-    this.attemptingToCancel,
-    this.awaitingSignatureCheck,
-    this.awaitingPhoneForAuth,
-    this.finished,
+    this.attemptingToCancel = false,
+    this.awaitingSignatureCheck = false,
+    this.awaitingPhoneForAuth = false,
+    this.finished = false,
     this.success,
     this.response,
     this.signatureRequiredMessage,
     this.phoneForAuthRequiredMessage,
     this.cancelAttemptTime,
     this.request,
-    this.awaitingGltResponse,
+    this.awaitingGltResponse = false,
   });
 
   factory TransactionFlowState.fromMap(Map<dynamic, dynamic> obj) {
@@ -246,12 +246,12 @@ class FlutterSpi {
     return version;
   }
 
-  static void handleMethodCall(Function cb) {
+  static void handleMethodCall(dynamic cb) {
     _channel.setMethodCallHandler(cb);
   }
 
   static Future<void> init(String posId, String eftposAddress,
-      {Map<String, String> secrets}) async {
+      {Map<String, String>? secrets}) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
       "eftposAddress": eftposAddress,
