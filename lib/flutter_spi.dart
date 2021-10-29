@@ -39,7 +39,7 @@ class Secrets {
     );
   }
 
-  Map<String, dynamic> toJSON() {
+  Map<String, String> toJSON() {
     return <String, String>{
       'encKey': encKey,
       'hmacKey': hmacKey,
@@ -180,7 +180,7 @@ class TransactionFlowState {
   factory TransactionFlowState.fromMap(Map<dynamic, dynamic> obj) {
     return TransactionFlowState(
       posRefId: obj['posRefId'],
-      type: EnumToString.fromString(SpiTransactionType.values, obj['type']),
+      type: EnumToString.fromString(SpiTransactionType.values, obj['type'])!,
       displayMessage: obj['displayMessage'],
       amountCents: obj['amountCents'],
       isRequestSent: obj['isRequestSent'],
