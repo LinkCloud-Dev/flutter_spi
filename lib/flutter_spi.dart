@@ -4,8 +4,8 @@ import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/services.dart';
 
 class SpiMessage {
-  String id;
-  String event;
+  String? id;
+  String? event;
   Map<dynamic, dynamic>? data;
 
   SpiMessage({
