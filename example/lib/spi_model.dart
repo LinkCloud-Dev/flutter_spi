@@ -56,6 +56,7 @@ class SpiModel extends ChangeNotifier {
     try {
       SpiMethodCallEvents eventType = EnumToString.fromString(
           SpiMethodCallEvents.values, methodCall.method);
+      print(methodCall);
       switch (eventType) {
         case SpiMethodCallEvents.statusChanged:
           status =

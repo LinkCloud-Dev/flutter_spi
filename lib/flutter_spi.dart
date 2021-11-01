@@ -65,9 +65,9 @@ class SpiConfig {
 }
 
 class SignatureRequired {
-  String requestId;
-  String posRefId;
-  String receiptToSign;
+  String? requestId;
+  String? posRefId;
+  String? receiptToSign;
 
   SignatureRequired({
     required this.requestId,
