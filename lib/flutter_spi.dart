@@ -85,10 +85,10 @@ class SignatureRequired {
 }
 
 class PhoneForAuthRequired {
-  String requestId;
-  String posRefId;
-  String phoneNumber;
-  String merchantId;
+  String? requestId;
+  String? posRefId;
+  String? phoneNumber;
+  String? merchantId;
 
   PhoneForAuthRequired({
     required this.requestId,
