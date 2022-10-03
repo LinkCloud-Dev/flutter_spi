@@ -7,9 +7,9 @@ import android.os.Handler
 import android.os.StrictMode
 import android.util.Log
 import androidx.annotation.NonNull
-import com.assemblypayments.spi.Spi
-import com.assemblypayments.spi.Spi.CompatibilityException
-import com.assemblypayments.spi.model.*
+import io.mx51.spi.Spi;
+import io.mx51.spi.Spi.CompatibilityException;
+import io.mx51.spi.model.*;
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -38,11 +38,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "init") {
-      init(call.argument("posId")!!, call.argument("eftposAddress")!!, call.argument("secrets"), result)
+      init(call.argument("posId")!!, call.argument("eftposAddress")!!, call.argument("serialNumber")!!,
+        call.argument("secrets"), result)
     } else if (call.method == "start") {
       start(result)
     } else if (call.method == "setPosId") {
       setPosId(call.argument("posId")!!, result)
+    } else if (call.method == "setSerialNumber") {
+      setSerialNumber(call.argument("serialNumber")!!, result)
     } else if (call.method == "setEftposAddress") {
       setEftposAddress(call.argument("address")!!, result)
     } else if (call.method == "setPosInfo") {
@@ -127,7 +130,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       }
   }
 
-  fun init(posId: String, eftposAddress: String, secrets: HashMap<String, String>?, result: Result) {
+  fun init(posId: String, serialNumber: String, eftposAddress: String, secrets: HashMap<String, String>?, result: Result) {
     var initialized = true
     try {
       mSpi
@@ -140,7 +143,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     try {
-      mSpi = Spi(posId, eftposAddress, if (secrets.isNullOrEmpty()) null else Secrets(secrets!!.get("encKey"), secrets!!.get("hmacKey")))
+      mSpi = Spi(posId, serialNumber, eftposAddress, if (secrets.isNullOrEmpty()) null else Secrets(secrets!!.get("encKey"), secrets!!.get("hmacKey")))
       val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
       mSpi.setPosInfo("LinkPOS", pInfo.versionName)
       setStatusChangedHandler()
@@ -211,6 +214,13 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    */
   fun setPosId(id: String, result: Result) {
     result.handleResult(mSpi.setPosId(id), result)
+  }
+
+  /**
+   * Allows you to set the serial number.
+   */
+  fun setSerialNumber(serialNumber: String, result: Result) {
+    result.handleResult(mSpi.setSerialNumber(serialNumber), result)
   }
 
   /**

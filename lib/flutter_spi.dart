@@ -250,10 +250,11 @@ class FlutterSpi {
     _channel.setMethodCallHandler(cb);
   }
 
-  static Future<void> init(String posId, String eftposAddress,
+  static Future<void> init(String posId, String serialNumber, String eftposAddress, 
       {Map<String, String>? secrets}) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
+      "serialNumber": serialNumber,
       "eftposAddress": eftposAddress,
       "secrets": secrets,
     });
@@ -265,6 +266,10 @@ class FlutterSpi {
 
   static Future<void> setPosId(String posId) async {
     await _channel.invokeMethod('setPosId', {"posId": posId});
+  }
+
+  static Future<void> setSerialNumber(String serialNumber) async {
+    await _channel.invokeMethod('setSerialNumber', {"serialNumber": serialNumber});
   }
 
   static Future<void> setEftposAddress(String address) async {
