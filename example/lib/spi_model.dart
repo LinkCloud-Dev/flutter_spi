@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SpiModel extends ChangeNotifier {
   SpiStatus status;
   String posId;
+  String serialNumber;
   String eftPosAddress;
   Secrets secrets;
   PairingFlowState pairingFlowState;
@@ -18,6 +19,7 @@ class SpiModel extends ChangeNotifier {
   SpiModel({
     this.status = SpiStatus.UNPAIRED,
     this.posId,
+    this.serialNumber,
     this.eftPosAddress,
     this.secrets,
   });
@@ -30,6 +32,7 @@ class SpiModel extends ChangeNotifier {
       posId = posId.replaceAll('-', '');
       if (posId.length > 16) posId = posId.substring(1, 16);
     }
+    serialNumber = prefs.getString('serialNumber') ?? '000-000-000';
     eftPosAddress = prefs.getString('eftPosAddress') ?? '192.168.1.99';
     final persistedSecrets = prefs.getString('secrets');
     if (persistedSecrets != null) {
@@ -37,13 +40,18 @@ class SpiModel extends ChangeNotifier {
     }
     notifyListeners();
     // start spi
-    await FlutterSpi.init(posId, eftPosAddress,
+    await FlutterSpi.init(posId, serialNumber, eftPosAddress,
         secrets: secrets != null ? secrets.toJSON() : null);
     await FlutterSpi.start();
   }
 
   void updatePosId(String value) {
     posId = value;
+    notifyListeners();
+  }
+
+  void updateSerialNumber(String value) {
+    serialNumber = value;
     notifyListeners();
   }
 
@@ -109,10 +117,13 @@ class SpiModel extends ChangeNotifier {
     // await FlutterSpi.setTestMode(testMode);
     // await FlutterSpi.setAutoAddressResolution(autoAddress);
     if (posId.isNotEmpty) await FlutterSpi.setPosId(posId);
-    // if (eftPosId.isNotEmpty) await FlutterSpi.setSerialNumber(eftPosId);
+    if (serialNumber.isNotEmpty) await FlutterSpi.setSerialNumber(serialNumber);
     if (eftPosAddress.isNotEmpty)
       await FlutterSpi.setEftposAddress(eftPosAddress);
     print('Save Success.');
+    print(posId);
+    print(serialNumber);
+    print(eftPosAddress);
   }
 
   Future<void> pair() async {

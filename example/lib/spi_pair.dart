@@ -67,6 +67,23 @@ class Pair extends StatelessWidget {
               height: 10,
             ),
             TextFormField(
+                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.text,
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: 'SERIAL NUMBER',
+                ),
+                maxLines: 1,
+                maxLength: 16,
+                readOnly: spi.status != SpiStatus.UNPAIRED,
+                initialValue: spi.serialNumber,
+                onChanged: (value) {
+                  spi.updateSerialNumber(value);
+                }),
+            SizedBox(
+              height: 10,
+            ),
+            TextFormField(
               textInputAction: TextInputAction.next,
               keyboardType: TextInputType.text,
               decoration: InputDecoration(
