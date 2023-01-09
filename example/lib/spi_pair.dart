@@ -10,7 +10,7 @@ import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/spi/unpair_dialog.dart';
 
 class Pair extends StatelessWidget {
-  const Pair({Key key}) : super(key: key);
+  const Pair({Key? key}) : super(key: key);
 
   void _pair(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: false);
@@ -30,7 +30,7 @@ class Pair extends StatelessWidget {
     );
   }
 
-  Future<void> _showDialog<T>({BuildContext context, Widget child}) async {
+  Future<void> _showDialog<T>({required BuildContext context, required Widget child}) async {
     await showDialog<T>(
       barrierDismissible: false,
       context: context,
@@ -46,14 +46,14 @@ class Pair extends StatelessWidget {
         title: const Text('PAIR'),
       ),
       body: Container(
-        padding: EdgeInsets.all(15),
+        padding: const EdgeInsets.all(15),
         child: ListView(
           children: [
             TextFormField(
                 textInputAction: TextInputAction.next,
                 keyboardType: TextInputType.text,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
                   labelText: 'POS ID',
                 ),
                 maxLines: 1,
@@ -63,14 +63,14 @@ class Pair extends StatelessWidget {
                 onChanged: (value) {
                   spi.updatePosId(value);
                 }),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             TextFormField(
                 textInputAction: TextInputAction.next,
                 keyboardType: TextInputType.text,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
                   labelText: 'SERIAL NUMBER',
                 ),
                 maxLines: 1,
@@ -80,14 +80,14 @@ class Pair extends StatelessWidget {
                 onChanged: (value) {
                   spi.updateSerialNumber(value);
                 }),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             TextFormField(
               textInputAction: TextInputAction.next,
               keyboardType: TextInputType.text,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
                 labelText: 'EFTPOS ADDRESS',
               ),
               maxLines: 1,
@@ -97,29 +97,29 @@ class Pair extends StatelessWidget {
                 spi.updateEftPosAddress(value);
               },
             ),
-            Divider(),
+            const Divider(),
             (spi.status == SpiStatus.UNPAIRED && spi.secrets != null)
                 ? Container(
-                    margin: EdgeInsets.all(15),
-                    child: Text('STATUS: DISCONNECTED'),
+                    margin: const EdgeInsets.all(15),
+                    child: const Text('STATUS: DISCONNECTED'),
                   )
                 : Container(
-                    margin: EdgeInsets.all(15),
+                    margin: const EdgeInsets.all(15),
                     child: Text(
                         'STATUS: ${EnumToString.convertToString(spi.status)}'),
                   ),
-            Divider(),
-            ElevatedButton(onPressed: () => spi.save(), child: Text('SAVE')),
+            const Divider(),
+            ElevatedButton(onPressed: () => spi.save(), child: const Text('SAVE')),
             (spi.status == SpiStatus.UNPAIRED && spi.secrets == null)
                 ? ElevatedButton(
-                    onPressed: () => _pair(context), child: Text('PAIR'))
-                : SizedBox.shrink(),
+                    onPressed: () => _pair(context), child: const Text('PAIR'))
+                : const SizedBox.shrink(),
             (spi.secrets != null)
                 ? ElevatedButton(
                     onPressed: () => _unpair(context),
-                    child: Text('UNPAIR'),
+                    child: const Text('UNPAIR'),
                   )
-                : SizedBox.shrink(),
+                : const SizedBox.shrink(),
           ],
         ),
       ),

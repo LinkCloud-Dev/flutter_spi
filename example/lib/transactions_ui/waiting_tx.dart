@@ -3,7 +3,7 @@ import 'package:flutter_spi/flutter_spi.dart';
 
 class WaitingTx extends StatelessWidget {
   final int amount;
-  const WaitingTx({Key key, @required this.amount}) : super(key: key);
+  const WaitingTx({Key? key, required this.amount}) : super(key: key);
 
   Future<void> _cancelTx() async {
     await FlutterSpi.cancelTransaction();

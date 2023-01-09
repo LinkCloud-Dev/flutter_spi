@@ -15,7 +15,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key key}) : super(key: key);
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +25,8 @@ class MyApp extends StatelessWidget {
         title: 'Spi Demo',
         initialRoute: '/',
         routes: {
-          '/': (context) => Home(),
-          '/pair': (context) => Pair(),
+          '/': (context) => const Home(),
+          '/pair': (context) => const Pair(),
         },
       ),
     );
@@ -34,10 +34,10 @@ class MyApp extends StatelessWidget {
 }
 
 class Home extends StatefulWidget {
-  const Home({Key key}) : super(key: key);
+  const Home({Key? key}) : super(key: key);
 
   @override
-  _HomeState createState() => _HomeState();
+  State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
@@ -59,7 +59,7 @@ class _HomeState extends State<Home> {
       print('Please Pair EFTPOS.');
       return;
     }
-    await spi.initiatePurchaseTx(Uuid().v4(), amount, 0, 0, false);
+    await spi.initiatePurchaseTx(const Uuid().v4(), amount, 0, 0, false);
     _showDialog<String>(
       context: context,
       child: TransactionDialog(
@@ -74,7 +74,7 @@ class _HomeState extends State<Home> {
       print('Please Pair EFTPOS.');
       return;
     }
-    await FlutterSpi.initiateSettleTx(Uuid().v4());
+    await FlutterSpi.initiateSettleTx(const Uuid().v4());
     _showDialog<String>(
       context: context,
       child: SettleDialog(),
@@ -87,7 +87,7 @@ class _HomeState extends State<Home> {
       print('Please Pair EFTPOS.');
       return;
     }
-    await FlutterSpi.initiateRefundTx(Uuid().v4(), amount);
+    await FlutterSpi.initiateRefundTx(const Uuid().v4(), amount);
     _showDialog<String>(
       context: context,
       child: RefundTransactionDialog(
@@ -100,7 +100,7 @@ class _HomeState extends State<Home> {
     FlutterSpi.ackFlowEndedAndBackToIdle();
   }
 
-  Future<void> _showDialog<T>({BuildContext context, Widget child}) async {
+  Future<void> _showDialog<T>({required BuildContext context, required Widget child}) async {
     await showDialog<T>(
       barrierDismissible: false,
       context: context,
@@ -113,7 +113,7 @@ class _HomeState extends State<Home> {
     var spi = Provider.of<SpiModel>(context, listen: true);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Spi Demo'),
+        title: const Text('Spi Demo'),
       ),
       body: Center(
         child: Column(
@@ -121,29 +121,29 @@ class _HomeState extends State<Home> {
           children: [
             (spi.status == SpiStatus.UNPAIRED && spi.secrets != null)
                 ? Container(
-                    margin: EdgeInsets.all(15),
-                    child: Text('STATUS: DISCONNECTED'),
+                    margin: const EdgeInsets.all(15),
+                    child: const Text('STATUS: DISCONNECTED'),
                   )
                 : Container(
-                    margin: EdgeInsets.all(15),
+                    margin: const EdgeInsets.all(15),
                     child: Text(
                         'STATUS: ${EnumToString.convertToString(spi.status)}'),
                   ),
             ElevatedButton(
               onPressed: () => Navigator.pushNamed(context, '/pair'),
-              child: Text('Pair'),
+              child: const Text('Pair'),
             ),
             ElevatedButton(
               onPressed: () => _startTransaction(1500, context),
-              child: Text('Charge \$15.00'),
+              child: const Text('Charge \$15.00'),
             ),
             ElevatedButton(
               onPressed: () => _initSettleTx(context),
-              child: Text('Settle'),
+              child: const Text('Settle'),
             ),
             ElevatedButton(
               onPressed: () => _initRefundTx(1500, context),
-              child: Text('Refund \$15.00'),
+              child: const Text('Refund \$15.00'),
             ),
             ElevatedButton(
               onPressed: () => _endTx(context),

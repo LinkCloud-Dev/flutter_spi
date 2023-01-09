@@ -239,7 +239,7 @@ enum SpiMethodCallEvents {
 }
 
 class FlutterSpi {
-  static const MethodChannel _channel = const MethodChannel('flutter_spi');
+  static const MethodChannel _channel = MethodChannel('flutter_spi');
 
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');

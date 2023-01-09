@@ -6,7 +6,7 @@ import '../spi_model.dart';
 class TxFaild extends StatelessWidget {
   final int amount;
   final Function retry;
-  const TxFaild({Key key, @required this.amount, @required this.retry})
+  const TxFaild({Key? key, required this.amount, required this.retry})
       : super(key: key);
 
   void _cancel(BuildContext context) {
@@ -24,18 +24,18 @@ class TxFaild extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: true);
-    String responseText;
-    if (spi.transactionFlowState.response.data['error_detail'] != null) {
-      responseText = spi.transactionFlowState.response.data['error_detail'];
+    String? responseText;
+    if (spi.transactionFlowState!.response!.data!['error_detail'] != null) {
+      responseText = spi.transactionFlowState!.response!.data!['error_detail'];
     }
-    if (spi.transactionFlowState.response.data['host_response_text'] != null) {
+    if (spi.transactionFlowState!.response!.data!['host_response_text'] != null) {
       responseText =
-          spi.transactionFlowState.response.data['host_response_text'];
+          spi.transactionFlowState!.response!.data!['host_response_text'];
     }
 
-    String customerCopy;
-    if (spi.transactionFlowState.response.data['customer_receipt'] != null) {
-      customerCopy = spi.transactionFlowState.response.data['customer_receipt'];
+    String? customerCopy;
+    if (spi.transactionFlowState!.response!.data!['customer_receipt'] != null) {
+      customerCopy = spi.transactionFlowState!.response!.data!['customer_receipt'];
     }
 
     return Container(
@@ -48,7 +48,7 @@ class TxFaild extends StatelessWidget {
           Text('\$${(amount / 100).toStringAsFixed(2)}'),
           customerCopy != null && customerCopy.isNotEmpty
               ? ElevatedButton(
-                  onPressed: () => _printCustomerCopy(customerCopy),
+                  onPressed: () => _printCustomerCopy(customerCopy!),
                   child: Text('PRINT CUSTOMER COPY'))
               : SizedBox.shrink(),
           Row(

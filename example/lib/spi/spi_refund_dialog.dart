@@ -24,13 +24,13 @@ enum TxUiState {
 class RefundTransactionDialog extends StatelessWidget {
   final int amount;
   RefundTransactionDialog({
-    Key key,
-    @required this.amount,
+    Key? key,
+    required this.amount,
   }) : super(key: key);
 
   Future<void> _retry(BuildContext context) async {
     var spi = Provider.of<SpiModel>(context, listen: false);
-    await spi.retryRefundTransaction(Uuid().v4(), amount);
+    await spi.retryRefundTransaction(const Uuid().v4(), amount);
   }
 
   @override
@@ -38,27 +38,27 @@ class RefundTransactionDialog extends StatelessWidget {
     var spi = Provider.of<SpiModel>(context, listen: true);
 
     Widget content = WaitingTx(amount: amount);
-    if (!spi.transactionFlowState.finished) {
+    if (!spi.transactionFlowState!.finished) {
       if (spi.status == SpiStatus.PAIRED_CONNECTING) {
         content = WaitingConnection(amount: amount);
       }
-      if (spi.transactionFlowState.awaitingSignatureCheck) {
+      if (spi.transactionFlowState!.awaitingSignatureCheck) {
         content = SignatureRequire(amount: amount);
       }
-      if (spi.transactionFlowState.attemptingToCancel) {
+      if (spi.transactionFlowState!.attemptingToCancel) {
         content = AttemptingCancelTransaction(amount: amount);
       }
     } else {
-      if (spi.transactionFlowState.success == 'UNKNOWN') {
+      if (spi.transactionFlowState!.success == 'UNKNOWN') {
         content = TxUnknown(
           amount: amount,
           retry: _retry,
         );
       }
-      if (spi.transactionFlowState.success == 'SUCCESS') {
+      if (spi.transactionFlowState!.success == 'SUCCESS') {
         content = TxSuccessful(amount: amount);
       }
-      if (spi.transactionFlowState.success == 'FAILED') {
+      if (spi.transactionFlowState!.success == 'FAILED') {
         content = TxFaild(
           amount: amount,
           retry: _retry,
@@ -67,9 +67,9 @@ class RefundTransactionDialog extends StatelessWidget {
     }
 
     return SimpleDialog(
-      contentPadding: EdgeInsets.all(0),
-      titlePadding: EdgeInsets.fromLTRB(40, 0, 40, 0),
-      title: Text('EFTPOS - REFUND'),
+      contentPadding: const EdgeInsets.all(0),
+      titlePadding: const EdgeInsets.fromLTRB(40, 0, 40, 0),
+      title: const Text('EFTPOS - REFUND'),
       children: [
         Container(
           width: MediaQuery.of(context).size.width * 0.5,

@@ -5,7 +5,7 @@ import '../spi_model.dart';
 
 class TxSuccessful extends StatelessWidget {
   final int amount;
-  const TxSuccessful({Key key, @required this.amount}) : super(key: key);
+  const TxSuccessful({Key? key, required this.amount}) : super(key: key);
 
   void _ok(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: false);
@@ -21,15 +21,15 @@ class TxSuccessful extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: true);
-    String responseText;
-    if (spi.transactionFlowState.response.data['host_response_text'] != null) {
+    String? responseText;
+    if (spi.transactionFlowState!.response!.data!['host_response_text'] != null) {
       responseText =
-          spi.transactionFlowState.response.data['host_response_text'];
+          spi.transactionFlowState!.response!.data!['host_response_text'];
     }
 
-    String customerCopy;
-    if (spi.transactionFlowState.response.data['customer_receipt'] != null) {
-      customerCopy = spi.transactionFlowState.response.data['customer_receipt'];
+    String? customerCopy;
+    if (spi.transactionFlowState!.response!.data!['customer_receipt'] != null) {
+      customerCopy = spi.transactionFlowState!.response!.data!['customer_receipt'];
     }
 
     return Container(
@@ -42,7 +42,7 @@ class TxSuccessful extends StatelessWidget {
           Text('\$${(amount / 100).toStringAsFixed(2)}'),
           customerCopy != null && customerCopy.isNotEmpty
               ? ElevatedButton(
-                  onPressed: () => _printCustomerCopy(customerCopy),
+                  onPressed: () => _printCustomerCopy(customerCopy!),
                   child: Text('PRINT CUSTOMER COPY'))
               : SizedBox.shrink(),
           ElevatedButton(

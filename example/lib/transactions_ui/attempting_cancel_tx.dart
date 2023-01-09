@@ -3,7 +3,7 @@ import 'package:flutter_spi/flutter_spi.dart';
 
 class WaitingConnection extends StatelessWidget {
   final int amount;
-  const WaitingConnection({Key key, @required this.amount}) : super(key: key);
+  const WaitingConnection({Key? key, required this.amount}) : super(key: key);
 
   Future<void> _cancelTx() async {
     await FlutterSpi.cancelTransaction();
@@ -14,7 +14,7 @@ class WaitingConnection extends StatelessWidget {
     return Container(
       child: Column(
         children: [
-          Text('Waiting for EFTPOS Connection'),
+          const Text('Waiting for EFTPOS Connection'),
           Text('\$${(amount / 100).toStringAsFixed(2)}'),
           ElevatedButton(onPressed: _cancelTx, child: Text('CANCEL'))
         ],
