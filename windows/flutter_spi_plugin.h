@@ -41,12 +41,14 @@ class FlutterSpiPlugin : public flutter::Plugin {
     FlutterSpiPlugin &operator=(const FlutterSpiPlugin &) = delete;
 
    private:
-    WSADATA wsa;
-    SOCKET s = INVALID_SOCKET;
-    struct sockaddr_in server;
+    static std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> channel;
 
-    int iResult;
-    struct addrinfo *addr_result = NULL, *ptr = NULL, hints;
+    static WSADATA wsa;
+    static SOCKET s;
+    static struct sockaddr_in server;
+
+    static int iResult;
+    static struct addrinfo *addr_result, *ptr, hints;
     
     // Called when a method is called on this plugin's channel from Dart.
     void HandleMethodCall(
@@ -54,13 +56,23 @@ class FlutterSpiPlugin : public flutter::Plugin {
         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
     // Initialise Winsock and set socket information
-    int init();
+    static int init();
 
     // Connect socket to Linkly Client
-    int start();
+    static int start();
 
+    // Log on to EFTPOS PIN pad
+    static int pair();
+
+    // Close socket connection
+    static void close_connection();
+    
     // Helper function to check if Winsock is initialised
-    bool WinsockInitialized();
+    static bool WinsockInitialized();
+
+    // Helper function to set the length bytes of the message
+    static void update_message_length(std::vector<char>& message);
+
 };
 
 }  // namespace flutter_spi
