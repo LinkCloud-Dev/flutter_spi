@@ -11,7 +11,7 @@ import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/spi_pair.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -147,7 +147,7 @@ class _HomeState extends State<Home> {
             ),
             ElevatedButton(
               onPressed: () => _endTx(context),
-              child: Text('End Transaction'),
+              child: const Text('End Transaction'),
             ),
           ],
         ),

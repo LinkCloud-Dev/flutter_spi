@@ -28,7 +28,8 @@ class SpiModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     posId = prefs.getString('posId');
     if (posId == null) {
-      posId = await FlutterSpi.getDeviceSN;
+      posId = "aAHFI-91239-080au";
+      // posId = await FlutterSpi.getDeviceSN;
       posId = posId!.replaceAll('-', '');
       if (posId!.length > 16) posId = posId!.substring(1, 16);
     }
