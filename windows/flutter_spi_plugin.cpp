@@ -28,98 +28,98 @@ void FlutterSpiPlugin::RegisterWithRegistrar(
     channel->SetMethodCallHandler(
         [plugin_pointer = plugin.get()](const auto &call, auto result) {
             if (call.method_name() == "init") {
-        // TODO
-        int _return_val = init();
-        if (_return_val == 0){
-            result->Success("Socket initialised.");
-        }else{
-            result->Error("INIT_ERROR", "Socket initialisation failed.");
-        }
+                // TODO
+                int _return_val = init();
+                if (_return_val == 0) {
+                    result->Success("Socket initialised.");
+                } else {
+                    result->Error("INIT_ERROR", "Socket initialisation failed.");
+                }
 
-    } else if (call.method_name() == "start") {
-        // TODO
-        int _return_val = start();
-        if (_return_val == 0){
-            result->Success("Socket connected.");
-            
-        }else{
-            result->Error("START_ERROR", "Socket connection failed.");
-        }
-    } else if (call.method_name() == "setPosId") {
-        // TODO
-        result->Success(NULL);
-    } else if (call.method_name() == "setSerialNumber") {
-        // TODO
-        result->Success(NULL);
-    } else if (call.method_name() == "setEftposAddress") {
-        // TODO
-        result->Success(NULL);
-    } else if (call.method_name() == "setPosInfo") {
-        // TODO
-        result->Success(NULL);
-    // } else if (call.method_name() == "getVersion") {
-    //     // TODO
-    // } else if (call.method_name() == "getCurrentStatus") {
-    //     // TODO
-    // } else if (call.method_name() == "getCurrentFlow") {
-    //     // TODO
-    // } else if (call.method_name() == "getCurrentPairingFlowState") {
-    //     // TODO
-    // } else if (call.method_name() == "getCurrentTxFlowState") {
-    //     // TODO
-    // } else if (call.method_name() == "getConfig") {
-    //     // TODO
-    // } else if (call.method_name() == "ackFlowEndedAndBackToIdle") {
-    //     // TODO
-    } else if (call.method_name() == "pair") {
-        // TODO
-        int _return_val = pair();
-        if (_return_val == 0){
-            result->Success("Successfully logged on.");
-        }else{
-            result->Error("PAIR_ERROR", "Unable to log on to EFTPOS PIN pad.");
-        }
-    // } else if (call.method_name() == "pairingConfirmCode") {
-    //     // TODO
-    // } else if (call.method_name() == "pairingCancel") {
-    //     // TODO
-    // } else if (call.method_name() == "unpair") {
-    //     // TODO
-    // } else if (call.method_name() == "initiatePurchaseTx") {
-    //     // TODO
-    // } else if (call.method_name() == "initiateRefundTx") {
-    //     // TODO
-    // } else if (call.method_name() == "acceptSignature") {
-    //     // TODO
-    // } else if (call.method_name() == "submitAuthCode") {
-    //     // TODO
-    // } else if (call.method_name() == "cancelTransaction") {
-    //     // TODO
-    // } else if (call.method_name() == "initiateCashoutOnlyTx") {
-    //     // TODO
-    // } else if (call.method_name() == "initiateMotoPurchaseTx") {
-    //     // TODO
-    // } else if (call.method_name() == "initiateSettleTx") {
-    //     // TODO
-    // } else if (call.method_name() == "initiateSettlementEnquiry") {
-    //     // TODO
-    // } else if (call.method_name() == "initiateGetLastTx") {
-    //     // TODO
-    // } else if (call.method_name() == "initiateRecovery") {
-    //     // TODO
-    // } else if (call.method_name() == "dispose") {
-    //     // TODO
-    // } else if (call.method_name() == "getDeviceSN") {
-    //     // TODO
-    // } else if (call.method_name() == "setPromptForCustomerCopyOnEftpos") {
-    //     // TODO
-    // } else if (call.method_name() == "setSignatureFlowOnEftpos") {
-    //     // TODO
-    // } else if (call.method_name() == "setPrintMerchantCopy") {
-    //     // TODO
-    } else {
-        result->NotImplemented();
-    }
+            } else if (call.method_name() == "start") {
+                int _return_val = start();
+                if (_return_val == 0) {
+                    result->Success("Socket connected.");
+
+                } else {
+                    result->Error("START_ERROR", "Socket connection failed.");
+                }
+            } else if (call.method_name() == "setPosId") {
+                // Do nothing since not needed for Linkly
+                result->Success(NULL);
+            } else if (call.method_name() == "setSerialNumber") {
+                // Do nothing since not needed for Linkly
+                result->Success(NULL);
+            } else if (call.method_name() == "setEftposAddress") {
+                // Do nothing since not needed for Linkly
+                result->Success(NULL);
+            } else if (call.method_name() == "setPosInfo") {
+                // Do nothing since not needed for Linkly
+                result->Success(NULL);
+                // } else if (call.method_name() == "getVersion") {
+                //     // TODO
+                // } else if (call.method_name() == "getCurrentStatus") {
+                //     // TODO
+                // } else if (call.method_name() == "getCurrentFlow") {
+                //     // TODO
+                // } else if (call.method_name() == "getCurrentPairingFlowState") {
+                //     // TODO
+                // } else if (call.method_name() == "getCurrentTxFlowState") {
+                //     // TODO
+                // } else if (call.method_name() == "getConfig") {
+                //     // TODO
+            } else if (call.method_name() == "ackFlowEndedAndBackToIdle") {
+                // Do nothing since not needed for Linkly
+                result->Success(NULL);
+            } else if (call.method_name() == "pair") {
+                // TODO
+                int _return_val = pair();
+                if (_return_val == 0) {
+                    result->Success("Successfully logged on.");
+                } else {
+                    result->Error("PAIR_ERROR", "Unable to log on to EFTPOS PIN pad.");
+                }
+                // } else if (call.method_name() == "pairingConfirmCode") {
+                //     // TODO
+                // } else if (call.method_name() == "pairingCancel") {
+                //     // TODO
+                // } else if (call.method_name() == "unpair") {
+                //     // TODO
+                // } else if (call.method_name() == "initiatePurchaseTx") {
+                //     // TODO
+                // } else if (call.method_name() == "initiateRefundTx") {
+                //     // TODO
+                // } else if (call.method_name() == "acceptSignature") {
+                //     // TODO
+                // } else if (call.method_name() == "submitAuthCode") {
+                //     // TODO
+                // } else if (call.method_name() == "cancelTransaction") {
+                //     // TODO
+                // } else if (call.method_name() == "initiateCashoutOnlyTx") {
+                //     // TODO
+                // } else if (call.method_name() == "initiateMotoPurchaseTx") {
+                //     // TODO
+                // } else if (call.method_name() == "initiateSettleTx") {
+                //     // TODO
+                // } else if (call.method_name() == "initiateSettlementEnquiry") {
+                //     // TODO
+                // } else if (call.method_name() == "initiateGetLastTx") {
+                //     // TODO
+                // } else if (call.method_name() == "initiateRecovery") {
+                //     // TODO
+                // } else if (call.method_name() == "dispose") {
+                //     // TODO
+                // } else if (call.method_name() == "getDeviceSN") {
+                //     // TODO
+                // } else if (call.method_name() == "setPromptForCustomerCopyOnEftpos") {
+                //     // TODO
+                // } else if (call.method_name() == "setSignatureFlowOnEftpos") {
+                //     // TODO
+                // } else if (call.method_name() == "setPrintMerchantCopy") {
+                //     // TODO
+            } else {
+                result->NotImplemented();
+            }
         });
     registrar->AddPlugin(std::move(plugin));
 }
@@ -153,7 +153,7 @@ int FlutterSpiPlugin::init() {
     return 0;
 }
 
-int FlutterSpiPlugin::start(){
+int FlutterSpiPlugin::start() {
     ptr = addr_result;
 
     s = INVALID_SOCKET;
@@ -185,7 +185,7 @@ int FlutterSpiPlugin::start(){
     return 0;
 }
 
-int FlutterSpiPlugin::pair(){
+int FlutterSpiPlugin::pair() {
     std::vector<char> message;
     char buffer[DEFAULT_BUFLEN];
 
@@ -217,8 +217,12 @@ int FlutterSpiPlugin::pair(){
     message.insert(message.end(), 3, '0');
 
     update_message_length(message);
+    
 
-    iResult = send(s, &message[0], (int)message.size(), 0);
+    printf("%s\n", message.data());
+    std::cout << "BEFORE SENT" << std::endl;
+    iResult = send(s, message.data(), (int)message.size(), 0);
+    std::cout << "AFTER SENT" << std::endl;
     if (iResult == SOCKET_ERROR) {
         printf("send failed: %d\n", iResult);
         close_connection();
@@ -227,34 +231,37 @@ int FlutterSpiPlugin::pair(){
 
     do {
         iResult = recv(s, buffer, DEFAULT_BUFLEN, 0);
-        if (iResult > 0){
+        if (iResult > 0) {
             // printf("Bytes received: %d\n", iResult);
-            
+
             std::cout << buffer << std::endl;
             char start_flag = buffer[0];
             if (start_flag != '#') {
-                std::cout << "STRAT_FLAG does not match!"<< std::endl;
+                std::cout << "STRAT_FLAG does not match!" << std::endl;
                 return 1;
             }
             char command_code = buffer[5];
-            if (command_code == 'G'){
+            if (command_code == 'G') {
                 char success_flag = buffer[7];
-                if (success_flag == '1'){
-                    std::cout << "Log on successful!"<< std::endl;
+                if (success_flag == '1') {
+                    std::cout << "Log on successful!" << std::endl;
                     return 0;
-                }else{
-                    std::cout << "Log on failed!"<< std::endl;
+                } else {
+                    std::cout << "Log on failed!" << std::endl;
                     return 1;
                 }
+            } 
+            else if (command_code == 'S') {
+                std::cout << "Connecting" << std::endl;
+                std::unique_ptr<flutter::EncodableValue> pair_flow_state = std::make_unique<flutter::EncodableValue>(mapPairingFlowState("Connecting...", false));
+                channel->InvokeMethod("pairingFlowStateChanged", std::move(pair_flow_state));
             }
-        }
-        else if (iResult == 0){
+        } else if (iResult == 0) {
             // printf("Connection closed\n");
             // closesocket(s);
             // WSACleanup();
             break;
-        }
-        else{
+        } else {
             printf("recv failed: %d\n", WSAGetLastError());
             close_connection();
             return 1;
@@ -264,7 +271,7 @@ int FlutterSpiPlugin::pair(){
     return 0;
 }
 
-void FlutterSpiPlugin::close_connection(){
+void FlutterSpiPlugin::close_connection() {
     closesocket(s);
     WSACleanup();
 }
@@ -278,15 +285,26 @@ bool FlutterSpiPlugin::WinsockInitialized() {
     return true;
 }
 
-void FlutterSpiPlugin::update_message_length(std::vector<char>& message){
+void FlutterSpiPlugin::update_message_length(std::vector<char> &message) {
     // Update the length of message
     std::string message_len = std::to_string((int)message.size());
 
     int temp_len_i = 4;
-    for (auto it = message_len.rbegin(); it != message_len.rend(); ++it, --temp_len_i){
+    for (auto it = message_len.rbegin(); it != message_len.rend(); ++it, --temp_len_i) {
         message[temp_len_i] = *it;
     }
 }
 
+flutter::EncodableValue FlutterSpiPlugin::mapPairingFlowState(std::string message, bool finished) {
+    std::map<flutter::EncodableValue, flutter::EncodableValue> map;
+    map[flutter::EncodableValue("message")] = flutter::EncodableValue(message);
+    map[flutter::EncodableValue("awaitingCheckFromEftpos")] = flutter::EncodableValue(false);
+    map[flutter::EncodableValue("awaitingCheckFromPos")] = flutter::EncodableValue(false);
+    map[flutter::EncodableValue("confirmationCode")] = flutter::EncodableValue("");
+    map[flutter::EncodableValue("finished")] = flutter::EncodableValue(finished);
+    map[flutter::EncodableValue("successful")] = flutter::EncodableValue(false);
+
+    return flutter::EncodableValue(map);
+}
 
 }  // namespace flutter_spi

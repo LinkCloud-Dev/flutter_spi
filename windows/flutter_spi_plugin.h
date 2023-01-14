@@ -73,6 +73,9 @@ class FlutterSpiPlugin : public flutter::Plugin {
     // Helper function to set the length bytes of the message
     static void update_message_length(std::vector<char>& message);
 
+    // Map paring flow state to EncodableValeu<std::map>
+    static flutter::EncodableValue FlutterSpiPlugin::mapPairingFlowState(std::string message,bool finished);
+
 };
 
 }  // namespace flutter_spi
