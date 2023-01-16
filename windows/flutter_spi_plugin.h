@@ -58,11 +58,14 @@ class FlutterSpiPlugin : public flutter::Plugin {
     // Initialise Winsock and set socket information
     static int init();
 
-    // Connect socket to Linkly Client
+    // Dummy function, does nothing
     static int start();
 
-    // Log on to EFTPOS PIN pad
+    // Connect socket to Linkly Client
+    // and log on to EFTPOS PIN pad
     static int pair();
+
+    static int init_purchase(std::string reference, int purchase_amount, int tip_amount, int cashout_amount);
 
     // Close socket connection
     static void close_connection();
