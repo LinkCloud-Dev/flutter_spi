@@ -103,7 +103,7 @@ class Linkly {
 
     // Map spi message to EncodableValue<std::map>
     static flutter::EncodableValue mapMessage(std::string message, std::string receipt,
-                                              bool is_refund_or_settle = false);
+                                              bool is_refund_or_settle = false, bool is_customer_receipt = false);
 
     // Helper function for flutter callbacks
     static void Linkly::pair_flow_changed(bool finished, std::string flow_text, std::string status_text);

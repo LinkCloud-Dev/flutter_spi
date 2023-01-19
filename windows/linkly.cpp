@@ -482,9 +482,9 @@ int Linkly::init_settle(std::string reference){
             if (command_code == 'P') {
                 char success_flag = buffer_vec[7];
 
-                std::string res_text(buffer_vec.begin() + 11, buffer_vec.begin() + 31);
+                std::string res_text(buffer_vec.begin() + 10, buffer_vec.begin() + 30);
 
-                std::string res_code(buffer_vec.begin() + 9, buffer_vec.begin() + 11);
+                std::string res_code(buffer_vec.begin() + 8, buffer_vec.begin() + 10);
 
                 if (success_flag == '1') {
                     std::cout << "Settlement successful!" << std::endl;
@@ -652,7 +652,7 @@ flutter::EncodableValue Linkly::mapTransactionState(std::string reference, std::
     return flutter::EncodableValue(map);
 }
 
-flutter::EncodableValue Linkly::mapMessage(std::string message, std::string receipt, bool is_refund_or_settle) {
+flutter::EncodableValue Linkly::mapMessage(std::string message, std::string receipt, bool is_refund_or_settle, bool is_customer_receipt) {
     std::map<flutter::EncodableValue, flutter::EncodableValue> data;
     std::map<flutter::EncodableValue, flutter::EncodableValue> map;
 
