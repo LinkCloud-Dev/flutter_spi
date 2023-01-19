@@ -63,9 +63,7 @@ int Linkly::pair() {
     if (iResult == SOCKET_ERROR) {
         pair_flow_changed(true, "ERROR: Unable to connect to server", "UNPAIRED");
         closesocket(s);
-        freeaddrinfo(addr_result);
         s = INVALID_SOCKET;
-        return 1;
     }
 
     if (s == INVALID_SOCKET) {
@@ -97,7 +95,7 @@ int Linkly::pair() {
     message.insert(message.end(), 2, '0');
 
     // Reciept auto-print
-    message.push_back('9');
+    message.push_back(PRINTER);
 
     // Cut receipt
     message.push_back('1');
@@ -256,7 +254,7 @@ int Linkly::init_purchase(std::string reference, int purchase_amount, int cashou
     }
 
     // Reciept auto-print
-    message.push_back('9');
+    message.push_back(PRINTER);
 
     // Cut receipt
     message.push_back('1');
@@ -411,6 +409,149 @@ int Linkly::init_purchase(std::string reference, int purchase_amount, int cashou
     return 0;
 }
 
+int Linkly::init_settle(std::string reference){
+    transac_flow_changed(false, "Settlement initiated", "");
+
+    std::vector<char> message;
+    char buffer[DEFAULT_BUFLEN];
+
+    // Start flag
+    message.push_back(START_FLAG);
+
+    // Length
+    message.insert(message.end(), 4, '0');
+
+    // Command code
+    message.push_back('P');
+
+    // Sub code
+    message.push_back('S');
+
+    // Merchant
+    message.insert(message.end(), 2, '0');
+
+    // Reciept auto-print
+    message.push_back(PRINTER);
+
+    // Cut receipt
+    message.push_back('1');
+
+    // Reset total
+    message.push_back('0');
+
+    // app
+    message.insert(message.end(), 2, '0');
+
+    // Purchase analysis data len
+    message.insert(message.end(), 3, '0');
+
+    update_message_length(message);
+
+    std::cout << message.data() << std::endl;
+    iResult = send(s, message.data(), (int)message.size(), 0);
+    if (iResult == SOCKET_ERROR) {
+        printf("send failed: %d\n", iResult);
+        transac_flow_changed(true, "ERROR: send failed: " + std::to_string(iResult), "FAILED");
+        closesocket(s);
+        WSACleanup();
+        return 1;
+    }
+
+    std::string receipt = "";
+    std::string receipt_type = "MERCHANT";
+
+    do {
+        iResult = recv(s, buffer, DEFAULT_BUFLEN, 0);
+        if (iResult > 0) {
+            std::vector<char> buffer_vec(buffer, buffer + iResult);
+
+            std::cout << buffer_vec.data() << std::endl;
+
+            char start_flag = buffer_vec[0];
+            if (start_flag != '#') {
+                std::cout << "STRAT_FLAG does not match!" << std::endl;
+                transac_flow_changed(true, "ERROR: STRAT_FLAG does not match!", "FAILED");
+                return 1;
+            }
+
+            // Check for event type
+            // P: Settlement event, read the response text and check if settlement is successful
+            // S: Display event, read the response text and pass it on to POS
+            // 3: Receipt event, print receipt
+            char command_code = buffer_vec[5];
+            if (command_code == 'P') {
+                char success_flag = buffer_vec[7];
+
+                std::string res_text(buffer_vec.begin() + 11, buffer_vec.begin() + 31);
+
+                std::string res_code(buffer_vec.begin() + 9, buffer_vec.begin() + 11);
+
+                if (success_flag == '1') {
+                    std::cout << "Settlement successful!" << std::endl;
+                    transac_flow_changed(true, res_text, "SUCCESS", receipt);
+                    return 0;
+
+                } else {
+                    std::cout << "Settlement failed!" << std::endl;
+                    transac_flow_changed(true, res_text, "FAILED", receipt);
+                    // Operator cancelled
+                    if (res_code == "TM") {
+                        return 0;
+                    }
+                    return 1;
+                }
+            } else if (command_code == 'S') {
+                std::string res_text(buffer_vec.begin() + 11, buffer_vec.begin() + 50);
+
+                transac_flow_changed(false, res_text, "");
+
+                if (buffer_vec[56] == '1') {
+                    iResult = send(s, "#0008Y00", 8, 0);
+                    if (iResult == SOCKET_ERROR) {
+                        printf("send failed: %d\n", iResult);
+                        closesocket(s);
+                        WSACleanup();
+                        return 1;
+                    }
+                }
+
+            } else if (command_code == '3') {
+                char sub_code = buffer_vec[6];
+                if (sub_code == 'M') {
+                    receipt_type = "MERCHANT";
+                } else if (sub_code == 'C') {
+                    receipt_type = "CUSTOMER";
+                } else if (sub_code == 'R') {
+                    // Store Receipt
+                    receipt = std::string(buffer_vec.begin() + 7, buffer_vec.end());
+                }
+                iResult = send(s, "#00073 ", 7, 0);
+                if (iResult == SOCKET_ERROR) {
+                    printf("send failed: %d\n", iResult);
+                    closesocket(s);
+                    WSACleanup();
+                    return 1;
+                }
+            }
+        } else if (iResult == 0) {
+            transac_flow_changed(true, "ERROR: Connection closed", "FAILED");
+            printf("Connection closed\n");
+            close_connection();
+            return 1;
+        } else {
+            transac_flow_changed(true, "ERROR: recv failed: "+ std::to_string(WSAGetLastError()), "FAILED");
+            printf("recv failed: %d\n", WSAGetLastError());
+            close_connection();
+            return 1;
+        }
+    } while (true);
+
+    
+
+
+    return 0;
+}
+
 int Linkly::cancel_transaction() {
     if (allow_cancel) {
         iResult = send(s, "#0008Y00", 8, 0);
@@ -424,10 +565,8 @@ int Linkly::cancel_transaction() {
             mapTransactionState(curr_ref, transaction_type, false, "", "", "", "", true));
         FlutterSpiPlugin::channel->InvokeMethod("txFlowStateChanged", std::move(transac_flow_state));
 
-        return 0;
-    } else {
-        return 1;
     }
+    return 0;
 }
 
 void Linkly::pair_flow_changed(bool finished, std::string flow_text, std::string status_text) {

@@ -30,6 +30,7 @@
 #define LINKLY_PORT "2011"
 #define DEFAULT_BUFLEN 1024
 #define START_FLAG '#'
+#define PRINTER '0'
 
 namespace flutter_spi {
 
@@ -73,6 +74,9 @@ class Linkly {
 
     // Start purchasing process
     static int init_purchase(std::string reference, int purchase_amount, int cashout_amount);
+   
+    // Start settlement process
+    static int init_settle(std::string reference);
 
     // Cancel transaction
     static int cancel_transaction();
@@ -101,7 +105,10 @@ class Linkly {
     static flutter::EncodableValue mapMessage(std::string message, std::string receipt,
                                               bool is_refund_or_settle = false);
 
+    // Helper function for flutter callbacks
     static void Linkly::pair_flow_changed(bool finished, std::string flow_text, std::string status_text);
+
+    // Helper function for flutter callbacks
     static void Linkly::transac_flow_changed(bool finished, std::string flow_text, std::string is_success,
                                              std::string receipt = "", bool cancel = false, bool sign_check = false,
                                              std::string sign_msg = "");
