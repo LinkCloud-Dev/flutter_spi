@@ -225,7 +225,7 @@ int Linkly::init_purchase(std::string reference, int purchase_amount, int cashou
     message.push_back('0');
 
     // Enable tip
-    message.push_back('0');
+    message.push_back('1');
 
     // Amount cash
     std::string cash_str = std::to_string(cashout_amount);
@@ -348,7 +348,6 @@ int Linkly::init_purchase(std::string reference, int purchase_amount, int cashou
                     return 0;
 
                 } else {
-
                     transac_flow_changed(true, res_text, "FAILED", receipt);
                     // Operator cancelled
                     if (res_code == "TM") {
@@ -409,7 +408,7 @@ int Linkly::init_purchase(std::string reference, int purchase_amount, int cashou
     return 0;
 }
 
-int Linkly::init_settle(std::string reference){
+int Linkly::init_settle(std::string reference) {
     transac_flow_changed(false, "Settlement initiated", "");
 
     std::vector<char> message;
@@ -539,15 +538,226 @@ int Linkly::init_settle(std::string reference){
             close_connection();
             return 1;
         } else {
-            transac_flow_changed(true, "ERROR: recv failed: "+ std::to_string(WSAGetLastError()), "FAILED");
+            transac_flow_changed(true, "ERROR: recv failed: " + std::to_string(WSAGetLastError()), "FAILED");
             printf("recv failed: %d\n", WSAGetLastError());
             close_connection();
             return 1;
         }
     } while (true);
 
-    
+    return 0;
+}
 
+int Linkly::init_refund(std::string reference, int refund_amount) {
+    transac_flow_changed(false, "Refund initiated", "");
+    std::vector<char> message;
+    char buffer[DEFAULT_BUFLEN];
+
+    curr_ref = reference;
+
+    std::string reference_short = reference.substr(0, 16);
+
+    // Start flag
+    message.push_back(START_FLAG);
+
+    // Length
+    message.insert(message.end(), 4, '0');
+
+    // Command code
+    message.push_back('M');
+
+    // Sub code
+    message.push_back('0');
+
+    // Merchant
+    message.insert(message.end(), 2, '0');
+
+    // Transaction type
+    message.push_back('R');
+
+    // Training mode
+    message.push_back('0');
+
+    // Enable tip
+    message.push_back('0');
+
+    // Amount cash
+    std::string cash_str = std::to_string(0);
+    for (int i = 0; i < 9 - cash_str.size(); i++) {
+        message.push_back('0');
+    }
+    for (char c : cash_str) {
+        message.push_back(c);
+    }
+
+    // Amount purchase
+    std::string purchase_str = std::to_string(refund_amount);
+    for (int i = 0; i < 9 - purchase_str.size(); i++) {
+        message.push_back('0');
+    }
+    for (char c : purchase_str) {
+        message.push_back(c);
+    }
+
+    // Auth code
+    message.insert(message.end(), 6, ' ');
+
+    // Transaction reference
+    for (char c : reference_short) {
+        message.push_back(c);
+    }
+
+    // Reciept auto-print
+    message.push_back(PRINTER);
+
+    // Cut receipt
+    message.push_back('1');
+
+    // Pan source
+    message.push_back(' ');
+
+    // Pan
+    message.insert(message.end(), 20, ' ');
+
+    // expiry date
+    message.insert(message.end(), 4, ' ');
+
+    // track 2
+    message.insert(message.end(), 40, ' ');
+
+    // Account type
+    message.push_back(' ');
+
+    // app
+    message.insert(message.end(), 2, '0');
+
+    // RRN
+    message.insert(message.end(), 12, ' ');
+
+    // Currency code
+    message.insert(message.end(), 3, ' ');
+
+    // Original txn type
+    message.push_back(' ');
+
+    // Voucher date
+    message.insert(message.end(), 6, ' ');
+
+    // Voucher time
+    message.insert(message.end(), 6, ' ');
+
+    // Reserved
+    message.insert(message.end(), 8, ' ');
+
+    // Purchase analysis data len
+    message.insert(message.end(), 3, '0');
+
+    update_message_length(message);
+
+    std::cout << message.data() << std::endl;
+    iResult = send(s, message.data(), (int)message.size(), 0);
+    if (iResult == SOCKET_ERROR) {
+        transac_flow_changed(true, "ERROR: send failed: " + std::to_string(iResult), "FAILED");
+
+        printf("send failed: %d\n", iResult);
+        closesocket(s);
+        WSACleanup();
+        return 1;
+    }
+
+    std::string receipt = "";
+    std::string receipt_type = "MERCHANT";
+
+    do {
+        iResult = recv(s, buffer, DEFAULT_BUFLEN, 0);
+        if (iResult > 0) {
+            std::vector<char> buffer_vec(buffer, buffer + iResult);
+
+            std::cout << buffer_vec.data() << std::endl;
+
+            char start_flag = buffer_vec[0];
+            if (start_flag != '#') {
+                std::cout << "STRAT_FLAG does not match!" << std::endl;
+                transac_flow_changed(true, "ERROR: STRAT_FLAG does not match!", "FAILED");
+                return 1;
+            }
+
+            // Check for event type
+            // M: Transaction event, read the response text and check if transaction is successful
+            // S: Display event, read the response text and pass it on to POS
+            // 3: Receipt event, print receipt
+            char command_code = buffer_vec[5];
+            if (command_code == 'M') {
+                char success_flag = buffer_vec[7];
+
+                std::string res_text(buffer_vec.begin() + 10, buffer_vec.begin() + 30);
+
+                std::string res_code(buffer_vec.begin() + 8, buffer_vec.begin() + 10);
+
+                reference = std::string(buffer_vec.begin() + 73, buffer_vec.begin() + 89);
+
+                if (success_flag == '1') {
+                    std::cout << "Transaction successful!" << std::endl;
+                    transac_flow_changed(true, res_text, "SUCCESS", receipt);
+                    return 0;
+
+                } else {
+                    transac_flow_changed(true, res_text, "FAILED", receipt);
+                    // Operator cancelled
+                    if (res_code == "TM") {
+                        return 0;
+                    }
+                    return 1;
+                }
+            } else if (command_code == 'S') {
+                std::string res_text(buffer_vec.begin() + 11, buffer_vec.begin() + 50);
+
+                allow_cancel = buffer_vec[51] == '1';
+
+                transac_flow_changed(false, res_text, "");
+
+                if (buffer_vec[56] == '1') {
+                    iResult = send(s, "#0008Y00", 8, 0);
+                    if (iResult == SOCKET_ERROR) {
+                        transac_flow_changed(true, "ERROR: Confirm response send failed", "FAILED");
+                        printf("send failed: %d\n", iResult);
+                        closesocket(s);
+                        WSACleanup();
+                        return 1;
+                    }
+                }
+
+            } else if (command_code == '3') {
+                char sub_code = buffer_vec[6];
+                if (sub_code == 'M') {
+                    receipt_type = "MERCHANT";
+                } else if (sub_code == 'C') {
+                    receipt_type = "CUSTOMER";
+                } else if (sub_code == 'R') {
+                    // Store Receipt
+                    receipt = std::string(buffer_vec.begin() + 7, buffer_vec.end());
+                }
+                iResult = send(s, "#00073 ", 7, 0);
+                if (iResult == SOCKET_ERROR) {
+                    transac_flow_changed(false, "ERROR: receipt response failed", "FAILED");
+                    printf("send failed: %d\n", iResult);
+                    closesocket(s);
+                    WSACleanup();
+                    return 1;
+                }
+            }
+        } else if (iResult == 0) {
+            transac_flow_changed(true, "ERROR: Connection closed", "FAILED");
+            printf("Connection closed\n");
+            close_connection();
+            return 1;
+        } else {
+            transac_flow_changed(true, "ERROR: recv failed: " + std::to_string(WSAGetLastError()), "FAILED");
+            printf("recv failed: %d\n", WSAGetLastError());
+            close_connection();
+            return 1;
+        }
+    } while (true);
 
     return 0;
 }
@@ -564,7 +774,6 @@ int Linkly::cancel_transaction() {
         std::unique_ptr<flutter::EncodableValue> transac_flow_state = std::make_unique<flutter::EncodableValue>(
             mapTransactionState(curr_ref, transaction_type, false, "", "", "", "", true));
         FlutterSpiPlugin::channel->InvokeMethod("txFlowStateChanged", std::move(transac_flow_state));
-
     }
     return 0;
 }
@@ -652,7 +861,8 @@ flutter::EncodableValue Linkly::mapTransactionState(std::string reference, std::
     return flutter::EncodableValue(map);
 }
 
-flutter::EncodableValue Linkly::mapMessage(std::string message, std::string receipt, bool is_refund_or_settle, bool is_customer_receipt) {
+flutter::EncodableValue Linkly::mapMessage(std::string message, std::string receipt, bool is_refund_or_settle,
+                                           bool is_customer_receipt) {
     std::map<flutter::EncodableValue, flutter::EncodableValue> data;
     std::map<flutter::EncodableValue, flutter::EncodableValue> map;
 

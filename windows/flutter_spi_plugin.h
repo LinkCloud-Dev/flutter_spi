@@ -78,6 +78,9 @@ class Linkly {
     // Start settlement process
     static int init_settle(std::string reference);
 
+    // Start refund process
+    static int init_refund(std::string reference, int refund_amount);
+
     // Cancel transaction
     static int cancel_transaction();
 

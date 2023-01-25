@@ -102,8 +102,22 @@ void FlutterSpiPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows* re
                 result->Error(e.what());
             }
 
-            // } else if (call.method_name() == "initiateRefundTx") {
-            //     // TODO
+            } else if (call.method_name() == "initiateRefundTx") {
+                try {
+                // Amount here is passed by in form of at least 4 digits integer or 0
+                // e.g. 15 dollars of refund is passed as 1500
+                const auto* arguments = std::get_if<flutter::EncodableMap>(call.arguments());
+                const auto* refund_amount = std::get_if<int>(ValueOrNull(*arguments, "refundAmount"));
+                const auto* reference = std::get_if<std::string>(ValueOrNull(*arguments, "posRefId"));
+
+                Linkly::transaction_type = "REFUND";
+                std::thread thread = std::thread(Linkly::init_refund, *reference, *refund_amount);
+                thread.detach();
+
+                result->Success("Refund initiated.");
+            } catch (std::exception e) {
+                result->Error(e.what());
+            }
             // } else if (call.method_name() == "acceptSignature") {
             //     // TODO
         } else if (call.method_name() == "cancelTransaction") {
