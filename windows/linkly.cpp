@@ -371,6 +371,8 @@ int Linkly::init_purchase(std::string reference, int purchase_amount, int cashou
                         WSACleanup();
                         return 1;
                     }
+                } else if (res_text.substr(0, 9) == "SIGNATURE") {
+                    transac_flow_changed(false, "Please confirm signature", "UNKNOWN", "", false, true, receipt);
                 }
 
             } else if (command_code == '3') {
@@ -778,6 +780,105 @@ int Linkly::cancel_transaction() {
     return 0;
 }
 
+int Linkly::accept_signature(bool accepted) {
+    std::vector<char> message;
+
+    // Start flag
+    message.push_back(START_FLAG);
+
+    // Length
+    message.insert(message.end(), 4, '0');
+
+    // Command code
+    message.push_back('Y');
+
+    // Sub code
+    message.push_back('0');
+
+    // Transaction type
+    if (accepted) {
+        message.push_back('1');
+    } else {
+        message.push_back('2');
+    }
+
+    update_message_length(message);
+
+    std::cout << message.data() << std::endl;
+    iResult = send(s, message.data(), (int)message.size(), 0);
+    if (iResult == SOCKET_ERROR) {
+        transac_flow_changed(true, "ERROR: send failed: " + std::to_string(iResult), "FAILED");
+
+        printf("send failed: %d\n", iResult);
+        closesocket(s);
+        WSACleanup();
+        return 1;
+    }
+
+    transac_flow_changed(false, "Signature processed", "UNKNOWN", "", false, false);
+
+    return 0;
+}
+
+std::string Linkly::get_last_transac() {
+    std::vector<char> message;
+    char buffer[DEFAULT_BUFLEN];
+
+    // Start flag
+    message.push_back(START_FLAG);
+
+    // Length
+    message.insert(message.end(), 4, '0');
+
+    // Command code
+    message.push_back('N');
+
+    // Sub code
+    message.push_back('0');
+
+    // App code
+    message.insert(message.end(), 2, '0');
+
+    // Merchant code
+    message.insert(message.end(), 2, '0');
+
+    update_message_length(message);
+
+    std::cout << message.data() << std::endl;
+    iResult = send(s, message.data(), (int)message.size(), 0);
+    if (iResult == SOCKET_ERROR) {
+        transac_flow_changed(true, "ERROR: send failed: " + std::to_string(iResult), "FAILED");
+
+        printf("send failed: %d\n", iResult);
+        closesocket(s);
+        WSACleanup();
+        return "";
+    }
+
+    do {
+        iResult = recv(s, buffer, DEFAULT_BUFLEN, 0);
+        if (iResult > 0) {
+            if (buffer[7] == '1'){
+                return "";
+            }else{
+                return buffer;
+            }
+
+        } else if (iResult == 0) {
+            transac_flow_changed(true, "ERROR: Connection closed", "FAILED");
+            printf("Connection closed\n");
+            close_connection();
+            return "";
+        } else {
+            transac_flow_changed(true, "ERROR: recv failed: " + std::to_string(WSAGetLastError()), "FAILED");
+            printf("recv failed: %d\n", WSAGetLastError());
+            close_connection();
+            return "";
+        }
+
+    } while (true);
+}
+
 void Linkly::pair_flow_changed(bool finished, std::string flow_text, std::string status_text) {
     std::unique_ptr<flutter::EncodableValue> pair_flow_state =
         std::make_unique<flutter::EncodableValue>(mapPairingFlowState(flow_text, finished));
@@ -852,7 +953,11 @@ flutter::EncodableValue Linkly::mapTransactionState(std::string reference, std::
     map[flutter::EncodableValue("success")] = flutter::EncodableValue(success);    // Needed
     map[flutter::EncodableValue("response")] =
         flutter::EncodableValue(mapMessage(message, receipt, type == "SETTLE" || type == "REFUND"));  // Needed
-    map[flutter::EncodableValue("signatureRequiredMessage")] = flutter::EncodableValue();             // Needed
+
+    std::map<flutter::EncodableValue, flutter::EncodableValue> signature;
+    signature[flutter::EncodableValue("receiptToSign")] = flutter::EncodableValue(signature_message);
+    map[flutter::EncodableValue("signatureRequiredMessage")] = flutter::EncodableValue(signature);  // Needed
+
     map[flutter::EncodableValue("phoneForAuthRequiredMessage")] = flutter::EncodableValue();
     map[flutter::EncodableValue("cancelAttemptTime")] = flutter::EncodableValue();
     map[flutter::EncodableValue("request")] = flutter::EncodableValue();

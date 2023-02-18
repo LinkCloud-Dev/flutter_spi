@@ -66,8 +66,7 @@ void FlutterSpiPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows* re
                 std::thread thread = std::thread(Linkly::pair);
                 thread.detach();
                 result->Success("Successfully logged on.");
-            }
-            catch(std::exception e) {
+            } catch (std::exception e) {
                 result->Error(e.what());
             }
 
@@ -102,8 +101,8 @@ void FlutterSpiPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows* re
                 result->Error(e.what());
             }
 
-            } else if (call.method_name() == "initiateRefundTx") {
-                try {
+        } else if (call.method_name() == "initiateRefundTx") {
+            try {
                 // Amount here is passed by in form of at least 4 digits integer or 0
                 // e.g. 15 dollars of refund is passed as 1500
                 const auto* arguments = std::get_if<flutter::EncodableMap>(call.arguments());
@@ -118,15 +117,20 @@ void FlutterSpiPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows* re
             } catch (std::exception e) {
                 result->Error(e.what());
             }
-            // } else if (call.method_name() == "acceptSignature") {
-            //     // TODO
+        } else if (call.method_name() == "acceptSignature") {
+            // TODO
+            const auto* arguments = std::get_if<flutter::EncodableMap>(call.arguments());
+                const auto* accepted = std::get_if<bool>(ValueOrNull(*arguments, "accepted"));
+
+            Linkly::accept_signature(accepted);
+            result->Success("Signature processs done.");
+
         } else if (call.method_name() == "cancelTransaction") {
             Linkly::cancel_transaction();
             result->Success("Cancellation attempted.");
 
         } else if (call.method_name() == "initiateSettleTx") {
             try {
-                
                 const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
                 const auto* ref = std::get_if<std::string>(ValueOrNull(*args, "id"));
 
@@ -152,12 +156,18 @@ void FlutterSpiPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows* re
         } else if (call.method_name() == "getDeviceSN") {
             // Send dummy code since Windows does not have consistent way to get a SN
             result->Success(flutter::EncodableValue("aaaa-bbbb-cccc"));
+        } else if (call.method_name() == "initiateGetLastTx") {
+            // Get last transaction
+            std::string last_tx = Linkly::get_last_transac();
 
+            if (last_tx != ""){
+                result->Success(flutter::EncodableValue(last_tx));
+            }else{
+                result->Error("Get last transaction failed.");
+            }
             // } else if (call.method_name() == "initiateRecovery") {
             //     // NOT USED
             // } else if (call.method_name() == "setPrintMerchantCopy") {
-            //     // NOT USED
-            // } else if (call.method_name() == "initiateGetLastTx") {
             //     // NOT USED
             // } else if (call.method_name() == "initiateMotoPurchaseTx") {
             //     // NOT USED

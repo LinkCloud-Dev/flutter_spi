@@ -93,6 +93,12 @@ class Linkly {
     // Helper function to set the length bytes of the message
     static void update_message_length(std::vector<char> &message);
 
+    // Accept signature or not
+    static int accept_signature(bool accepted);
+
+    // Get last transaction record
+    static std::string get_last_transac();
+
     // Map paring flow state to EncodableValeu<std::map>
     static flutter::EncodableValue mapPairingFlowState(std::string message, bool finished);
 

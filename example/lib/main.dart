@@ -138,6 +138,10 @@ class _HomeState extends State<Home> {
               child: const Text('Charge \$15.00'),
             ),
             ElevatedButton(
+              onPressed: () => _startTransaction(1508, context),
+              child: const Text('Charge \$15.08'),
+            ),
+            ElevatedButton(
               onPressed: () => _initSettleTx(context),
               child: const Text('Settle'),
             ),
