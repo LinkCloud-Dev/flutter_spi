@@ -207,6 +207,23 @@ class TransactionFlowState {
   }
 }
 
+class Tenant {
+  String code;
+  String name;
+
+  Tenant({
+    required this.code,
+    required this.name,
+  });
+
+  factory Tenant.fromMap(Map<dynamic, dynamic> obj) {
+    return Tenant(
+      code: obj['code'],
+      name: obj['name'],
+    );
+  }
+}
+
 enum SpiStatus {
   UNPAIRED,
   PAIRED_CONNECTING,
@@ -276,9 +293,20 @@ class FlutterSpi {
     await _channel.invokeMethod('setEftposAddress', {"address": address});
   }
 
+  static Future<void> setTenantCode(String tenantCode) async {
+    await _channel.invokeMethod('setTenantCode', {"tenantCode": tenantCode});
+  }
+
   static Future<void> setPosInfo(String posVendorId, String posVersion) async {
     await _channel.invokeMethod(
         'setPosInfo', {"posVendorId": posVendorId, "posVersion": posVersion});
+  }
+
+  static Future<List<Tenant>> getTenantsList(String apiKey, {String countryCode = "AU"}) async {
+    final List tenants = await _channel.invokeMethod('getTenantsList', 
+      {"apiKey": apiKey, "countryCode": countryCode});
+    List<Tenant> tenantsList = tenants.map((e) => Tenant.fromMap(e)).toList();
+    return tenantsList;
   }
 
   static Future<String> get getDeviceSN async {
