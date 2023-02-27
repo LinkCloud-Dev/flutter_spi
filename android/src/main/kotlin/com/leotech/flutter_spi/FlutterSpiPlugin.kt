@@ -48,8 +48,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       setSerialNumber(call.argument("serialNumber")!!, result)
     } else if (call.method == "setEftposAddress") {
       setEftposAddress(call.argument("address")!!, result)
+    } else if (call.method == "setTenantCode") {
+      setTenantCode(call.argument("tenantCode")!!, result)
     } else if (call.method == "setPosInfo") {
       setPosInfo(call.argument("posVendorId")!!, call.argument("posVersion")!!, result)
+    } else if (call.method == "getTenantsList") {
+      getTenantsList(call.argument("apiKey")!!, call.argument("countryCode")!!, result)
     } else if (call.method == "getVersion") {
       getVersion(result)
     } else if (call.method == "getCurrentStatus") {
@@ -233,6 +237,13 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   /**
+   * Allows you to set the acquirer code.
+   */
+  fun setTenantCode(tenantCode: String, result: Result) {
+    result.handleResult(mSpi.setTenantCode(tenantCode), result)
+  }
+
+  /**
    * Sets values used to identify the POS software to the EFTPOS terminal.
    *
    *
@@ -246,6 +257,15 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     result.success(null)
   }
 
+  /**
+   * Get available tenants list.
+   *
+   * @param apiKey  The api key to access mx51 api.
+   * @param countryCode  Country code.
+   */
+  fun getTenantsList(apiKey: String, countryCode: String, result: Result) {
+    result.success(mapTenants(Spi.getAvailableTenants("LinkPOS", apiKey, countryCode)))
+  }
 
   /**
    * Retrieves package version of the SPI client library.
@@ -582,7 +602,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     map.put("phoneForAuthRequiredMessage", mapPhoneForAuthRequired(obj.phoneForAuthRequiredMessage))
     map.put("cancelAttemptTime", obj.cancelAttemptTime.toString())
     map.put("request", mapMessage(obj.request))
-    map.put("awaitingGltResponse", obj.isAwaitingGltResponse)
+    map.put("awaitingGltResponse", obj.isAwaitingGtResponse)  //GltResponse has been replaced by GtResponse
     return map
   }
 
@@ -601,6 +621,19 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     map.put("event", obj?.eventName)
     map.put("data", hashMapToWritableMap(obj?.data))
     return map
+  }
+
+  fun mapTenants(obj: Tenants): ArrayList<HashMap<String, String>> {
+    var list : ArrayList<HashMap<String, String>>
+             = ArrayList<HashMap<String, String>>()
+    for (datum in obj.data) {
+      var map : HashMap<String, String>
+              = HashMap<String, String> ()
+      map.put("name", datum.name)
+      map.put("code", datum.code)
+      list.add(map)
+    }
+    return list
   }
 
   @Suppress("UNCHECKED_CAST")

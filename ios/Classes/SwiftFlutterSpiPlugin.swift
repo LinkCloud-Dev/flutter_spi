@@ -92,6 +92,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
             initSpi(
                 posId: args["posId"] as! String,
                 eftposAddress: args["eftposAddress"] as! String,
+                serialNumber: args["serialNumber"] as! String,
                 secrets: args["secrets"] as? [String: String],
                 result: result
             )
@@ -263,10 +264,10 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         spiChannel.invokeMethod(flutterMethod, arguments: message)
     }
     
-    private func initSpi(posId: String, eftposAddress: String, secrets: [String: String]?, result: @escaping FlutterResult) {
+    private func initSpi(posId: String, eftposAddress: String, serialNumber: String, secrets: [String: String]?, result: @escaping FlutterResult) {
         client.posId = posId
         client.eftposAddress = eftposAddress
-        client.serialNumber = "321-496-507"
+        client.serialNumber = serialNumber
         client.testMode = false
         client.autoAddressResolutionEnable = false
         client.posVendorId = "LinkPOS"
@@ -356,7 +357,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     }
     
     private func initiatePurchaseTx(posRefId: String, purchaseAmount: Int, tipAmount: Int, cashoutAmount: Int, promptForCashout: Bool, result: @escaping FlutterResult) {
-        client.enablePayAtTable()
+        // client.enablePayAtTable()
         client.initiatePurchaseTx(posRefId, purchaseAmount: purchaseAmount, tipAmount: tipAmount, cashoutAmount: cashoutAmount, promptForCashout: promptForCashout, completion: printResult)
         result(nil)
     }

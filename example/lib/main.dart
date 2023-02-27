@@ -100,7 +100,14 @@ class _HomeState extends State<Home> {
     FlutterSpi.ackFlowEndedAndBackToIdle();
   }
 
-  Future<void> _showDialog<T>({required BuildContext context, required Widget child}) async {
+  void _getTenants(BuildContext context) async {
+    final tenants = await FlutterSpi.getTenantsList("BurgerPosDeviceAPIKey");
+    for(Tenant tenant in tenants) {
+      print("name: ${tenant.name}, code: ${tenant.code}");
+    }
+  }
+
+  Future<void> _showDialog<T>({BuildContext context, Widget child}) async {
     await showDialog<T>(
       barrierDismissible: false,
       context: context,
@@ -152,6 +159,10 @@ class _HomeState extends State<Home> {
             ElevatedButton(
               onPressed: () => _endTx(context),
               child: const Text('End Transaction'),
+            ),
+            ElevatedButton(
+              onPressed: () => _getTenants(context),
+              child: Text('Get Tenants'),
             ),
           ],
         ),
