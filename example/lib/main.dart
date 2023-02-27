@@ -1,14 +1,13 @@
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-
 import 'package:flutter_spi/flutter_spi.dart';
 import 'package:flutter_spi_example/spi/spi_refund_dialog.dart';
 import 'package:flutter_spi_example/spi/spi_settle_dialog.dart';
 import 'package:flutter_spi_example/spi/spi_transaction_dialog.dart';
 import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/spi_pair.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 void main() {
   runApp(const MyApp());
@@ -102,12 +101,13 @@ class _HomeState extends State<Home> {
 
   void _getTenants(BuildContext context) async {
     final tenants = await FlutterSpi.getTenantsList("BurgerPosDeviceAPIKey");
-    for(Tenant tenant in tenants) {
+    for (Tenant tenant in tenants) {
       print("name: ${tenant.name}, code: ${tenant.code}");
     }
   }
 
-  Future<void> _showDialog<T>({BuildContext context, Widget child}) async {
+  Future<void> _showDialog<T>(
+      {required BuildContext context, required Widget child}) async {
     await showDialog<T>(
       barrierDismissible: false,
       context: context,
