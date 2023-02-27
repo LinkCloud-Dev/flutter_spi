@@ -24,13 +24,13 @@ enum TxUiState {
 class TransactionDialog extends StatelessWidget {
   final int amount;
   TransactionDialog({
-    Key key,
-    @required this.amount,
+    Key? key,
+    required this.amount,
   }) : super(key: key);
 
   Future<void> _retry(BuildContext context) async {
     var spi = Provider.of<SpiModel>(context, listen: false);
-    await spi.retryTransaction(Uuid().v4(), amount, 0, 0, false);
+    await spi.retryTransaction(const Uuid().v4(), amount, 0, 0, false);
   }
 
   @override
@@ -40,27 +40,27 @@ class TransactionDialog extends StatelessWidget {
     Widget content = WaitingTx(amount: amount);
     if (spi.transactionFlowState == null) {
       content = WaitingTx(amount: amount);
-    } else if (!spi.transactionFlowState.finished) {
+    } else if (!spi.transactionFlowState!.finished) {
       if (spi.status == SpiStatus.PAIRED_CONNECTING) {
         content = WaitingConnection(amount: amount);
       }
-      if (spi.transactionFlowState.awaitingSignatureCheck) {
+      if (spi.transactionFlowState!.awaitingSignatureCheck) {
         content = SignatureRequire(amount: amount);
       }
-      if (spi.transactionFlowState.attemptingToCancel) {
+      if (spi.transactionFlowState!.attemptingToCancel) {
         content = AttemptingCancelTransaction(amount: amount);
       }
     } else {
-      if (spi.transactionFlowState.success == 'UNKNOWN') {
+      if (spi.transactionFlowState!.success == 'UNKNOWN') {
         content = TxUnknown(
           amount: amount,
           retry: _retry,
         );
       }
-      if (spi.transactionFlowState.success == 'SUCCESS') {
+      if (spi.transactionFlowState!.success == 'SUCCESS') {
         content = TxSuccessful(amount: amount);
       }
-      if (spi.transactionFlowState.success == 'FAILED') {
+      if (spi.transactionFlowState!.success == 'FAILED') {
         content = TxFaild(
           amount: amount,
           retry: _retry,
@@ -69,11 +69,11 @@ class TransactionDialog extends StatelessWidget {
     }
 
     return SimpleDialog(
-      contentPadding: EdgeInsets.all(0),
-      titlePadding: EdgeInsets.fromLTRB(40, 0, 40, 0),
+      contentPadding: const EdgeInsets.all(0),
+      titlePadding: const EdgeInsets.fromLTRB(40, 0, 40, 0),
       title: Container(
-        padding: EdgeInsets.all(20),
-        child: Center(
+        padding: const EdgeInsets.all(20),
+        child: const Center(
           child: Text('EFTPOS - Order XYZ'),
         ),
       ),

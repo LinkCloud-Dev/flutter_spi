@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AttemptingCancelTransaction extends StatelessWidget {
   final int amount;
-  const AttemptingCancelTransaction({Key key, @required this.amount})
+  const AttemptingCancelTransaction({Key? key, required this.amount})
       : super(key: key);
 
   @override

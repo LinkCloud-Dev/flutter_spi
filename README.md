@@ -13,3 +13,5 @@ For help getting started with Flutter, view our
 [online documentation](https://flutter.dev/docs), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
+## Linkly Integration
+Linkly EFT-Client listens on ```port 2011``` for POS request, and listens on ```port 2012``` for EFTPOS machine (i.e. PIN pad).

@@ -6,7 +6,7 @@ import '../spi_model.dart';
 class TxUnknown extends StatelessWidget {
   final int amount;
   final Function retry;
-  const TxUnknown({Key key, @required this.amount, @required this.retry})
+  const TxUnknown({Key? key, required this.amount, required this.retry})
       : super(key: key);
 
   void _cancel(BuildContext context) {
@@ -26,15 +26,15 @@ class TxUnknown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: true);
-    String responseText;
-    if (spi.transactionFlowState.response.data['host_response_text'] != null) {
+    String? responseText;
+    if (spi.transactionFlowState!.response!.data!['host_response_text'] != null) {
       responseText =
-          spi.transactionFlowState.response.data['host_response_text'];
+          spi.transactionFlowState!.response!.data!['host_response_text'];
     }
 
-    String customerCopy;
-    if (spi.transactionFlowState.response.data['customer_receipt'] != null) {
-      customerCopy = spi.transactionFlowState.response.data['customer_receipt'];
+    String? customerCopy;
+    if (spi.transactionFlowState!.response!.data!['customer_receipt'] != null) {
+      customerCopy = spi.transactionFlowState!.response!.data!['customer_receipt'];
     }
 
     return Container(
