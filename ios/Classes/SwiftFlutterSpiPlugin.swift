@@ -296,7 +296,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         result(nil)
     }
 
-    private func setSerialNumber(serialNumber: String, result: @escaping Result) {
+    private func setSerialNumber(serialNumber: String, result: @escaping FlutterResult) {
         client.serialNumber = serialNumber
         result(nil)
     }
