@@ -103,6 +103,11 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
                 throw SpiError.unknown
             }
             setPosId(id: args["posId"] as! String, result: result)
+        } else if (call.method == "setSerialNumber") {
+            guard let args = call.arguments as? [String:Any] else {
+                throw SpiError.unknown
+            }
+            setSerialNumber(serialNumber: args["serialNumber"] as! String, result: result)
         } else if (call.method == "getVersion") {
             getVersion(result: result)
         } else if (call.method == "getDeviceSN") {
@@ -288,6 +293,11 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     
     private func setPosId(id: String, result: @escaping FlutterResult) {
         client.posId = id
+        result(nil)
+    }
+
+    private func setSerialNumber(serialNumber: String, result: @escaping Result) {
+        client.serialNumber = serialNumber
         result(nil)
     }
     
