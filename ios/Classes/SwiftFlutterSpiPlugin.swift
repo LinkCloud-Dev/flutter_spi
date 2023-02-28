@@ -126,7 +126,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
             }
             getTenantsList(apiKey: args["apiKey"] as! String,
                            countryCode: args["countryCode"] as! String,
-                           result: FlutterResult)
+                           result: result)
         } else if (call.method == "getVersion") {
             getVersion(result: result)
         } else if (call.method == "getDeviceSN") {
@@ -345,7 +345,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     }
 
     private func getTenantsList(apiKey: String, countryCode: String, result: @escaping FlutterResult) {
-        result(mapTenants(Spi.getAvailableTenants("LinkPOS", apiKey, countryCode)))
+        result(mapTenants(client.getAvailableTenants("LinkPOS", apiKey, countryCode)))
     }
 
     private func getVersion(result: @escaping FlutterResult) {
@@ -457,7 +457,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     }
 
     private func initiateRecovery(posRefId: String, txType: String, result: @escaping FlutterResult) {
-        client.initiateRecovery(posRefId, TransactionType.valueOf(txType), completion: printResult)
+        client.initiateRecovery(posRefId, SPITransactionType.txType, completion: printResult)
         result(nil)
     }
     
@@ -542,7 +542,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
 
     private func mapTenants(obj: SPITenantsResult) -> [[String: String]] {
         var list:[[String: String]] = [[:]]
-        for datum in obj.data {
+        for datum in obj {
             var map:[String:String] = [:]
             map["name"] = datum.name
             map["code"] = datum.code
