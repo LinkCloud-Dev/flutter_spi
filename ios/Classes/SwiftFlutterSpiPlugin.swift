@@ -540,7 +540,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         return map
     }
 
-    private func mapTenants(obj: [Tenant]) -> [[String: String]] {
+    private func mapTenants(obj: Tenant) -> [[String: String]] {
         var list:[[String: String]] = [[:]]
         for datum in obj.data {
             var map:[String:String] = [:]
