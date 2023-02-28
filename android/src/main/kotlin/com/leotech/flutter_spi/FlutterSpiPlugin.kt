@@ -150,6 +150,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       mSpi = Spi(posId, serialNumber, eftposAddress, if (secrets.isNullOrEmpty()) null else Secrets(secrets!!.get("encKey"), secrets!!.get("hmacKey")))
       val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
       mSpi.setPosInfo("LinkPOS", pInfo.versionName)
+      mSpi.setAutoAddressResolution(false);
       setStatusChangedHandler()
       setPairingFlowStateChangedHandler()
       setTxFlowStateChangedHandler()
@@ -228,9 +229,16 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   /**
+   * Allows you to enable/disable auto address resolution.
+   */
+  fun setAutoAddressResolution(autoAddressResolution: Boolean, result: Result) {
+    result.handleResult(mSpi.setAutoAddressResolution(autoAddressResolution), result)
+  }
+
+  /**
    * Allows you to set the PIN pad address. Sometimes the PIN pad might change IP address (we recommend
    * reserving static IPs if possible). Either way you need to allow your User to enter the IP address
-   * of the PIN pad.
+   * of the PIN pad. Make sure you disable auto address resolution before calling this function.
    */
   fun setEftposAddress(address: String, result: Result) {
     result.handleResult(mSpi.setEftposAddress(address), result)
