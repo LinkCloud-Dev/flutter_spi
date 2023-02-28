@@ -108,6 +108,25 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
                 throw SpiError.unknown
             }
             setSerialNumber(serialNumber: args["serialNumber"] as! String, result: result)
+        } else if (call.method == "setTenantCode") {
+            guard let args = call.arguments as? [String:Any] else {
+                throw SpiError.unknown
+            }
+            setTenantCode(tenantCode: args["tenantCode"] as! String, result: result)
+        } else if (call.method == "setPosInfo") {
+            guard let args = call.arguments as? [String:Any] else {
+                throw SpiError.unknown
+            }
+            setPosInfo(posVendorId: args["posVendorId"] as! String,
+                        posVersion: args["posVersion"] as! String,
+                        result: result)
+        } else if (call.method == "getTenantsList") {
+            guard let args = call.arguments as? [String:Any] else {
+                throw SpiError.unknown
+            }
+            getTenantsList(apiKey: args["apiKey"] as! String,
+                           countryCode: args["countryCode"] as! String,
+                           result: FlutterResult)
         } else if (call.method == "getVersion") {
             getVersion(result: result)
         } else if (call.method == "getDeviceSN") {
@@ -212,6 +231,14 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
             )
         } else if (call.method == "initiateGetLastTx") {
             initiateGetLastTx(result: result)
+        } else if (call.method == "initiateRecovery") {
+            guard let args = call.arguments as? [String:Any] else {
+                throw SpiError.unknown
+            }
+            initiateRecovery(posRefId: args["posRefId"] as! String,
+                             txType: args["txType"] as! String,
+                             result: result
+            )
         } else if (call.method == "dispose") {
             dispose(result: result)
         } else if (call.method == "setPromptForCustomerCopyOnEftpos") {
@@ -305,11 +332,20 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         client.eftposAddress = address
         result(nil)
     }
+
+    private func setTenantCode(tenantCode: String, result: @escaping FlutterResult) {
+        client.tenantCode = tenantCode
+        result(nil)
+    }
     
     private func setPosInfo(posVendorId: String, posVersion: String, result: @escaping FlutterResult) {
         client.posVersion = posVersion
         client.posVendorId = posVendorId
         result(nil)
+    }
+
+    private func getTenantsList(apiKey: String, countryCode: String, result: Result) {
+        result(mapTenants(Spi.getAvailableTenants("LinkPOS", apiKey, countryCode)))
     }
 
     private func getVersion(result: @escaping FlutterResult) {
@@ -419,6 +455,11 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         client.initiateGetLastTx(completion: printResult)
         result(nil)
     }
+
+    private func initiateRecovery(posRefId: String, txType: String, result: @escaping FlutterResult) {
+        client.initiateRecovery(posRefId, TransactionType.valueOf(txType), completion: printResult)
+        result(nil)
+    }
     
     private func dispose(result: @escaping FlutterResult) {
         result(nil)
@@ -497,6 +538,17 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         map["event"] = message.eventName
         map["data"] = message.data
         return map
+    }
+
+    private func mapTenants(obj: Tenants) -> [[String: String]] {
+        var list:[[String: String]] = [[:]]
+        for datum in obj.data {
+            var map:[String:String] = [:]
+            map["name"] = datum.name
+            map["code"] = datum.code
+            list.append(map)
+        }
+        return list
     }
     
     private func mapSignatureRequest(obj: SPISignatureRequired) -> [String: Any] {
