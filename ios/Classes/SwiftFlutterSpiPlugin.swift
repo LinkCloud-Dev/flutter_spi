@@ -344,7 +344,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         result(nil)
     }
 
-    private func getTenantsList(apiKey: String, countryCode: String, result: Result) {
+    private func getTenantsList(apiKey: String, countryCode: String, result: @escaping FlutterResult) {
         result(mapTenants(Spi.getAvailableTenants("LinkPOS", apiKey, countryCode)))
     }
 
@@ -540,7 +540,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         return map
     }
 
-    private func mapTenants(obj: Tenants) -> [[String: String]] {
+    private func mapTenants(obj: SPITenants) -> [[String: String]] {
         var list:[[String: String]] = [[:]]
         for datum in obj.data {
             var map:[String:String] = [:]
