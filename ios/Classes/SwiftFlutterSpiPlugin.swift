@@ -64,16 +64,16 @@ extension SPITransactionType {
 }
 
 public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
-    
+
     private static var _instance: SwiftFlutterSpiPlugin = SwiftFlutterSpiPlugin()
 
   var client = SPIClient()
   var spiChannel = FlutterMethodChannel()
-    
+
     static var current: SwiftFlutterSpiPlugin {
         return _instance
     }
-    
+
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "flutter_spi", binaryMessenger: registrar.messenger())
     let instance = SwiftFlutterSpiPlugin()
@@ -274,7 +274,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
                                 details: nil))
     }
   }
-    
+
     public func spi(_ spi: SPIClient, statusChanged state: SPIState) {
         SPILogMsg("statusChanged \(state.status.name)")
         invokeFlutterMethod(flutterMethod:"statusChanged", message: state.status.name)
@@ -291,11 +291,11 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     public func spi(_ spi: SPIClient, deviceAddressChanged state: SPIState) {
         invokeFlutterMethod(flutterMethod:"deviceAddressChanged", message: state.deviceAddressStatus.address)
     }
-    
+
     private func invokeFlutterMethod(flutterMethod: String, message: Any?) {
         spiChannel.invokeMethod(flutterMethod, arguments: message)
     }
-    
+
     private func initSpi(posId: String, eftposAddress: String, serialNumber: String, secrets: [String: String]?, result: @escaping FlutterResult) {
         client.posId = posId
         client.eftposAddress = eftposAddress
@@ -304,7 +304,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         client.autoAddressResolutionEnable = false
         client.posVendorId = "LinkPOS"
         client.posVersion = "1.0.0"
-        
+
         if secrets != nil {
             client.setSecretEncKey(secrets?["encKey"], hmacKey: secrets?["hmacKey"])
         }
@@ -312,12 +312,12 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         client.delegate = self
         result(nil)
     }
-    
+
     private func start(result: @escaping FlutterResult) {
         client.start()
         result(nil)
     }
-    
+
     private func setPosId(id: String, result: @escaping FlutterResult) {
         client.posId = id
         result(nil)
@@ -327,7 +327,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         client.serialNumber = serialNumber
         result(nil)
     }
-    
+
     private func setEftposAddress(address: String, result: @escaping FlutterResult) {
         client.eftposAddress = address
         result(nil)
@@ -337,7 +337,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         client.tenantCode = tenantCode
         result(nil)
     }
-    
+
     private func setPosInfo(posVendorId: String, posVersion: String, result: @escaping FlutterResult) {
         client.posVersion = posVersion
         client.posVendorId = posVendorId
@@ -345,79 +345,84 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
     }
 
     private func getTenantsList(apiKey: String, countryCode: String, result: @escaping FlutterResult) {
-        result(mapTenants(client.getAvailableTenants("LinkPOS", apiKey, countryCode)))
+        SPIClient.getAvailableTenants("LinkPOS", apiKey: apiKey, countryCode: countryCode) { (data) in
+            if (data != nil) {
+                var tenants = (data as? Array<Dictionary<String, String>>)!
+                result(tenants)
+            }
+        }
     }
 
     private func getVersion(result: @escaping FlutterResult) {
         result(SPIClient.getVersion())
     }
-    
+
     private func getDeviceSN(result: @escaping FlutterResult) {
         result(UIDevice.current.identifierForVendor!.uuidString)
     }
-    
+
     private func getCurrentStatus(result: @escaping FlutterResult) {
         result(client.state.status.name)
     }
-    
+
     private func getCurrentFlow(result: @escaping FlutterResult) {
         result(client.state.flow.name)
     }
-    
+
     private func getCurrentPairingFlowState(result: @escaping FlutterResult) {
         result(mapPairingFlowState(state: client.state.pairingFlowState))
     }
-    
+
     private func getCurrentTxFlowState(result: @escaping FlutterResult) {
         result(mapPairingFlowState(state: client.state.pairingFlowState))
     }
-    
+
     private func getConfig(result: @escaping FlutterResult) {
         result(mapSpiConfig(obj: client.config))
     }
-    
+
     private func ackFlowEndedAndBackToIdle(result: @escaping FlutterResult) {
         client.ackFlowEndedAndBack { (_, state) in
             result(nil)
         }
     }
-    
+
     private func pair(result: @escaping FlutterResult) {
         client.pair()
         result(nil)
     }
-    
+
     private func pairingConfirmCode(result: @escaping FlutterResult) {
         client.pairingConfirmCode()
         result(nil)
     }
-    
+
     private func pairingCancel(result: @escaping FlutterResult) {
         client.pairingCancel()
         result(nil)
     }
-    
+
     private func unpair(result: @escaping FlutterResult) {
         client.unpair()
         result(nil)
     }
-    
+
     private func initiatePurchaseTx(posRefId: String, purchaseAmount: Int, tipAmount: Int, cashoutAmount: Int, promptForCashout: Bool, result: @escaping FlutterResult) {
         // client.enablePayAtTable()
         client.initiatePurchaseTx(posRefId, purchaseAmount: purchaseAmount, tipAmount: tipAmount, cashoutAmount: cashoutAmount, promptForCashout: promptForCashout, completion: printResult)
         result(nil)
     }
-    
+
     private func initiateRefundTx(posRefId: String, refundAmount: Int, result: @escaping FlutterResult) {
         client.initiateRefundTx(posRefId, amountCents: refundAmount, completion: printResult)
         result(nil)
     }
-    
+
     private func acceptSignature(accepted: Bool, result: @escaping FlutterResult) {
         client.acceptSignature(accepted)
         result(nil)
     }
-    
+
     private func submitAuthCode(authCode: String, result: @escaping FlutterResult) {
         client.submitAuthCode(authCode, completion: { (result) in
                               print(String(format: "Valid format: %@)", result?.isValidFormat ?? false))
@@ -425,71 +430,71 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
                           })
         result(nil)
     }
-    
+
     private func cancelTransaction(result: @escaping FlutterResult) {
         client.cancelTransaction()
         result(nil)
     }
-    
+
     private func initiateCashoutOnlyTx(posRefId: String, amountCents: Int, result: @escaping FlutterResult) {
         client.initiateCashoutOnlyTx(posRefId, amountCents: amountCents, completion: printResult)
         result(nil)
     }
-    
+
     private func initiateMotoPurchaseTx(posRefId: String, amountCents: Int, result: @escaping FlutterResult) {
         client.initiateMotoPurchaseTx(posRefId, amountCents: amountCents, completion: printResult)
         result(nil)
     }
-    
+
     private func initiateSettleTx(id: String, result: @escaping FlutterResult) {
         client.initiateSettleTx(id, completion: printResult)
         result(nil)
     }
-    
+
     private func initiateSettlementEnquiry(posRefId: String, result: @escaping FlutterResult) {
         client.initiateSettlementEnquiry(posRefId, completion: printResult)
         result(nil)
     }
-    
+
     private func initiateGetLastTx(result: @escaping FlutterResult) {
         client.initiateGetLastTx(completion: printResult)
         result(nil)
     }
 
     private func initiateRecovery(posRefId: String, txType: String, result: @escaping FlutterResult) {
-        client.initiateRecovery(posRefId, SPITransactionType.txType, completion: printResult)
+        client.initiateRecovery(posRefId, transactionType: SPITransactionType.getLastTransaction, completion: printResult)
         result(nil)
     }
-    
+
     private func dispose(result: @escaping FlutterResult) {
         result(nil)
     }
-    
+
     private func setPromptForCustomerCopyOnEftpos(promptForCustomerCopyOnEftpos: Bool, result: @escaping FlutterResult) {
         client.config.promptForCustomerCopyOnEftpos = promptForCustomerCopyOnEftpos
         result(nil)
     }
-    
+
     private func setSignatureFlowOnEftpos(signatureFlowOnEftpos: Bool, result: @escaping FlutterResult) {
         client.config.signatureFlowOnEftpos = signatureFlowOnEftpos
         result(nil)
     }
-    
+
     private func setPrintMerchantCopy(printMerchantCopy: Bool, result: @escaping FlutterResult) {
         client.config.printMerchantCopy = printMerchantCopy
         result(nil)
     }
-    
-    
-    
-    
+
+
+
+
     private func mapSecrets(obj: SPISecrets) -> [String: Any] {
         var map:[String: Any] = [:]
         map["encKey"] = obj.encKey
         map["hmacKey"] = obj.hmacKey
         return map
     }
-    
+
     private func mapPairingFlowState(state: SPIPairingFlowState) -> [String: Any] {
         var map:[String: Any] = [:]
         map["message"] = state.message
@@ -500,7 +505,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         map["successful"] = state.isSuccessful
         return map
     }
-    
+
     private func mapTransactionState(state: SPITransactionFlowState) -> [String: Any] {
         var map:[String: Any] = [:]
         map["posRefId"] = state.posRefId
@@ -521,17 +526,17 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         map["cancelAttemptTime"] = state.cancelAttemptTime != nil ? stringFromDate(state.cancelAttemptTime) : nil
         map["request"] = state.request != nil ? mapMessage(message: state.request) : nil
         map["awaitingGltResponse"] = state.isAwaitingGltResponse
-        
+
         return map
     }
-    
+
     private func mapSpiConfig(obj: SPIConfig) -> [String: Bool] {
         var map:[String: Bool] = [:]
         map["promptForCustomerCopyOnEftpos"] = obj.promptForCustomerCopyOnEftpos
         map["signatureFlowOnEftpos"] = obj.signatureFlowOnEftpos
         return map
     }
-    
+
     private func mapMessage(message: SPIMessage) -> [String: Any] {
         var map:[String: Any] = [:]
         map["id"] = message.mid
@@ -540,17 +545,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         return map
     }
 
-    private func mapTenants(obj: SPITenantsResult) -> [[String: String]] {
-        var list:[[String: String]] = [[:]]
-        for datum in obj {
-            var map:[String:String] = [:]
-            map["name"] = datum.name
-            map["code"] = datum.code
-            list.append(map)
-        }
-        return list
-    }
-    
+
     private func mapSignatureRequest(obj: SPISignatureRequired) -> [String: Any] {
         var map:[String: Any] = [:]
         map["requestId"] = obj.requestId
@@ -558,7 +553,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         map["receiptToSign"] = obj.getMerchantReceipt()
         return map
     }
-    
+
     private func mapPhoneForAuthRequired(obj: SPIPhoneForAuthRequired) -> [String: Any] {
         var map:[String: Any] = [:]
         map["requestId"] = obj.requestId
@@ -567,13 +562,13 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         map["merchantId"] = obj.getMerchantId()
         return map
     }
-    
+
     private func stringFromDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd MMM yyyy HH:mm" //yyyy
         return formatter.string(from: date)
     }
-    
+
     private func mapTxStateSuccess(_ success: SPIMessageSuccessState) -> String {
         switch success {
         case SPIMessageSuccessState.success:
@@ -584,7 +579,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
             return "UNKNOWN"
         }
     }
-    
+
     func printResult(result: SPIInitiateTxResult?) {
         DispatchQueue.main.async {
             SPILogMsg(result?.message)
