@@ -268,11 +268,12 @@ class FlutterSpi {
   }
 
   static Future<void> init(String posId, String serialNumber, String eftposAddress, 
-      {Map<String, String>? secrets}) async {
+      String apiKey, {Map<String, String>? secrets}) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
       "serialNumber": serialNumber,
       "eftposAddress": eftposAddress,
+      "apiKey": apiKey,
       "secrets": secrets,
     });
   }
