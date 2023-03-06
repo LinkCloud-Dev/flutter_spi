@@ -38,7 +38,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "init") {
-      init(call.argument("posId")!!, call.argument("eftposAddress")!!, call.argument("serialNumber")!!,
+      init(call.argument("posId")!!, call.argument("serialNumber")!!, call.argument("eftposAddress")!!,
         call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("secrets"), result)
     } else if (call.method == "start") {
       start(result)
