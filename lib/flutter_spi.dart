@@ -222,6 +222,13 @@ class Tenant {
       name: obj['name'],
     );
   }
+
+  Map<String, String> toJSON() {
+    return <String, String>{
+      'code': code,
+      'name': name,
+    };
+  }
 }
 
 enum SpiStatus {
@@ -268,11 +275,13 @@ class FlutterSpi {
   }
 
   static Future<void> init(String posId, String serialNumber, String eftposAddress, 
-      {Map<String, String>? secrets}) async {
+      String apiKey, String tenantCode, {Map<String, String>? secrets}) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
       "serialNumber": serialNumber,
       "eftposAddress": eftposAddress,
+      "apiKey": apiKey,
+      "tenantCode": tenantCode,
       "secrets": secrets,
     });
   }

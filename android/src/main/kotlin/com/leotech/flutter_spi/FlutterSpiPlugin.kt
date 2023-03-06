@@ -39,7 +39,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "init") {
       init(call.argument("posId")!!, call.argument("eftposAddress")!!, call.argument("serialNumber")!!,
-        call.argument("secrets"), result)
+        call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("secrets"), result)
     } else if (call.method == "start") {
       start(result)
     } else if (call.method == "setPosId") {
@@ -134,7 +134,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       }
   }
 
-  fun init(posId: String, serialNumber: String, eftposAddress: String, secrets: HashMap<String, String>?, result: Result) {
+  fun init(posId: String, serialNumber: String, eftposAddress: String, apiKey: String, tenantCode: String, secrets: HashMap<String, String>?, result: Result) {
     var initialized = true
     try {
       mSpi
@@ -151,6 +151,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
       mSpi.setPosInfo("LinkPOS", pInfo.versionName)
       mSpi.setAutoAddressResolution(false);
+      mSpi.setDeviceApiKey(apiKey);
+      mSpi.setTenantCode(tenantCode);
       setStatusChangedHandler()
       setPairingFlowStateChangedHandler()
       setTxFlowStateChangedHandler()
