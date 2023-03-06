@@ -13,6 +13,7 @@ class SpiModel extends ChangeNotifier {
   String? serialNumber;
   String? eftPosAddress;
   String? apiKey;
+  String? tenantCode;
   Secrets? secrets;
   PairingFlowState? pairingFlowState;
   TransactionFlowState? transactionFlowState;
@@ -23,6 +24,7 @@ class SpiModel extends ChangeNotifier {
     this.serialNumber,
     this.eftPosAddress,
     this.apiKey,
+    this.tenantCode,
     this.secrets,
   });
 
@@ -37,6 +39,7 @@ class SpiModel extends ChangeNotifier {
     serialNumber = prefs.getString('serialNumber') ?? '000-000-000';
     eftPosAddress = prefs.getString('eftPosAddress') ?? '192.168.1.99';
     apiKey = "BurgerPosDeviceAPIKey";
+    tenantCode = "wbc";
     final persistedSecrets = prefs.getString('secrets');
     if (persistedSecrets != null) {
       secrets = Secrets.fromMap(jsonDecode(persistedSecrets));
@@ -44,7 +47,7 @@ class SpiModel extends ChangeNotifier {
     notifyListeners();
     // start spi
     await FlutterSpi.init(posId!, serialNumber!, eftPosAddress!, apiKey!,
-        secrets: secrets != null ? secrets!.toJSON() : null);
+        tenantCode!, secrets: secrets != null ? secrets!.toJSON() : null);
     await FlutterSpi.start();
   }
 
