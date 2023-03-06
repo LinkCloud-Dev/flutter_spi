@@ -38,8 +38,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "init") {
-      init(call.argument("posId")!!, call.argument("eftposAddress")!!, call.argument("serialNumber")!!,
-        call.argument("secrets"), result)
+      init(call.argument("posId")!!, call.argument("serialNumber")!!, call.argument("eftposAddress")!!,
+        call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("secrets"), result)
     } else if (call.method == "start") {
       start(result)
     } else if (call.method == "setPosId") {
@@ -134,7 +134,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       }
   }
 
-  fun init(posId: String, serialNumber: String, eftposAddress: String, secrets: HashMap<String, String>?, result: Result) {
+  fun init(posId: String, serialNumber: String, eftposAddress: String, apiKey: String, tenantCode: String, secrets: HashMap<String, String>?, result: Result) {
     var initialized = true
     try {
       mSpi
@@ -150,6 +150,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       mSpi = Spi(posId, serialNumber, eftposAddress, if (secrets.isNullOrEmpty()) null else Secrets(secrets!!.get("encKey"), secrets!!.get("hmacKey")))
       val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
       mSpi.setPosInfo("LinkPOS", pInfo.versionName)
+      mSpi.setAutoAddressResolution(false);
+      mSpi.setDeviceApiKey(apiKey);
+      mSpi.setTenantCode(tenantCode);
       setStatusChangedHandler()
       setPairingFlowStateChangedHandler()
       setTxFlowStateChangedHandler()
@@ -228,9 +231,16 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   /**
+   * Allows you to enable/disable auto address resolution.
+   */
+  fun setAutoAddressResolution(autoAddressResolution: Boolean, result: Result) {
+    result.handleResult(mSpi.setAutoAddressResolution(autoAddressResolution), result)
+  }
+
+  /**
    * Allows you to set the PIN pad address. Sometimes the PIN pad might change IP address (we recommend
    * reserving static IPs if possible). Either way you need to allow your User to enter the IP address
-   * of the PIN pad.
+   * of the PIN pad. Make sure you disable auto address resolution before calling this function.
    */
   fun setEftposAddress(address: String, result: Result) {
     result.handleResult(mSpi.setEftposAddress(address), result)
