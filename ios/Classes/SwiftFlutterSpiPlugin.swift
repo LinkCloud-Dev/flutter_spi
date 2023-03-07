@@ -93,6 +93,8 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
                 posId: args["posId"] as! String,
                 eftposAddress: args["eftposAddress"] as! String,
                 serialNumber: args["serialNumber"] as! String,
+                apiKey: args["apiKey"] as! String,
+                tenantCode: args["tenantCode"] as! String,
                 secrets: args["secrets"] as? [String: String],
                 result: result
             )
@@ -296,7 +298,7 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         spiChannel.invokeMethod(flutterMethod, arguments: message)
     }
 
-    private func initSpi(posId: String, eftposAddress: String, serialNumber: String, secrets: [String: String]?, result: @escaping FlutterResult) {
+    private func initSpi(posId: String, eftposAddress: String, serialNumber: String, apiKey: String, tenantCode: String, secrets: [String: String]?, result: @escaping FlutterResult) {
         client.posId = posId
         client.eftposAddress = eftposAddress
         client.serialNumber = serialNumber
@@ -304,6 +306,8 @@ public class SwiftFlutterSpiPlugin: NSObject, FlutterPlugin, SPIDelegate {
         client.autoAddressResolutionEnable = false
         client.posVendorId = "LinkPOS"
         client.posVersion = "1.0.0"
+        client.deviceApiKey = apiKey
+        client.tenantCode = tenantCode
 
         if secrets != nil {
             client.setSecretEncKey(secrets?["encKey"], hmacKey: secrets?["hmacKey"])
