@@ -39,7 +39,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "init") {
       init(call.argument("posId")!!, call.argument("serialNumber")!!, call.argument("eftposAddress")!!,
-        call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("secrets"), result)
+        call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("autoAddressResolution")!!,
+        call.argument("testMode")!!, call.argument("secrets"), result)
     } else if (call.method == "start") {
       start(result)
     } else if (call.method == "setPosId") {
@@ -108,6 +109,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       setSignatureFlowOnEftpos(call.argument("signatureFlowOnEftpos")!!, result)
     } else if (call.method == "setPrintMerchantCopy") {
       setPrintMerchantCopy(call.argument("printMerchantCopy")!!, result)
+    } else if (call.method == "setTestMode") {
+      setTestMode(call.argument("testMode")!!, result)
+    } else if (call.method == "setAutoAddressResolution") {
+      setAutoAddressResolution(call.argument("autoAddressResolution")!!, result)
+    } else if (call.method == "getCurrentDeviceStatus") {
+      getCurrentDeviceStatus(result)
     } else  {
       result.notImplemented()
     }
@@ -134,7 +141,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       }
   }
 
-  fun init(posId: String, serialNumber: String, eftposAddress: String, apiKey: String, tenantCode: String, secrets: HashMap<String, String>?, result: Result) {
+  fun init(posId: String, serialNumber: String, eftposAddress: String, apiKey: String, tenantCode: String, autoAddressResolution: Boolean, testMode: Boolean, secrets: HashMap<String, String>?, result: Result) {
     var initialized = true
     try {
       mSpi
@@ -150,13 +157,15 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       mSpi = Spi(posId, serialNumber, eftposAddress, if (secrets.isNullOrEmpty()) null else Secrets(secrets!!.get("encKey"), secrets!!.get("hmacKey")))
       val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
       mSpi.setPosInfo("LinkPOS", pInfo.versionName)
-      mSpi.setAutoAddressResolution(false);
       mSpi.setDeviceApiKey(apiKey);
       mSpi.setTenantCode(tenantCode);
+      mSpi.setAutoAddressResolution(autoAddressResolution);
+      mSpi.setTestMode(testMode);
       setStatusChangedHandler()
       setPairingFlowStateChangedHandler()
       setTxFlowStateChangedHandler()
       setSecretsChangedHandler()
+      setDeviceAddressChangedHandler()
       result.success(null)
     } catch (e: CompatibilityException) {
       result.error("INIT_ERROR", "Init Error.", null)
@@ -204,6 +213,15 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   /**
+   * Subscribe to this event to know when device address changes, e.g. autoAddressResolution
+   */
+  private fun setDeviceAddressChangedHandler() {
+    mSpi.setDeviceAddressChangedHandler {
+      invokeFlutterMethod("deviceAddressChanged", mapDeviceAddressStatus(it))
+    }
+  }
+
+  /**
    * Call this method after constructing an instance of the class and subscribing to events.
    * It will start background maintenance threads.
    *
@@ -231,6 +249,16 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   /**
+   * Allows you to enable/disable test mode.
+   * Set it to true only while you are developing the integration.
+   * It defaults to false.
+   * For a real merchant, always leave it set to false.
+   */
+  fun setTestMode(testMode: Boolean, result: Result) {
+    result.handleResult(mSpi.setTestMode(testMode), result)
+  }
+
+  /**
    * Allows you to enable/disable auto address resolution.
    */
   fun setAutoAddressResolution(autoAddressResolution: Boolean, result: Result) {
@@ -250,7 +278,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
    * Allows you to set the acquirer code.
    */
   fun setTenantCode(tenantCode: String, result: Result) {
-    result.handleResult(mSpi.setTenantCode(tenantCode), result)
+    result.handleResult(mSpi.setAcquirerCode(tenantCode), result)
   }
 
   /**
@@ -556,6 +584,13 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
   }
 
+  /**
+   * The current device status (deviceAddressStatus)
+   */
+  fun getCurrentDeviceStatus(result: Result) {
+    result.success(mapDeviceAddressStatus(mSpi.getCurrentDeviceStatus()))
+  }
+
   fun setPromptForCustomerCopyOnEftpos(promptForCustomerCopyOnEftpos: Boolean, result: Result) {
     mSpi.config.isPromptForCustomerCopyOnEftpos = promptForCustomerCopyOnEftpos
     result.success(null)
@@ -646,6 +681,18 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     return list
   }
 
+  fun mapDeviceAddressStatus(obj: DeviceAddressStatus): HashMap<String, Any> {
+    var map : HashMap<String, Any>
+            = HashMap<String, Any> ()
+
+    map.put("lastUpdated", obj.lastUpdated)
+    map.put("address", obj.address)
+    map.put("deviceAddressResponseCode", obj.deviceAddressResponseCode.name)
+    map.put("responseStatusDescription", obj.responseStatusDescription)
+    map.put("responseMessage", obj.responseMessage)
+    return map
+  }
+
   @Suppress("UNCHECKED_CAST")
   private fun hashMapToWritableMap(map: Map<String, Any?>?): HashMap<String, Any?> {
     var result : HashMap<String, Any?>
@@ -704,6 +751,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     private const val pairingFlowStateChangedEvent = "PairingFlowStateChanged"
     private const val txFlowStateChangedEvent = "TxFlowStateChanged"
     private const val secretsChangedEvent = "SecretsChanged"
+    private const val deviceAddressChangedEvent = "DeviceAddressChanged"
 
     private fun Result.handleResult(success: Boolean, result: Result) {
       if (success) {

@@ -231,6 +231,40 @@ class Tenant {
   }
 }
 
+class DeviceAddressStatus {
+  String? lastUpdated;
+  String? address;
+  DeviceAddressResponseCode? deviceAddressResponseCode;
+  String? responseStatusDescription;
+  String? responseMessage;
+
+  DeviceAddressStatus({
+    this.lastUpdated,
+    this.address,
+    this.deviceAddressResponseCode,
+    this.responseStatusDescription,
+    this.responseMessage
+  });
+
+  factory DeviceAddressStatus.fromMap(Map<dynamic, dynamic> obj) {
+    return DeviceAddressStatus(
+      lastUpdated: obj['lastUpdated'],
+      address: obj['address'],
+      deviceAddressResponseCode: EnumToString.fromString(DeviceAddressResponseCode.values, obj['deviceAddressResponseCode']),
+      responseStatusDescription: obj['responseStatusDescription'],
+      responseMessage: obj['responseMessage']
+    );
+  }
+}
+
+enum DeviceAddressResponseCode {
+  SUCCESS,
+  INVALID_SERIAL_NUMBER,
+  ADDRESS_NOT_CHANGED,
+  SERIAL_NUMBER_NOT_CHANGED,
+  DEVICE_SERVICE_ERROR,
+}
+
 enum SpiStatus {
   UNPAIRED,
   PAIRED_CONNECTING,
@@ -260,6 +294,7 @@ enum SpiMethodCallEvents {
   pairingFlowStateChanged,
   txFlowStateChanged,
   secretsChanged,
+  deviceAddressChanged,
 }
 
 class FlutterSpi {
@@ -275,13 +310,15 @@ class FlutterSpi {
   }
 
   static Future<void> init(String posId, String serialNumber, String eftposAddress, 
-      String apiKey, String tenantCode, {Map<String, String>? secrets}) async {
+      String apiKey, String tenantCode, bool autoAddressResolution, bool testMode, {Map<String, String>? secrets}) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
       "serialNumber": serialNumber,
       "eftposAddress": eftposAddress,
       "apiKey": apiKey,
       "tenantCode": tenantCode,
+      "autoAddressResolution": autoAddressResolution,
+      "testMode": testMode,
       "secrets": secrets,
     });
   }
@@ -305,6 +342,21 @@ class FlutterSpi {
   static Future<void> setTenantCode(String tenantCode) async {
     await _channel.invokeMethod('setTenantCode', {"tenantCode": tenantCode});
   }
+
+  static Future<void> setTestMode(bool testMode) async {
+    await _channel.invokeMethod('setTestMode', {"testMode": testMode});
+  }
+
+  static Future<void> setAutoAddressResolution(bool autoAddressResolution) async {
+    await _channel.invokeMethod('setAutoAddressResolution', {"autoAddressResolution": autoAddressResolution});
+  }
+
+  static Future<DeviceAddressStatus> get getCurrentDeviceStatus async {
+    final Map<Object?, Object?> deviceStatus = await _channel.invokeMethod('getCurrentDeviceStatus');
+    DeviceAddressStatus deviceAddressStatus = DeviceAddressStatus.fromMap(deviceStatus);
+    return deviceAddressStatus;
+  }
+
 
   static Future<void> setPosInfo(String posVendorId, String posVersion) async {
     await _channel.invokeMethod(
