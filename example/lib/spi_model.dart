@@ -17,6 +17,9 @@ class SpiModel extends ChangeNotifier {
   Secrets? secrets;
   PairingFlowState? pairingFlowState;
   TransactionFlowState? transactionFlowState;
+  DeviceAddressStatus? deviceAddressStatus;
+  bool autoAddressResolution = false;
+  bool testMode = false;
 
   SpiModel({
     this.status = SpiStatus.UNPAIRED,
@@ -39,22 +42,27 @@ class SpiModel extends ChangeNotifier {
     serialNumber = prefs.getString('serialNumber') ?? '000-000-000';
     eftPosAddress = prefs.getString('eftPosAddress') ?? '192.168.1.99';
     apiKey = "BurgerPosDeviceAPIKey";
-    tenantCode = "wbc";
+    tenantCode = "gko";
     final persistedSecrets = prefs.getString('secrets');
     if (persistedSecrets != null) {
       secrets = Secrets.fromMap(jsonDecode(persistedSecrets));
     }
     notifyListeners();
     // start spi
-    // Non thumbzup machine
 
+    // // Non thumbzup machine
+    //
     // await FlutterSpi.init(
     //     posId: posId!,
     //     serialNumber: serialNumber!,
     //     eftposAddress: eftPosAddress!,
     //     apiKey: apiKey!,
     //     tenantCode: tenantCode!,
-    //     secrets: secrets != null ? secrets!.toJSON() : null);
+    //     secrets: secrets != null ? secrets!.toJSON() : null,
+    //     autoAddressResolution: autoAddressResolution,
+    //     testMode: testMode);
+    // await FlutterSpi.setAutoAddressResolution(autoAddressResolution);
+    // await FlutterSpi.setTestMode(testMode);
 
     // TODO: Add keys
     // Thumbzup machine
@@ -84,6 +92,16 @@ class SpiModel extends ChangeNotifier {
 
   void updateEftPosAddress(String value) {
     eftPosAddress = value;
+    notifyListeners();
+  }
+
+  void updateAutoAddressResolution(bool value) {
+    autoAddressResolution = value;
+    notifyListeners();
+  }
+
+  void updateTestMode(bool value) {
+    testMode = value;
     notifyListeners();
   }
 
@@ -134,6 +152,13 @@ class SpiModel extends ChangeNotifier {
             print('Transaction Success.');
           }
           break;
+        case SpiMethodCallEvents.deviceAddressChanged:
+          deviceAddressStatus = DeviceAddressStatus.fromMap(methodCall.arguments);
+          if (status == SpiStatus.UNPAIRED && deviceAddressStatus != null) {
+            await handleDeviceAddressStatus(deviceAddressStatus!);
+          }
+          notifyListeners();
+          break;
         default:
       }
     } catch (e) {
@@ -141,15 +166,45 @@ class SpiModel extends ChangeNotifier {
     }
   }
 
+  Future<void> handleDeviceAddressStatus(DeviceAddressStatus deviceAddressStatus) async {
+    switch (deviceAddressStatus.deviceAddressResponseCode) {
+      case DeviceAddressResponseCode.SUCCESS:
+      // TODO: update eftpos addr, enable pair button
+        updateEftPosAddress(deviceAddressStatus.address ?? '');
+        break;
+      case DeviceAddressResponseCode.INVALID_SERIAL_NUMBER:
+      // TODO: set eftpos addr "", disable pair button
+        updateEftPosAddress('');
+        break;
+      case DeviceAddressResponseCode.DEVICE_SERVICE_ERROR:
+      // TODO: set eftpos addr "", disable pair button
+        updateEftPosAddress('');
+        break;
+      case DeviceAddressResponseCode.ADDRESS_NOT_CHANGED:
+      // TODO: show message, enable pair button
+        break;
+      case DeviceAddressResponseCode.SERIAL_NUMBER_NOT_CHANGED:
+      // TODO: show message, enable pair button
+        break;
+      default:
+      // TODO: The IP address have not changed or The serial number is invalid!
+        break;
+    }
+  }
+
   Future<void> save() async {
-    // await FlutterSpi.setTestMode(testMode);
-    // await FlutterSpi.setAutoAddressResolution(autoAddress);
     if (posId!.isNotEmpty) await FlutterSpi.setPosId(posId!);
     if (serialNumber!.isNotEmpty) {
       await FlutterSpi.setSerialNumber(serialNumber!);
     }
-    if (eftPosAddress!.isNotEmpty) {
+    if (!autoAddressResolution && eftPosAddress != '') { // cannot call setEftposAddress while autoAddressResolution == true
       await FlutterSpi.setEftposAddress(eftPosAddress!);
+    }
+    await FlutterSpi.setTestMode(testMode);
+    await FlutterSpi.setAutoAddressResolution(autoAddressResolution);
+    deviceAddressStatus = await FlutterSpi.getCurrentDeviceStatus;
+    if (deviceAddressStatus != null) {
+      await handleDeviceAddressStatus(deviceAddressStatus!);
     }
     print('Save Success.');
     print(posId);

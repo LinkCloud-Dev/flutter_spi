@@ -10,6 +10,8 @@ abstract class FlutterSpiPlatform {
       String? apiKey,
       String? tenantCode,
       Map<String, String>? secrets,
+      bool? autoAddressResolution,
+      bool? testMode,
       String? spiType,
       String? appKey,
       String? merchantId,
@@ -24,6 +26,12 @@ abstract class FlutterSpiPlatform {
   Future<void> setEftposAddress(String address);
 
   Future<void> setTenantCode(String tenantCode);
+
+  Future<void> setAutoAddressResolution(bool autoAddressResolution);
+
+  Future<DeviceAddressStatus> get getCurrentDeviceStatus;
+
+  Future<void> setTestMode(bool testMode);
 
   Future<void> setPosInfo(String posVendorId, String posVersion);
 

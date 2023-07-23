@@ -235,6 +235,43 @@ class Tenant {
   }
 }
 
+class DeviceAddressStatus {
+  String? lastUpdated;
+  String? address;
+  DeviceAddressResponseCode? deviceAddressResponseCode;
+  String? responseStatusDescription;
+  String? responseMessage;
+
+  DeviceAddressStatus({
+    this.lastUpdated,
+    this.address,
+    this.deviceAddressResponseCode,
+    this.responseStatusDescription,
+    this.responseMessage
+  });
+
+  factory DeviceAddressStatus.fromMap(Map<dynamic, dynamic> obj) {
+    return DeviceAddressStatus(
+      lastUpdated: obj['lastUpdated'],
+      address: obj['address'],
+      deviceAddressResponseCode: obj['deviceAddressResponseCode'] == null
+          ? null
+          : EnumToString.fromString(DeviceAddressResponseCode.values,
+              obj['deviceAddressResponseCode']),
+      responseStatusDescription: obj['responseStatusDescription'],
+      responseMessage: obj['responseMessage']
+    );
+  }
+}
+
+enum DeviceAddressResponseCode {
+  SUCCESS,
+  INVALID_SERIAL_NUMBER,
+  ADDRESS_NOT_CHANGED,
+  SERIAL_NUMBER_NOT_CHANGED,
+  DEVICE_SERVICE_ERROR,
+}
+
 enum SpiStatus {
   UNPAIRED,
   PAIRED_CONNECTING,
@@ -264,6 +301,7 @@ enum SpiMethodCallEvents {
   pairingFlowStateChanged,
   txFlowStateChanged,
   secretsChanged,
+  deviceAddressChanged,
 }
 
 class FlutterSpi {
@@ -284,6 +322,8 @@ class FlutterSpi {
     String? apiKey, // MX51
     String? tenantCode, // MX51
     Map<String, String>? secrets, // MX51, ThumbzUp
+    bool? autoAddressResolution, // MX51
+    bool? testMode, // MX51
     String? spiType, // MX51, ThumbzUp
     String? appKey, // ThumbzUp
     String? merchantId, // ThumbzUp
@@ -302,6 +342,8 @@ class FlutterSpi {
       apiKey: apiKey,
       tenantCode: tenantCode,
       secrets: secrets,
+      autoAddressResolution: autoAddressResolution,
+      testMode: testMode,
       appKey: appKey,
       merchantId: merchantId,
       username: username,
@@ -326,6 +368,18 @@ class FlutterSpi {
 
   static Future<void> setTenantCode(String tenantCode) async {
     flutterSpi.setTenantCode(tenantCode);
+  }
+
+  static Future<void> setTestMode(bool testMode) async {
+    flutterSpi.setTestMode(testMode);
+  }
+
+  static Future<void> setAutoAddressResolution(bool autoAddressResolution) async {
+    flutterSpi.setAutoAddressResolution(autoAddressResolution);
+  }
+
+  static Future<DeviceAddressStatus> get getCurrentDeviceStatus async {
+    return flutterSpi.getCurrentDeviceStatus;
   }
 
   static Future<void> setPosInfo(String posVendorId, String posVersion) async {

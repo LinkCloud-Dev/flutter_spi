@@ -9,8 +9,21 @@ import 'package:flutter_spi_example/spi/paring_dialog.dart';
 import 'package:flutter_spi_example/spi_model.dart';
 import 'package:flutter_spi_example/spi/unpair_dialog.dart';
 
-class Pair extends StatelessWidget {
+class Pair extends StatefulWidget {
   const Pair({Key? key}) : super(key: key);
+
+  @override
+  State<Pair> createState() => _PairState();
+}
+
+class _PairState extends State<Pair> {
+  final TextEditingController _eftposAddressController = TextEditingController();
+
+  @override
+  void dispose() {
+    _eftposAddressController.dispose();
+    super.dispose();
+  }
 
   void _pair(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: false);
@@ -41,6 +54,8 @@ class Pair extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: true);
+    _eftposAddressController.text = spi.eftPosAddress!;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('PAIR'),
@@ -83,7 +98,22 @@ class Pair extends StatelessWidget {
             const SizedBox(
               height: 10,
             ),
-            TextFormField(
+            spi.autoAddressResolution
+            ? TextFormField(
+              controller: _eftposAddressController,
+              textInputAction: TextInputAction.next,
+              keyboardType: TextInputType.text,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'EFTPOS ADDRESS',
+              ),
+              maxLines: 1,
+              readOnly: true,
+              onChanged: (value) {
+                spi.updateEftPosAddress(value);
+              },
+            )
+            : TextFormField(
               textInputAction: TextInputAction.next,
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
@@ -97,6 +127,41 @@ class Pair extends StatelessWidget {
                 spi.updateEftPosAddress(value);
               },
             ),
+            const Divider(),
+            Container(
+              margin: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Text("Auto-Address Resolution:"),
+                      Checkbox(
+                        checkColor: Colors.white,
+                        value: spi.autoAddressResolution,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            spi.updateAutoAddressResolution(value!);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Text("Test Mode:"),
+                      Checkbox(
+                        checkColor: Colors.white,
+                        value: spi.testMode,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            spi.updateTestMode(value!);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+              ]
+            ),),
             const Divider(),
             (spi.status == SpiStatus.UNPAIRED && spi.secrets != null)
                 ? Container(

@@ -23,6 +23,8 @@ class SpiMethodChannel implements FlutterSpiPlatform {
       String? apiKey,
       String? tenantCode,
       Map<String, String>? secrets,
+      bool? autoAddressResolution,
+      bool? testMode,
       String? spiType,
       String? appKey,
       String? merchantId,
@@ -34,6 +36,8 @@ class SpiMethodChannel implements FlutterSpiPlatform {
       "apiKey": apiKey,
       "tenantCode": tenantCode,
       "secrets": secrets,
+      "autoAddressResolution": autoAddressResolution,
+      "testMode": testMode,
     });
   }
 
@@ -61,6 +65,24 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   @override
   Future<void> setTenantCode(String tenantCode) async {
     await _channel.invokeMethod('setTenantCode', {"tenantCode": tenantCode});
+  }
+
+
+  @override
+  Future<void> setTestMode(bool testMode) async {
+    await _channel.invokeMethod('setTestMode', {"testMode": testMode});
+  }
+
+  @override
+  Future<void> setAutoAddressResolution(bool autoAddressResolution) async {
+    await _channel.invokeMethod('setAutoAddressResolution', {"autoAddressResolution": autoAddressResolution});
+  }
+
+  @override
+  Future<DeviceAddressStatus> get getCurrentDeviceStatus async {
+    final Map<Object?, Object?> deviceStatus = await _channel.invokeMethod('getCurrentDeviceStatus');
+    DeviceAddressStatus deviceAddressStatus = DeviceAddressStatus.fromMap(deviceStatus);
+    return deviceAddressStatus;
   }
 
   @override

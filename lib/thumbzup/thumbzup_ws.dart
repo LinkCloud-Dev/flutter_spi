@@ -576,6 +576,8 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       String? apiKey,
       String? tenantCode,
       Map<String, String>? secrets,
+      bool? autoAddressResolution,
+      bool? testMode,
       String? spiType,
       String? appKey,
       String? merchantId,
@@ -790,6 +792,22 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   @override
   Future<void> setTenantCode(String tenantCode) async {
     // NOT NEEDED
+  }
+
+  @override
+  Future<void> setTestMode(bool testMode) async {
+    // NOT NEEDED
+  }
+
+  @override
+  Future<void> setAutoAddressResolution(bool autoAddressResolution) async {
+    // NOT NEEDED
+  }
+
+  @override
+  Future<DeviceAddressStatus> get getCurrentDeviceStatus async {
+    // NOT NEEDED
+    return DeviceAddressStatus();
   }
 
   @override
