@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/foundation.dart';
@@ -233,6 +234,22 @@ class Tenant {
       'name': name,
     };
   }
+
+  static Map<String, String> toMap(Tenant tenant) {
+    return <String, String>{
+      'code': tenant.code,
+      'name': tenant.name,
+    };
+  }
+  static String encodeList(List<Tenant> tenantsList) => json.encode(
+    tenantsList
+        .map<Map<String, dynamic>>((tenant) => Tenant.toMap(tenant))
+        .toList(),
+  );
+  static List<Tenant> decodeList(String tenantsList) =>
+      (json.decode(tenantsList) as List<dynamic>)
+          .map<Tenant>((tenant) => Tenant.fromMap(tenant))
+          .toList();
 }
 
 class DeviceAddressStatus {
