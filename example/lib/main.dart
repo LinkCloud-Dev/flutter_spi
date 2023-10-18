@@ -49,7 +49,7 @@ class _HomeState extends State<Home> {
   void _initSpi() async {
     var spi = Provider.of<SpiModel>(context, listen: false);
     await spi.init();
-    FlutterSpi.handleMethodCall(spi.subscribeSpiEvents);
+    SpiModel.flutterSpi.handleMethodCall(spi.subscribeSpiEvents);
   }
 
   Future<void> _startTransaction(int amount, BuildContext context) async {
@@ -73,7 +73,7 @@ class _HomeState extends State<Home> {
       print('Please Pair EFTPOS.');
       return;
     }
-    await FlutterSpi.initiateSettleTx(const Uuid().v4());
+    await SpiModel.flutterSpi.initiateSettleTx(const Uuid().v4());
     _showDialog<String>(
       context: context,
       child: SettleDialog(),
@@ -86,7 +86,7 @@ class _HomeState extends State<Home> {
       print('Please Pair EFTPOS.');
       return;
     }
-    await FlutterSpi.initiateRefundTx(const Uuid().v4(), amount);
+    await SpiModel.flutterSpi.initiateRefundTx(const Uuid().v4(), amount);
     _showDialog<String>(
       context: context,
       child: RefundTransactionDialog(
@@ -96,11 +96,11 @@ class _HomeState extends State<Home> {
   }
 
   void _endTx(BuildContext context) {
-    FlutterSpi.ackFlowEndedAndBackToIdle();
+    SpiModel.flutterSpi.ackFlowEndedAndBackToIdle();
   }
 
   void _getTenants(BuildContext context) async {
-    final tenants = await FlutterSpi.getTenantsList("BurgerPosDeviceAPIKey");
+    final tenants = await SpiModel.flutterSpi.getTenantsList("BurgerPosDeviceAPIKey");
     for (Tenant tenant in tenants) {
       print("name: ${tenant.name}, code: ${tenant.code}");
     }

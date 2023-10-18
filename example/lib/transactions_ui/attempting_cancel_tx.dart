@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spi/flutter_spi.dart';
+import 'package:flutter_spi_example/spi_model.dart';
 
 class WaitingConnection extends StatelessWidget {
   final int amount;
   const WaitingConnection({Key? key, required this.amount}) : super(key: key);
 
   Future<void> _cancelTx() async {
-    await FlutterSpi.cancelTransaction();
+    await SpiModel.flutterSpi.cancelTransaction();
   }
 
   @override

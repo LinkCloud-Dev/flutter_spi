@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spi/flutter_spi.dart';
+import 'package:flutter_spi_example/spi_model.dart';
 
 class SignatureRequire extends StatelessWidget {
   final int amount;
   const SignatureRequire({Key? key, required this.amount}) : super(key: key);
 
   Future<void> _acceptSignature(bool accepted) async {
-    await FlutterSpi.acceptSignature(accepted);
+    await SpiModel.flutterSpi.acceptSignature(accepted);
   }
 
   @override

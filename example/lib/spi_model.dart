@@ -17,6 +17,7 @@ class SpiModel extends ChangeNotifier {
   Secrets? secrets;
   PairingFlowState? pairingFlowState;
   TransactionFlowState? transactionFlowState;
+  static FlutterSpi flutterSpi = FlutterSpi();
 
   SpiModel({
     this.status = SpiStatus.UNPAIRED,
@@ -32,7 +33,7 @@ class SpiModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     posId = prefs.getString('posId');
     if (posId == null) {
-      posId = await FlutterSpi.getDeviceSN;
+      posId = await flutterSpi.getDeviceSN;
       posId = posId!.replaceAll('-', '');
       if (posId!.length > 16) posId = posId!.substring(1, 16);
     }
@@ -46,9 +47,9 @@ class SpiModel extends ChangeNotifier {
     }
     notifyListeners();
     // start spi
-    await FlutterSpi.init(posId!, serialNumber!, eftPosAddress!, apiKey!,
+    await flutterSpi.init(posId!, serialNumber!, eftPosAddress!, apiKey!,
         tenantCode!, secrets: secrets != null ? secrets!.toJSON() : null);
-    await FlutterSpi.start();
+    await flutterSpi.start();
   }
 
   void updatePosId(String value) {
@@ -81,7 +82,7 @@ class SpiModel extends ChangeNotifier {
           pairingFlowState = PairingFlowState.fromMap(methodCall.arguments);
           notifyListeners();
           if (pairingFlowState!.finished) {
-            await FlutterSpi.ackFlowEndedAndBackToIdle();
+            await flutterSpi.ackFlowEndedAndBackToIdle();
           }
           break;
         case SpiMethodCallEvents.secretsChanged:
@@ -104,7 +105,7 @@ class SpiModel extends ChangeNotifier {
             break;
           }
           if (transactionFlowState!.finished) {
-            await FlutterSpi.ackFlowEndedAndBackToIdle();
+            await flutterSpi.ackFlowEndedAndBackToIdle();
           }
           // TODO: should print merchant copy
           if (transactionFlowState!.success == 'SUCCESS') {
@@ -122,10 +123,10 @@ class SpiModel extends ChangeNotifier {
   Future<void> save() async {
     // await FlutterSpi.setTestMode(testMode);
     // await FlutterSpi.setAutoAddressResolution(autoAddress);
-    if (posId!.isNotEmpty) await FlutterSpi.setPosId(posId!);
-    if (serialNumber!.isNotEmpty) await FlutterSpi.setSerialNumber(serialNumber!);
+    if (posId!.isNotEmpty) await flutterSpi.setPosId(posId!);
+    if (serialNumber!.isNotEmpty) await flutterSpi.setSerialNumber(serialNumber!);
     if (eftPosAddress!.isNotEmpty) {
-      await FlutterSpi.setEftposAddress(eftPosAddress!);
+      await flutterSpi.setEftposAddress(eftPosAddress!);
     }
     print('Save Success.');
     print(posId);
@@ -136,11 +137,11 @@ class SpiModel extends ChangeNotifier {
   Future<void> pair() async {
     await save();
     // await FlutterSpi.init(posId, eftPosId, eftPosAddress);
-    await FlutterSpi.pair();
+    await flutterSpi.pair();
   }
 
   Future<void> unpair() async {
-    await FlutterSpi.unpair();
+    await flutterSpi.unpair();
     secrets = null;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
@@ -148,11 +149,11 @@ class SpiModel extends ChangeNotifier {
   }
 
   Future<void> cancelPair() async {
-    await FlutterSpi.pairingCancel();
+    await flutterSpi.pairingCancel();
   }
 
   Future<void> confirmPairingCode() async {
-    await FlutterSpi.pairingConfirmCode();
+    await flutterSpi.pairingConfirmCode();
   }
 
   Future<void> persistentStoreData() async {
@@ -165,7 +166,7 @@ class SpiModel extends ChangeNotifier {
   Future<void> initiatePurchaseTx(String transactionId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
     resetTransaction();
-    await FlutterSpi.initiatePurchaseTx(transactionId, purchaseAmount,
+    await flutterSpi.initiatePurchaseTx(transactionId, purchaseAmount,
         tipAmount, cashoutAmount, promptForCashout);
   }
 
@@ -177,7 +178,7 @@ class SpiModel extends ChangeNotifier {
   Future<void> retryTransaction(String transactionId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
     transactionFlowState = null;
-    await FlutterSpi.initiatePurchaseTx(transactionId, purchaseAmount,
+    await flutterSpi.initiatePurchaseTx(transactionId, purchaseAmount,
         tipAmount, cashoutAmount, promptForCashout);
   }
 
@@ -186,6 +187,6 @@ class SpiModel extends ChangeNotifier {
     int refundAmount,
   ) async {
     transactionFlowState = null;
-    await FlutterSpi.initiateRefundTx(transactionId, refundAmount);
+    await flutterSpi.initiateRefundTx(transactionId, refundAmount);
   }
 }
