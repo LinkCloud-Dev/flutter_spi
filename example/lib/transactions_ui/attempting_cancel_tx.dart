@@ -7,7 +7,7 @@ class WaitingConnection extends StatelessWidget {
   const WaitingConnection({Key? key, required this.amount}) : super(key: key);
 
   Future<void> _cancelTx() async {
-    await SpiModel.flutterSpi.cancelTransaction();
+    await FlutterSpi.cancelTransaction();
   }
 
   @override

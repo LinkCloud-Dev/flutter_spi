@@ -2,8 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
 
-class SpiMethodChannel implements FlutterSpiPlatform{
-   static const MethodChannel _channel = MethodChannel('flutter_spi');
+class SpiMethodChannel implements FlutterSpiPlatform {
+  static const MethodChannel _channel = MethodChannel('flutter_spi');
 
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
@@ -16,8 +16,9 @@ class SpiMethodChannel implements FlutterSpiPlatform{
   }
 
   @override
-  Future<void> init(String posId, String serialNumber, String eftposAddress, 
-      String apiKey, String tenantCode, {Map<String, String>? secrets, String? spiType}) async {
+  Future<void> init(String posId, String serialNumber, String eftposAddress,
+      String apiKey, String tenantCode,
+      {Map<String, String>? secrets, String? spiType}) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
       "serialNumber": serialNumber,
@@ -40,7 +41,8 @@ class SpiMethodChannel implements FlutterSpiPlatform{
 
   @override
   Future<void> setSerialNumber(String serialNumber) async {
-    await _channel.invokeMethod('setSerialNumber', {"serialNumber": serialNumber});
+    await _channel
+        .invokeMethod('setSerialNumber', {"serialNumber": serialNumber});
   }
 
   @override
@@ -59,10 +61,11 @@ class SpiMethodChannel implements FlutterSpiPlatform{
         'setPosInfo', {"posVendorId": posVendorId, "posVersion": posVersion});
   }
 
- @override
-  Future<List<Tenant>> getTenantsList(String apiKey, {String countryCode = "AU"}) async {
-    final List tenants = await _channel.invokeMethod('getTenantsList', 
-      {"apiKey": apiKey, "countryCode": countryCode});
+  @override
+  Future<List<Tenant>> getTenantsList(String apiKey,
+      {String countryCode = "AU"}) async {
+    final List tenants = await _channel.invokeMethod(
+        'getTenantsList', {"apiKey": apiKey, "countryCode": countryCode});
     List<Tenant> tenantsList = tenants.map((e) => Tenant.fromMap(e)).toList();
     return tenantsList;
   }
@@ -111,7 +114,7 @@ class SpiMethodChannel implements FlutterSpiPlatform{
     return config;
   }
 
-   @override
+  @override
   Future<void> ackFlowEndedAndBackToIdle() async {
     await _channel.invokeMethod('ackFlowEndedAndBackToIdle');
   }
@@ -149,8 +152,7 @@ class SpiMethodChannel implements FlutterSpiPlatform{
   }
 
   @override
-  Future<void> initiateRefundTx(
-      String posRefId, int refundAmount) async {
+  Future<void> initiateRefundTx(String posRefId, int refundAmount) async {
     await _channel.invokeMethod('initiateRefundTx', {
       "posRefId": posRefId,
       "refundAmount": refundAmount,
@@ -177,8 +179,7 @@ class SpiMethodChannel implements FlutterSpiPlatform{
   }
 
   @override
-  Future<void> initiateCashoutOnlyTx(
-      String posRefId, int amountCents) async {
+  Future<void> initiateCashoutOnlyTx(String posRefId, int amountCents) async {
     await _channel.invokeMethod('initiateCashoutOnlyTx', {
       "posRefId": posRefId,
       "amountCents": amountCents,
@@ -186,8 +187,7 @@ class SpiMethodChannel implements FlutterSpiPlatform{
   }
 
   @override
-  Future<void> initiateMotoPurchaseTx(
-      String posRefId, int amountCents) async {
+  Future<void> initiateMotoPurchaseTx(String posRefId, int amountCents) async {
     await _channel.invokeMethod('initiateMotoPurchaseTx', {
       "posRefId": posRefId,
       "amountCents": amountCents,
@@ -213,7 +213,7 @@ class SpiMethodChannel implements FlutterSpiPlatform{
     await _channel.invokeMethod('initiateGetLastTx');
   }
 
- @override
+  @override
   Future<void> dispose() async {
     await _channel.invokeMethod('dispose');
   }
@@ -227,14 +227,13 @@ class SpiMethodChannel implements FlutterSpiPlatform{
   }
 
   @override
-  Future<void> setSignatureFlowOnEftpos(
-      bool signatureFlowOnEftpos) async {
+  Future<void> setSignatureFlowOnEftpos(bool signatureFlowOnEftpos) async {
     await _channel.invokeMethod('setSignatureFlowOnEftpos', {
       "signatureFlowOnEftpos": signatureFlowOnEftpos,
     });
   }
 
-   @override
+  @override
   Future<void> setPrintMerchantCopy(bool printMerchantCopy) async {
     await _channel.invokeMethod('setPrintMerchantCopy', {
       "printMerchantCopy": printMerchantCopy,

@@ -7,7 +7,7 @@ class SignatureRequire extends StatelessWidget {
   const SignatureRequire({Key? key, required this.amount}) : super(key: key);
 
   Future<void> _acceptSignature(bool accepted) async {
-    await SpiModel.flutterSpi.acceptSignature(accepted);
+    await FlutterSpi.acceptSignature(accepted);
   }
 
   @override

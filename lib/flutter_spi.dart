@@ -266,18 +266,15 @@ enum SpiMethodCallEvents {
   secretsChanged,
 }
 
-class FlutterSpi implements FlutterSpiPlatform {
+class FlutterSpi {
   static FlutterSpiPlatform flutterSpi = SpiMethodChannel();
 
-  
-  @override
-  void handleMethodCall(cb) {
+  static void handleMethodCall(cb) {
     flutterSpi.handleMethodCall(cb);
   }
 
-  @override
-  Future<void> init(String posId, String serialNumber, String eftposAddress,
-      String apiKey, String tenantCode,
+  static Future<void> init(String posId, String serialNumber,
+      String eftposAddress, String apiKey, String tenantCode,
       {Map<String, String>? secrets, String? spiType}) async {
     if (spiType == "THUMBZUP") {
       flutterSpi = SpiThumbzup();
@@ -286,146 +283,143 @@ class FlutterSpi implements FlutterSpiPlatform {
         secrets: secrets);
   }
 
-  @override
-  Future<void> start() async {
+  static Future<void> start() async {
     flutterSpi.start();
   }
 
-  @override
-  Future<void> setPosId(String posId) async {
+  static Future<void> setPosId(String posId) async {
     flutterSpi.setPosId(posId);
   }
 
-  @override
-  Future<void> setSerialNumber(String serialNumber) async {
+  static Future<void> setSerialNumber(String serialNumber) async {
     flutterSpi.setSerialNumber(serialNumber);
   }
 
-  @override
-  Future<void> setEftposAddress(String address) async {
+  static Future<void> setEftposAddress(String address) async {
     flutterSpi.setEftposAddress(address);
   }
 
-  @override
-  Future<void> setTenantCode(String tenantCode) async {
+  static Future<void> setTenantCode(String tenantCode) async {
     flutterSpi.setTenantCode(tenantCode);
   }
 
-  @override
-  Future<void> setPosInfo(String posVendorId, String posVersion) async {
+  static Future<void> setPosInfo(String posVendorId, String posVersion) async {
     flutterSpi.setPosInfo(posVendorId, posVersion);
   }
 
-  @override
-  Future<List<Tenant>> getTenantsList(String apiKey,
+  static Future<List<Tenant>> getTenantsList(String apiKey,
       {String countryCode = "AU"}) async {
     return flutterSpi.getTenantsList(apiKey);
   }
 
-  @override
-  Future<String> get getDeviceSN async {
+  static Future<String> get getDeviceSN async {
     return flutterSpi.getDeviceSN;
   }
 
-  @override
-  Future<String> get getVersion async {
+  static Future<String> get getVersion async {
     return flutterSpi.getVersion;
   }
 
-  @override
-  Future<String> get getCurrentStatus async {
+  static Future<String> get getCurrentStatus async {
     return flutterSpi.getCurrentStatus;
   }
 
-  @override
-  Future<String> get getCurrentFlow async {
+  static Future<String> get getCurrentFlow async {
     return flutterSpi.getCurrentFlow;
   }
 
-  @override
-  Future<String> get getCurrentPairingFlowState async {
+  static Future<String> get getCurrentPairingFlowState async {
     return flutterSpi.getCurrentPairingFlowState;
   }
 
-  @override
-  Future<String> get getCurrentTxFlowState async {
+  static Future<String> get getCurrentTxFlowState async {
     return flutterSpi.getCurrentTxFlowState;
   }
 
-  @override
-  Future<Map<String, bool>> get getConfig async {
+  static Future<Map<String, bool>> get getConfig async {
     return flutterSpi.getConfig;
   }
 
-  @override
-  Future<void> ackFlowEndedAndBackToIdle() async {
+  static Future<void> ackFlowEndedAndBackToIdle() async {
     flutterSpi.ackFlowEndedAndBackToIdle();
   }
 
-  @override
-  Future<void> pair() async {
+  static Future<void> pair() async {
     flutterSpi.pair();
   }
 
-  @override
-  Future<void> pairingConfirmCode() async {
+  static Future<void> pairingConfirmCode() async {
     flutterSpi.pairingConfirmCode();
   }
 
-  @override
-  Future<void> pairingCancel() async {
+  static Future<void> pairingCancel() async {
     flutterSpi.pairingCancel();
   }
 
-  @override
-  Future<void> unpair() async {
+  static Future<void> unpair() async {
     flutterSpi.unpair();
   }
 
-  @override
-  Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
+  static Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
-        flutterSpi.initiatePurchaseTx(posRefId, purchaseAmount, tipAmount, cashoutAmount, promptForCashout);
-      }
+    flutterSpi.initiatePurchaseTx(
+        posRefId, purchaseAmount, tipAmount, cashoutAmount, promptForCashout);
+  }
 
-  @override
-  Future<void> initiateRefundTx(String posRefId, int refundAmount) async {}
+  static Future<void> initiateRefundTx(
+      String posRefId, int refundAmount) async {
+    flutterSpi.initiateRefundTx(posRefId, refundAmount);
+  }
 
-  @override
-  Future<void> acceptSignature(bool accepted) async {}
+  static Future<void> acceptSignature(bool accepted) async {
+    flutterSpi.acceptSignature(accepted);
+  }
 
-  @override
-  Future<void> submitAuthCode(String authCode) async {}
+  static Future<void> submitAuthCode(String authCode) async {
+    flutterSpi.submitAuthCode(authCode);
+  }
 
-  @override
-  Future<void> cancelTransaction() async {}
+  static Future<void> cancelTransaction() async {
+    flutterSpi.cancelTransaction();
+  }
 
-  @override
-  Future<void> initiateCashoutOnlyTx(String posRefId, int amountCents) async {}
+  static Future<void> initiateCashoutOnlyTx(
+      String posRefId, int amountCents) async {
+    flutterSpi.initiateCashoutOnlyTx(posRefId, amountCents);
+  }
 
-  @override
-  Future<void> initiateMotoPurchaseTx(String posRefId, int amountCents) async {}
+  static Future<void> initiateMotoPurchaseTx(
+      String posRefId, int amountCents) async {
+    flutterSpi.initiateMotoPurchaseTx(posRefId, amountCents);
+  }
 
-  @override
-  Future<void> initiateSettleTx(String id) async {}
+  static Future<void> initiateSettleTx(String id) async {
+    flutterSpi.initiateSettleTx(id);
+  }
 
-  @override
-  Future<void> initiateSettlementEnquiry(String posRefId) async {}
+  static Future<void> initiateSettlementEnquiry(String posRefId) async {
+    flutterSpi.initiateSettlementEnquiry(posRefId);
+  }
 
-  @override
-  Future<void> initiateGetLastTx() async {}
+  static Future<void> initiateGetLastTx() async {
+    flutterSpi.initiateGetLastTx();
+  }
 
-  @override
-  Future<void> dispose() async {}
+  static Future<void> dispose() async {
+    flutterSpi.dispose();
+  }
 
-  @override
-  Future<void> setPromptForCustomerCopyOnEftpos(
-      bool promptForCustomerCopyOnEftpos) async {}
+  static Future<void> setPromptForCustomerCopyOnEftpos(
+      bool promptForCustomerCopyOnEftpos) async {
+    flutterSpi.setPromptForCustomerCopyOnEftpos(promptForCustomerCopyOnEftpos);
+  }
 
-  @override
-  Future<void> setSignatureFlowOnEftpos(bool signatureFlowOnEftpos) async {}
+  static Future<void> setSignatureFlowOnEftpos(
+      bool signatureFlowOnEftpos) async {
+    flutterSpi.setSignatureFlowOnEftpos(signatureFlowOnEftpos);
+  }
 
-  @override
-  Future<void> setPrintMerchantCopy(bool printMerchantCopy) async {}
-  
+  static Future<void> setPrintMerchantCopy(bool printMerchantCopy) async {
+    flutterSpi.setPrintMerchantCopy(printMerchantCopy);
+  }
 }
