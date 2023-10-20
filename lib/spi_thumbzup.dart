@@ -1,7 +1,32 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
 
-class SpiThumbzup implements FlutterSpiPlatform{
+class SpiThumbzup implements FlutterSpiPlatform {
+  static const String appUrl = "payment.thumbzup.com";
+  static const String appClass = "payment.thumbzup.com.IntentActivity";
+
+  static const MethodChannel _channel = MethodChannel('thumbzup');
+
+  @override
+  Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
+      int tipAmount, int cashoutAmount, bool promptForCashout) async {
+    // TODO: implement initiatePurchaseTx
+    await _channel.invokeMethod("initiatePurchaseTx", {
+      "posRefId": posRefId,
+      "purchaseAmount": purchaseAmount,
+      "tipAmount": tipAmount,
+      "cashoutAmount": cashoutAmount,
+      "promptForCashout": promptForCashout,
+    });
+  }
+
+  @override
+  Future<void> initiateRefundTx(String posRefId, int refundAmount) {
+    // TODO: implement initiateRefundTx
+    throw UnimplementedError();
+  }
+
   @override
   Future<void> acceptSignature(bool accepted) {
     // TODO: implement acceptSignature
@@ -51,7 +76,8 @@ class SpiThumbzup implements FlutterSpiPlatform{
   Future<String> get getDeviceSN => throw UnimplementedError();
 
   @override
-  Future<List<Tenant>> getTenantsList(String apiKey, {String countryCode = "AU"}) {
+  Future<List<Tenant>> getTenantsList(String apiKey,
+      {String countryCode = "AU"}) {
     // TODO: implement getTenantsList
     throw UnimplementedError();
   }
@@ -61,9 +87,11 @@ class SpiThumbzup implements FlutterSpiPlatform{
   Future<String> get getVersion => throw UnimplementedError();
 
   @override
-  init(String posId, String serialNumber, String eftposAddress, String apiKey, String tenantCode, {Map<String, String>? secrets, String? spiType}) {
+  Future<void> init(String posId, String serialNumber, String eftposAddress,
+      String apiKey, String tenantCode,
+      {Map<String, String>? secrets, String? spiType}) async {
     // TODO: implement init
-    throw UnimplementedError();
+    await _channel.invokeMethod("init");
   }
 
   @override
@@ -81,18 +109,6 @@ class SpiThumbzup implements FlutterSpiPlatform{
   @override
   Future<void> initiateMotoPurchaseTx(String posRefId, int amountCents) {
     // TODO: implement initiateMotoPurchaseTx
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount, int tipAmount, int cashoutAmount, bool promptForCashout) {
-    // TODO: implement initiatePurchaseTx
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> initiateRefundTx(String posRefId, int refundAmount) {
-    // TODO: implement initiateRefundTx
     throw UnimplementedError();
   }
 
@@ -151,7 +167,8 @@ class SpiThumbzup implements FlutterSpiPlatform{
   }
 
   @override
-  Future<void> setPromptForCustomerCopyOnEftpos(bool promptForCustomerCopyOnEftpos) {
+  Future<void> setPromptForCustomerCopyOnEftpos(
+      bool promptForCustomerCopyOnEftpos) {
     // TODO: implement setPromptForCustomerCopyOnEftpos
     throw UnimplementedError();
   }
@@ -175,9 +192,9 @@ class SpiThumbzup implements FlutterSpiPlatform{
   }
 
   @override
-  Future<void> start() {
+  Future<void> start() async {
     // TODO: implement start
-    throw UnimplementedError();
+    await _channel.invokeMethod("start");
   }
 
   @override
@@ -191,10 +208,9 @@ class SpiThumbzup implements FlutterSpiPlatform{
     // TODO: implement unpair
     throw UnimplementedError();
   }
-  
-  @override
-  void handleMethodCall(cb) {
-    // TODO: implement handleMethodCall
-  }
 
+  @override
+  void handleMethodCall(dynamic cb) {
+    _channel.setMethodCallHandler(cb);
+  }
 }

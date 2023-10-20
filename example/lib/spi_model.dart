@@ -47,7 +47,7 @@ class SpiModel extends ChangeNotifier {
     notifyListeners();
     // start spi
     await FlutterSpi.init(posId!, serialNumber!, eftPosAddress!, apiKey!,
-        tenantCode!, secrets: secrets != null ? secrets!.toJSON() : null);
+        tenantCode!, secrets: secrets != null ? secrets!.toJSON() : null, spiType: "THUMBZUP");
     await FlutterSpi.start();
   }
 

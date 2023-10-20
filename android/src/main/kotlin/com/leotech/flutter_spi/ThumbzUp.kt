@@ -7,46 +7,33 @@ import android.os.Handler
 import android.os.StrictMode
 import android.util.Log
 import androidx.annotation.NonNull
-import io.mx51.spi.Spi;
-import io.mx51.spi.Spi.CompatibilityException;
-import io.mx51.spi.model.*;
-import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.mx51.spi.Spi
+import io.mx51.spi.Spi.CompatibilityException
+import io.mx51.spi.model.*
 import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 
 /** FlutterSpiPlugin */
-class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
+class ThumbzUp: MethodCallHandler {
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
-  private lateinit var spiChannel: MethodChannel
-  private lateinit var thumbzUpChannel: MethodChannel
-  private lateinit var context: Context
 
   lateinit var mSpi: Spi
-
-  override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    spiChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi")
-    spiChannel.setMethodCallHandler(this)
-
-    thumbzUpChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "thumbzup")
-    thumbzUpChannel.setMethodCallHandler(ThumbzUp())
-
-    context = flutterPluginBinding.applicationContext
-  }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "init") {
-      init(call.argument("posId")!!, call.argument("serialNumber")!!, call.argument("eftposAddress")!!,
-        call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("secrets"), result)
+      print("Hahahahahaha success!")
+//      init(call.argument("posId")!!, call.argument("serialNumber")!!, call.argument("eftposAddress")!!,
+//        call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("secrets"), result)
     } else if (call.method == "start") {
-      start(result)
+      println("Starting!")
+//      start(result)
     } else if (call.method == "setPosId") {
       setPosId(call.argument("posId")!!, result)
     } else if (call.method == "setSerialNumber") {
@@ -118,42 +105,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
   }
 
-  override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    spiChannel.setMethodCallHandler(null)
-  }
-
-  fun invokeFlutterMethodThumbzUp(flutterMethod: String, message: Any?){
-    val mainHandler = Handler(context.mainLooper)
-    mainHandler.post {
-      thumbzUpChannel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
-        override fun success(o: Any?) {
-          Log.d("SUCCESS", "invokeMethod: success")
-        }
-        override fun error(s: String, s1: String?, o: Any?) {
-          Log.d("ERROR", "invokeMethod: error")
-        }
-        override fun notImplemented() {
-          Log.d("ERROR", "notImplemented")
-        }
-      })
-    }
-  }
-
   private fun invokeFlutterMethod(flutterMethod: String, message: Any?) {
-     val mainHandler = Handler(context.mainLooper)
-      mainHandler.post {
-        spiChannel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
-          override fun success(o: Any?) {
-            Log.d("SUCCESS", "invokeMethod: success")
-          }
-          override fun error(s: String, s1: String?, o: Any?) {
-            Log.d("ERROR", "invokeMethod: error")
-          }
-          override fun notImplemented() {
-            Log.d("ERROR", "notImplemented")
-          }
-        })
-      }
+     FlutterSpiPlugin().invokeFlutterMethodThumbzUp(flutterMethod, message);
   }
 
   fun init(posId: String, serialNumber: String, eftposAddress: String, apiKey: String, tenantCode: String, secrets: HashMap<String, String>?, result: Result) {
@@ -170,58 +123,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     try {
       mSpi = Spi(posId, serialNumber, eftposAddress, if (secrets.isNullOrEmpty()) null else Secrets(secrets!!.get("encKey"), secrets!!.get("hmacKey")))
-      val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
-      mSpi.setPosInfo("LinkPOS", pInfo.versionName)
       mSpi.setAutoAddressResolution(false);
       mSpi.setDeviceApiKey(apiKey);
       mSpi.setTenantCode(tenantCode);
-      setStatusChangedHandler()
-      setPairingFlowStateChangedHandler()
-      setTxFlowStateChangedHandler()
-      setSecretsChangedHandler()
       result.success(null)
     } catch (e: CompatibilityException) {
       result.error("INIT_ERROR", "Init Error.", null)
-    }
-  }
-
-  /**
-   * Subscribe to this event to know when the status has changed.
-   */
-  private fun setStatusChangedHandler() {
-    mSpi.setStatusChangedHandler {
-      invokeFlutterMethod("statusChanged", it?.name)
-    }
-  }
-
-  /**
-   * Subscribe to this event to know when the current pairing flow state has changed.
-   */
-  private fun setPairingFlowStateChangedHandler() {
-    mSpi.setPairingFlowStateChangedHandler {
-      invokeFlutterMethod("pairingFlowStateChanged", mapPairingFlowState(it))
-    }
-  }
-
-  /**
-   * Subscribe to this event to know when the current pairing flow state changes
-   */
-  private fun setTxFlowStateChangedHandler() {
-    mSpi.setTxFlowStateChangedHandler {
-      invokeFlutterMethod("txFlowStateChanged", mapTransactionState(it))
-    }
-  }
-
-  /**
-   * Subscribe to this event to know when the secrets change, such as at the end of the pairing process,
-   * or every time that the keys are periodically rolled.
-   *
-   *
-   * You then need to persist the secrets safely so you can instantiate SPI with them next time around.
-   */
-  private fun setSecretsChangedHandler() {
-    mSpi.setSecretsChangedHandler {
-      invokeFlutterMethod("secretsChanged", mapSecrets(it))
     }
   }
 
