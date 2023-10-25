@@ -1,12 +1,19 @@
 import 'package:flutter_spi/flutter_spi.dart';
 
 abstract class FlutterSpiPlatform {
-
   void handleMethodCall(dynamic cb);
 
-  Future<void> init(String posId, String serialNumber, String eftposAddress, String apiKey,
-      String tenantCode,
-      {Map<String, String>? secrets, String? spiType});
+  Future<void> init(
+      {String? posId,
+      String? serialNumber,
+      String? eftposAddress,
+      String? apiKey,
+      String? tenantCode,
+      Map<String, String>? secrets,
+      String? spiType,
+      String? appKey,
+      String? merchantId,
+      String username = "default"});
 
   Future<void> start();
 

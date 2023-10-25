@@ -46,8 +46,21 @@ class SpiModel extends ChangeNotifier {
     }
     notifyListeners();
     // start spi
-    await FlutterSpi.init(posId!, serialNumber!, eftPosAddress!, apiKey!,
-        tenantCode!, secrets: secrets != null ? secrets!.toJSON() : null, spiType: "THUMBZUP");
+    // Non thumbzup machine
+    // await FlutterSpi.init(
+    //     posId: posId!,
+    //     serialNumber: serialNumber!,
+    //     eftposAddress: eftPosAddress!,
+    //     apiKey: apiKey!,
+    //     tenantCode: tenantCode!,
+    //     secrets: secrets != null ? secrets!.toJSON() : null);
+    
+    // Thumbzup machine
+    await FlutterSpi.init(
+        appKey: "05705f64-4bcc-49a4-a197-6891eaed6c7f",
+        merchantId: "linkpos",
+        serialNumber: serialNumber,
+        spiType: "THUMBZUP");
     await FlutterSpi.start();
   }
 
@@ -100,7 +113,8 @@ class SpiModel extends ChangeNotifier {
           notifyListeners();
           if (transactionFlowState!.awaitingSignatureCheck) {
             // TODO: print receipt to sign on paper & update UI for customer signature
-            print(transactionFlowState!.signatureRequiredMessage!.receiptToSign);
+            print(
+                transactionFlowState!.signatureRequiredMessage!.receiptToSign);
             break;
           }
           if (transactionFlowState!.finished) {
@@ -123,7 +137,9 @@ class SpiModel extends ChangeNotifier {
     // await FlutterSpi.setTestMode(testMode);
     // await FlutterSpi.setAutoAddressResolution(autoAddress);
     if (posId!.isNotEmpty) await FlutterSpi.setPosId(posId!);
-    if (serialNumber!.isNotEmpty) await FlutterSpi.setSerialNumber(serialNumber!);
+    if (serialNumber!.isNotEmpty) {
+      await FlutterSpi.setSerialNumber(serialNumber!);
+    }
     if (eftPosAddress!.isNotEmpty) {
       await FlutterSpi.setEftposAddress(eftPosAddress!);
     }

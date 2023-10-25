@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
 import 'package:flutter_spi/spi_method_channel.dart';
-import 'package:flutter_spi/spi_thumbzup.dart';
+import 'package:flutter_spi/thumbzup_ws.dart';
 
 class SpiMessage {
   String? id;
@@ -273,14 +273,29 @@ class FlutterSpi {
     flutterSpi.handleMethodCall(cb);
   }
 
-  static Future<void> init(String posId, String serialNumber,
-      String eftposAddress, String apiKey, String tenantCode,
-      {Map<String, String>? secrets, String? spiType}) async {
+  static Future<void> init(
+      {String? posId,
+      String? serialNumber,
+      String? eftposAddress,
+      String? apiKey,
+      String? tenantCode,
+      Map<String, String>? secrets,
+      String? spiType,
+      String? appKey,
+      String? merchantId,
+      String username = "default"}) async {
     if (spiType == "THUMBZUP") {
-      flutterSpi = SpiThumbzup();
+      flutterSpi = ThumbzUpWebSocket();
     }
-    flutterSpi.init(posId, serialNumber, eftposAddress, apiKey, tenantCode,
-        secrets: secrets);
+    flutterSpi.init(
+        posId: posId,
+        serialNumber: serialNumber,
+        eftposAddress: eftposAddress,
+        apiKey: apiKey,
+        tenantCode: tenantCode,
+        secrets: secrets,
+        appKey: appKey,
+        merchantId: merchantId);
   }
 
   static Future<void> start() async {

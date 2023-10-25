@@ -16,9 +16,17 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> init(String posId, String serialNumber, String eftposAddress,
-      String apiKey, String tenantCode,
-      {Map<String, String>? secrets, String? spiType}) async {
+  Future<void> init(
+      {String? posId,
+      String? serialNumber,
+      String? eftposAddress,
+      String? apiKey,
+      String? tenantCode,
+      Map<String, String>? secrets,
+      String? spiType,
+      String? appKey,
+      String? merchantId,
+      String username = "default"}) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
       "serialNumber": serialNumber,

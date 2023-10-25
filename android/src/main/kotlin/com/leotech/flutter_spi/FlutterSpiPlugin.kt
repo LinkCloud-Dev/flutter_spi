@@ -24,7 +24,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
   private lateinit var spiChannel: MethodChannel
-  private lateinit var thumbzUpChannel: MethodChannel
   private lateinit var context: Context
 
   lateinit var mSpi: Spi
@@ -32,10 +31,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     spiChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi")
     spiChannel.setMethodCallHandler(this)
-
-    thumbzUpChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "thumbzup")
-    thumbzUpChannel.setMethodCallHandler(ThumbzUp())
-
     context = flutterPluginBinding.applicationContext
   }
 
@@ -120,23 +115,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
     spiChannel.setMethodCallHandler(null)
-  }
-
-  fun invokeFlutterMethodThumbzUp(flutterMethod: String, message: Any?){
-    val mainHandler = Handler(context.mainLooper)
-    mainHandler.post {
-      thumbzUpChannel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
-        override fun success(o: Any?) {
-          Log.d("SUCCESS", "invokeMethod: success")
-        }
-        override fun error(s: String, s1: String?, o: Any?) {
-          Log.d("ERROR", "invokeMethod: error")
-        }
-        override fun notImplemented() {
-          Log.d("ERROR", "notImplemented")
-        }
-      })
-    }
   }
 
   private fun invokeFlutterMethod(flutterMethod: String, message: Any?) {
