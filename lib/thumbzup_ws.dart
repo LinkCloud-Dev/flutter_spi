@@ -108,6 +108,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
         Uri.parse("wss://$deviceIdentifier.thumbzup.mobi:8080"));
 
     _websocket!.stream.listen((event) {
+      log(event);
       final eventJson = json.decode(event);
       // TODO: to be confirmed if key is correct
       switch (eventJson["type"]) {

@@ -58,7 +58,7 @@ class SpiModel extends ChangeNotifier {
     // Thumbzup machine
     await FlutterSpi.init(
         appKey: "05705f64-4bcc-49a4-a197-6891eaed6c7f",
-        merchantId: "linkpos",
+        merchantId: "42298585635787",
         serialNumber: serialNumber,
         spiType: "THUMBZUP");
     await FlutterSpi.start();
