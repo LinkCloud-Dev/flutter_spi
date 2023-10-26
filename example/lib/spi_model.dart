@@ -171,11 +171,11 @@ class SpiModel extends ChangeNotifier {
   Future<void> save() async {
     if (posId!.isNotEmpty) await FlutterSpi.setPosId(posId!);
     if (serialNumber!.isNotEmpty) await FlutterSpi.setSerialNumber(serialNumber!);
+    await FlutterSpi.setAutoAddressResolution(autoAddressResolution);
     if (!autoAddressResolution && eftPosAddress != '') { // cannot call setEftposAddress while autoAddressResolution == true
       await FlutterSpi.setEftposAddress(eftPosAddress!);
     }
     await FlutterSpi.setTestMode(testMode);
-    await FlutterSpi.setAutoAddressResolution(autoAddressResolution);
     deviceAddressStatus = await FlutterSpi.getCurrentDeviceStatus;
     if (deviceAddressStatus != null) {
       await handleDeviceAddressStatus(deviceAddressStatus!);
