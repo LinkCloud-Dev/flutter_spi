@@ -15,6 +15,9 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
 
   WebSocketChannel? _websocket;
 
+  String? currentTxId;
+  int? currentTxAmount;
+
   String _merchantId = "";
   String _username = "";
   String _applicationKey = "";
@@ -37,30 +40,74 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   // Only here to retrofit other eftpos
   Function? _handleMethodCall;
 
-  Function? _saleCallback;
-  Function? _refundCallback;
-  Function? _authCallback;
-  Function? _pingCallback;
   Function? _printCallback;
   Function? _barcodeCallback;
+
+  void _authCallback(Map<String, dynamic> data) {
+    if (data["errorBundle"] != null) {
+      _handleMethodCall!(
+        constructMethodCall(
+          SpiMethodCallEvents.txFlowStateChanged,
+          {
+            "posRefId": currentTxId,
+            "type": "PURCHASE",
+            "amountCents": currentTxAmount,
+            "finished": true,
+            "success": "FAILED",
+            "response": {
+              "data": {
+                "host_response_text":
+                    "${data["errorBundle"]["description"]}\n ${data["errorBundle"]["message"]}",
+              }
+            },
+          },
+        ),
+      );
+      return;
+    }
+
+    setAuthenticationKey(data["authenticationKey"]);
+  }
+
+  void _pingCallback(Map<String, dynamic> data) {
+    if (data["errorBundle"] != null) {
+      // log("Ping error: ${data["errorBundle"]["description"]}\n ${data["errorBundle"]["message"]}");
+      _statusCallback(PbStatus.disconnected);
+      _paringCallback(
+        true,
+        false,
+        msg:
+            "Ping error: ${data["errorBundle"]["description"]}\n ${data["errorBundle"]["message"]}",
+      );
+    } else if (data["result"] != "SUCCESS") {
+      _statusCallback(PbStatus.disconnected);
+      _paringCallback(true, false, msg: "Websocket not connected");
+    } else {
+      _statusCallback(PbStatus.connected);
+      _paringCallback(true, true, msg: "Websocket CONNECTED");
+    }
+  }
 
   void _statusCallback(PbStatus status) {
     switch (status) {
       case PbStatus.connected:
         _handleMethodCall!(constructMethodCall(
-            SpiMethodCallEvents.statusChanged,
-            EnumToString.convertToString(SpiStatus.PAIRED_CONNECTED)));
+          SpiMethodCallEvents.statusChanged,
+          EnumToString.convertToString(SpiStatus.PAIRED_CONNECTED),
+        ));
         break;
       case PbStatus.disconnected:
         _handleMethodCall!(constructMethodCall(
-            SpiMethodCallEvents.statusChanged,
-            EnumToString.convertToString(SpiStatus.UNPAIRED)));
+          SpiMethodCallEvents.statusChanged,
+          EnumToString.convertToString(SpiStatus.UNPAIRED),
+        ));
         break;
       case PbStatus.error:
         // TODO: to be confirmed whether ws connection is down
         _handleMethodCall!(constructMethodCall(
-            SpiMethodCallEvents.statusChanged,
-            EnumToString.convertToString(SpiStatus.UNPAIRED)));
+          SpiMethodCallEvents.statusChanged,
+          EnumToString.convertToString(SpiStatus.UNPAIRED),
+        ));
         break;
     }
   }
@@ -75,6 +122,82 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     };
     _handleMethodCall!(constructMethodCall(
         SpiMethodCallEvents.pairingFlowStateChanged, payload));
+  }
+
+  void _transactionCallback(Map<String, dynamic> data, String type) {
+    if (data["errorBundle"] != null) {
+      _handleMethodCall!(
+        constructMethodCall(
+          SpiMethodCallEvents.txFlowStateChanged,
+          {
+            "posRefId": currentTxId,
+            "type": type,
+            "amountCents": currentTxAmount,
+            "finished": true,
+            "success": "FAILED",
+            "response": {
+              "data": {
+                "host_response_text":
+                    "${data["errorBundle"]["description"]}\n ${data["errorBundle"]["message"]}",
+              }
+            },
+          },
+        ),
+      );
+    } else {
+      if (data["isApproved"] == "true") {
+        // Sale is approved
+        _handleMethodCall!(
+          constructMethodCall(
+            SpiMethodCallEvents.txFlowStateChanged,
+            {
+              "posRefId": data["transactionUuid"],
+              "type": type,
+              "amountCents": int.parse(data["transactionAmount"]),
+              "finished": true,
+              "success": "SUCCESS",
+              "response": {
+                "data": {
+                  "host_response_text": "Transaction successful",
+                }
+              },
+            },
+          ),
+        );
+      } else if (data["isApproved"] == "false") {
+        // Sale is declined due to PIN mismatch
+        _handleMethodCall!(
+          constructMethodCall(
+            SpiMethodCallEvents.txFlowStateChanged,
+            {
+              "posRefId": data["transactionUuid"],
+              "type": type,
+              "amountCents": int.parse(data["transactionAmount"]),
+              "finished": true,
+              "success": "FAILED",
+              "displayMessage": "Transaction declined, invalid PIN",
+            },
+          ),
+        );
+      } else {
+        // Sale is declined by the bank or unknown error
+        _handleMethodCall!(
+          constructMethodCall(
+            SpiMethodCallEvents.txFlowStateChanged,
+            {
+              "posRefId": data["transactionUuid"],
+              "type": type,
+              "amountCents": int.parse(data["transactionAmount"]),
+              "finished": true,
+              "success": "FAILED",
+              "displayMessage": "Transaction declined, check with your bank",
+            },
+          ),
+        );
+      }
+    }
+    currentTxAmount = null;
+    currentTxId = null;
   }
 
   void setMerchantId(String merchantId) {
@@ -114,13 +237,11 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       switch (eventJson["type"]) {
         case "open":
           _logCallback(PbLogType.info, "Websocket CONNECTED");
-          _statusCallback(PbStatus.connected);
-          _paringCallback(true, true,
-              msg: "Websocket CONNECTED");
           break;
         case "close":
           _logCallback(PbLogType.info, "Websocket DISCONNECTED");
           _statusCallback(PbStatus.disconnected);
+          _paringCallback(true, false, msg: "Websocket DISCONNECTED");
           break;
         case "message":
           // TODO: to be confirmed if key is correct
@@ -132,16 +253,16 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
               data["commandId"] == "PAY_APP_RESPONSE") {
             final commandPayload = data["commandPayload"];
             if (commandPayload["launchType"] == "SALE") {
-              _saleCallback!(commandPayload);
+              _transactionCallback(commandPayload, "PURCHASE");
             } else if (commandPayload["launchType"] == "REFUND") {
-              _refundCallback!(commandPayload);
+              _transactionCallback(commandPayload, "REFUND");
             } else if (commandPayload["launchType"] == "AUTH" ||
                 commandPayload["launchType"] == "RETAIL_AUTH") {
-              _authCallback!(commandPayload);
+              _authCallback(commandPayload);
             }
           } else if (data["commandId"] == "PING_RESPONSE" &&
               data["result"] != null) {
-            _pingCallback!(
+            _pingCallback(
                 {"result": data["result"], "payload": data["commandPayload"]});
           } else if (data["commandId"] == "PRINT_SUNMI_COMMANDS_RESPONSE" &&
               data["result"] != null) {
@@ -154,12 +275,14 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     }, onError: (event) {
       _logCallback(PbLogType.error, "Websocket error: ${event.toString()}");
       _statusCallback(PbStatus.error);
-      _paringCallback(true, false,
-              msg: "Unable to connect");
+      _paringCallback(true, false, msg: "Unable to connect");
     });
 
     // Wait for ws to connect
-    await _websocket!.ready;
+    // await _websocket!.ready;
+
+    // Check connection
+    pingDevice();
   }
 
   Future<void> disconnect() async {
@@ -175,9 +298,50 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     _websocket!.sink.add(msg);
   }
 
-  Future<void> doAuth(Function callback) async {
+  void pingDevice() {
     if (_websocket == null) {
-      callback({
+      _pingCallback({
+        "errorBundle": {
+          "description": "Error",
+          "message": "Websocket not Connected"
+        }
+      });
+      return;
+    }
+
+    sendMessage({"commandId": "PING"});
+  }
+
+  void clearItems() {
+    var obj = {"commandId": "CLEAR_DISPLAY"};
+
+    sendMessage(obj);
+  }
+
+  void displayItems(int totalCost, {dynamic items}) {
+    var itemList = [];
+
+    if (items != null) {
+      items.map((element) {
+        itemList.add({
+          "quantity": element["count"],
+          "cost": formatCurrency(element["count"] * element["price"]),
+          "description": element["description"],
+        });
+      });
+    }
+
+    var obj = {
+      "commandId": "ITEM_DISPLAY",
+      "commandPayload": {"items": itemList, "total": formatCurrency(totalCost)}
+    };
+
+    sendMessage(obj);
+  }
+
+  Future<void> doAuth() async {
+    if (_websocket == null) {
+      _authCallback({
         "errorBundle": {
           "description": "Error",
           "message": "Websocket not connected"
@@ -185,8 +349,6 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       });
       return;
     }
-
-    _authCallback = callback;
 
     sendMessage({
       "commandId": "PAY_APP_RQST",
@@ -199,41 +361,97 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     });
   }
 
+  Future<void> doSale(int amount, {Map<String, dynamic>? extraParams}) async {
+    if (_websocket == null) {
+      _transactionCallback({
+        "errorBundle": {
+          "description": "Error",
+          "message": "Websocket not Connected"
+        }
+      }, "PURCHASE");
+      return;
+    }
+
+    Map<String, dynamic> obj = {
+      "commandId": "PAY_APP_RQST",
+      "commandPayload": {
+        "launchType": "SALE",
+        "applicationKey": _applicationKey,
+        "merchantID": _merchantId,
+        "merchantUsername": _username,
+        "transactionAmount": amount,
+      }
+    };
+
+    if (extraParams != null) {
+      obj.addAll(extraParams);
+    }
+
+    sendMessage(obj);
+
+    _handleMethodCall!(
+      constructMethodCall(
+        SpiMethodCallEvents.txFlowStateChanged,
+        {
+          "posRefId": currentTxId,
+          "type": "PURCHASE",
+          "amountCents": amount,
+          "finished": false,
+        },
+      ),
+    );
+  }
+
+  Future<void> doRefund(String uuid, int amount,
+      {Map<String, dynamic>? extraParams}) async {
+    if (_websocket == null) {
+      _transactionCallback({
+        "errorBundle": {
+          "description": "Error",
+          "message": "Websocket not Connected"
+        }
+      }, "REFUND");
+      return;
+    }
+
+    Map<String, dynamic> obj = {
+      "commandId": "PAY_APP_RQST",
+      "commandPayload": {
+        "launchType": "REFUND",
+        "applicationKey": _applicationKey,
+        "merchantID": _merchantId,
+        "merchantUsername": _username,
+        "originalTransactionUuid": uuid,
+        "transactionAmount": amount,
+      }
+    };
+
+    if (extraParams != null) {
+      obj.addAll(extraParams);
+    }
+
+    sendMessage(obj);
+
+    _handleMethodCall!(
+      constructMethodCall(
+        SpiMethodCallEvents.txFlowStateChanged,
+        {
+          "posRefId": currentTxId,
+          "type": "REFUND",
+          "amountCents": amount,
+          "finished": false,
+        },
+      ),
+    );
+  }
+
+  String formatCurrency(int cents) {
+    return "AU\$ ${(cents / 100).toStringAsFixed(2).replaceAll(RegExp(r"/\B(?=(\d{3})+(?!\d))/g"), " ")}";
+  }
+
   MethodCall constructMethodCall(Enum callType, dynamic arguments) {
     return MethodCall(EnumToString.convertToString(callType), arguments);
   }
-
-  @override
-  Future<void> cancelTransaction() {
-    // TODO: implement cancelTransaction
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> dispose() {
-    // TODO: implement dispose
-    throw UnimplementedError();
-  }
-
-  @override
-  // TODO: implement getConfig
-  Future<Map<String, bool>> get getConfig => throw UnimplementedError();
-
-  @override
-  // TODO: implement getCurrentFlow
-  Future<String> get getCurrentFlow => throw UnimplementedError();
-
-  @override
-  // TODO: implement getCurrentPairingFlowState
-  Future<String> get getCurrentPairingFlowState => throw UnimplementedError();
-
-  @override
-  // TODO: implement getCurrentStatus
-  Future<String> get getCurrentStatus => throw UnimplementedError();
-
-  @override
-  // TODO: implement getCurrentTxFlowState
-  Future<String> get getCurrentTxFlowState => throw UnimplementedError();
 
   @override
   Future<String> get getDeviceSN async {
@@ -269,15 +487,26 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
 
   @override
   Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
-      int tipAmount, int cashoutAmount, bool promptForCashout) {
-    // TODO: implement initiatePurchaseTx
-    throw UnimplementedError();
+      int tipAmount, int cashoutAmount, bool promptForCashout) async {
+    await doAuth();
+    currentTxAmount = purchaseAmount + tipAmount;
+    currentTxId = posRefId;
+    Map<String, dynamic> payload = {
+      "transactionReferenceNo": currentTxId,
+    };
+
+    await doSale(currentTxAmount!, extraParams: payload);
   }
 
   @override
-  Future<void> initiateRefundTx(String posRefId, int refundAmount) {
-    // TODO: implement initiateRefundTx
-    throw UnimplementedError();
+  Future<void> initiateRefundTx(String posRefId, int refundAmount) async {
+    await doAuth();
+    currentTxAmount = refundAmount;
+    currentTxId = posRefId;
+    Map<String, dynamic> payload = {
+      "transactionReferenceNo": currentTxId,
+    };
+    await doRefund(posRefId, refundAmount, extraParams: payload);
   }
 
   @override
@@ -312,6 +541,46 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   
   
   ======================================================*/
+
+  @override
+  Future<void> dispose() async {
+    // NOT NEEDED
+  }
+
+  @override
+  Future<Map<String, bool>> get getConfig async {
+    // NOT NEEDED
+    return {};
+  }
+
+  @override
+  Future<String> get getCurrentFlow async {
+    // NOT NEEDED
+    return "";
+  }
+
+  @override
+  Future<String> get getCurrentPairingFlowState async {
+    // NOT NEEDED
+    return "";
+  }
+
+  @override
+  Future<String> get getCurrentStatus async {
+    // NOT NEEDED
+    return "";
+  }
+
+  @override
+  Future<String> get getCurrentTxFlowState async {
+    // NOT NEEDED
+    return "";
+  }
+
+  @override
+  Future<void> cancelTransaction() async {
+    // Not supported
+  }
 
   @override
   Future<List<Tenant>> getTenantsList(String apiKey,

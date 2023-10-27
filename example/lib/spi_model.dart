@@ -47,6 +47,7 @@ class SpiModel extends ChangeNotifier {
     notifyListeners();
     // start spi
     // Non thumbzup machine
+    
     // await FlutterSpi.init(
     //     posId: posId!,
     //     serialNumber: serialNumber!,
