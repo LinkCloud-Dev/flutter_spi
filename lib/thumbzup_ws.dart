@@ -234,44 +234,44 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       log(event);
       final eventJson = json.decode(event);
       // TODO: to be confirmed if key is correct
-      switch (eventJson["type"]) {
-        case "open":
-          _logCallback(PbLogType.info, "Websocket CONNECTED");
-          break;
-        case "close":
-          _logCallback(PbLogType.info, "Websocket DISCONNECTED");
-          _statusCallback(PbStatus.disconnected);
-          _paringCallback(true, false, msg: "Websocket DISCONNECTED");
-          break;
-        case "message":
-          // TODO: to be confirmed if key is correct
-          _logCallback(PbLogType.receiveData, eventJson["data"]);
-          final data = eventJson["data"];
+      // switch (eventJson["type"]) {
+      //   case "open":
+      //     _logCallback(PbLogType.info, "Websocket CONNECTED");
+      //     break;
+      //   case "close":
+      //     _logCallback(PbLogType.info, "Websocket DISCONNECTED");
+      //     _statusCallback(PbStatus.disconnected);
+      //     _paringCallback(true, false, msg: "Websocket DISCONNECTED");
+      //     break;
+      //   case "message":
+      // TODO: to be confirmed if key is correct
+      _logCallback(PbLogType.receiveData, eventJson);
+      final data = eventJson;
 
-          // Posbuddy response
-          if (data["commandPayload"] != null &&
-              data["commandId"] == "PAY_APP_RESPONSE") {
-            final commandPayload = data["commandPayload"];
-            if (commandPayload["launchType"] == "SALE") {
-              _transactionCallback(commandPayload, "PURCHASE");
-            } else if (commandPayload["launchType"] == "REFUND") {
-              _transactionCallback(commandPayload, "REFUND");
-            } else if (commandPayload["launchType"] == "AUTH" ||
-                commandPayload["launchType"] == "RETAIL_AUTH") {
-              _authCallback(commandPayload);
-            }
-          } else if (data["commandId"] == "PING_RESPONSE" &&
-              data["result"] != null) {
-            _pingCallback(
-                {"result": data["result"], "payload": data["commandPayload"]});
-          } else if (data["commandId"] == "PRINT_SUNMI_COMMANDS_RESPONSE" &&
-              data["result"] != null) {
-            _printCallback!({"result": data["result"]});
-          } else if (data["commandId"] == "BARCODE_VALUE" &&
-              data["commandPayload"] != null) {
-            _barcodeCallback!(data["commandPayload"]["value"]);
-          }
+      // Posbuddy response
+      if (data["commandPayload"] != null &&
+          data["commandId"] == "PAY_APP_RESPONSE") {
+        final commandPayload = data["commandPayload"];
+        if (commandPayload["launchType"] == "SALE") {
+          _transactionCallback(commandPayload, "PURCHASE");
+        } else if (commandPayload["launchType"] == "REFUND") {
+          _transactionCallback(commandPayload, "REFUND");
+        } else if (commandPayload["launchType"] == "AUTH" ||
+            commandPayload["launchType"] == "RETAIL_AUTH") {
+          _authCallback(commandPayload);
+        }
+      } else if (data["commandId"] == "PING_RESPONSE" &&
+          data["result"] != null) {
+        _pingCallback(
+            {"result": data["result"], "payload": data["commandPayload"]});
+      } else if (data["commandId"] == "PRINT_SUNMI_COMMANDS_RESPONSE" &&
+          data["result"] != null) {
+        _printCallback!({"result": data["result"]});
+      } else if (data["commandId"] == "BARCODE_VALUE" &&
+          data["commandPayload"] != null) {
+        _barcodeCallback!(data["commandPayload"]["value"]);
       }
+      // }
     }, onError: (event) {
       _logCallback(PbLogType.error, "Websocket error: ${event.toString()}");
       _statusCallback(PbStatus.error);
