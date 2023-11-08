@@ -59,12 +59,12 @@ class SpiModel extends ChangeNotifier {
     // TODO: Add keys
     // Thumbzup machine
     await FlutterSpi.init(
-      appKey: "05705f64-4bcc-49a4-a197-6891eaed6c7f",
-      merchantId: "42298585635787",
+      appKey: "ca1f5a1b-e582-40f3-86e9-c24269783b6f",
+      merchantId: "112223334",
       serialNumber: serialNumber,
       secrets: {
-        "secretKey": "",
-        "accessKey": "",
+        "secretKey": "GSGjgneRLmDbf/9l*nDMh2nEa/1A*3297S9UX3Pk",
+        "accessKey": "5T73RL8TJUCT4SCM98DU",
       },
       spiType: "THUMBZUP",
       username: "default",
