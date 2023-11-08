@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
-// import 'dart:io';
+import 'dart:io';
 
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +13,8 @@ import 'package:web_socket_channel/status.dart' as status;
 class ThumbzUpWebSocket implements FlutterSpiPlatform {
   static const MethodChannel _channel = MethodChannel('flutter_spi');
 
-  WebSocketChannel? _websocket;
+  // WebSocketChannel? _websocket;
+  WebSocket? _websocket;
 
   String? currentTxId;
   int? currentTxAmount;
@@ -227,24 +228,16 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
 
     _paringCallback(false, false, msg: "Connecting to $deviceIdentifier...");
 
-    _websocket = WebSocketChannel.connect(
-        Uri.parse("wss://$deviceIdentifier.thumbzup.mobi:8080"));
+    // _websocket = WebSocketChannel.connect(
+    // Uri.parse("wss://$deviceIdentifier.thumbzup.mobi:8080"));
 
-    _websocket!.stream.listen((event) {
+    _websocket = WebSocket.fromUpgradedSocket(await SecureSocket.connect(
+        "wss://$deviceIdentifier.thumbzup.mobi", 8080, onBadCertificate: (certificate) => true,));
+
+    // _websocket!.stream.listen
+    _websocket!.listen((event) {
       log(event);
       final eventJson = json.decode(event);
-      // TODO: to be confirmed if key is correct
-      // switch (eventJson["type"]) {
-      //   case "open":
-      //     _logCallback(PbLogType.info, "Websocket CONNECTED");
-      //     break;
-      //   case "close":
-      //     _logCallback(PbLogType.info, "Websocket DISCONNECTED");
-      //     _statusCallback(PbStatus.disconnected);
-      //     _paringCallback(true, false, msg: "Websocket DISCONNECTED");
-      //     break;
-      //   case "message":
-      // TODO: to be confirmed if key is correct
       _logCallback(PbLogType.receiveData, event);
       final data = eventJson;
 
@@ -271,7 +264,6 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
           data["commandPayload"] != null) {
         _barcodeCallback!(data["commandPayload"]["value"]);
       }
-      // }
     }, onError: (event) {
       _logCallback(PbLogType.error, "Websocket error: ${event.toString()}");
       _statusCallback(PbStatus.error);
@@ -287,7 +279,8 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
 
   Future<void> disconnect() async {
     if (_websocket != null) {
-      await _websocket!.sink.close(status.normalClosure);
+      await _websocket!.close(status.normalClosure);
+      // await _websocket!.sink.close(status.normalClosure);
     }
   }
 
@@ -295,7 +288,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     final msg = json.encode(obj);
 
     _logCallback(PbLogType.transmitData, msg);
-    _websocket!.sink.add(msg);
+    _websocket!.add(msg);
   }
 
   void pingDevice() {
@@ -513,7 +506,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
     // await doAuth();
-    // await 
+    // await
     currentTxAmount = purchaseAmount + tipAmount;
     currentTxId = posRefId;
     Map<String, dynamic> payload = {
