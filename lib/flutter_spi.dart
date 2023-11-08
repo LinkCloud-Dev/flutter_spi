@@ -269,6 +269,10 @@ enum SpiMethodCallEvents {
 class FlutterSpi {
   static FlutterSpiPlatform flutterSpi = SpiMethodChannel();
 
+  static void registerWith(dynamic registrar) {
+    // FlutterSpiPlatform.instance = FlutterSpiWeb();
+  }
+
   static void handleMethodCall(cb) {
     flutterSpi.handleMethodCall(cb);
   }

@@ -37,6 +37,9 @@ flutter:
         pluginClass: FlutterSpiPlugin
       windows:
         pluginClass: FlutterSpiPluginCApi
+      web:
+        pluginClass: FlutterSpi
+        fileName: flutter_spi.dart
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:
