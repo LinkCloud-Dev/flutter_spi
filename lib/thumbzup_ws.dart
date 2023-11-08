@@ -10,6 +10,14 @@ import 'package:flutter_spi/thumbzup_status.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 
+// class MyHttpOverrides extends HttpOverrides{
+//   @override
+//   HttpClient createHttpClient(SecurityContext context){
+//     return super.createHttpClient(context)
+//       ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
+//   }
+// }
+
 class ThumbzUpWebSocket implements FlutterSpiPlatform {
   static const MethodChannel _channel = MethodChannel('flutter_spi');
 
@@ -23,7 +31,11 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   String _username = "";
   String _applicationKey = "";
   String _serialNumber = "";
+  String _secretKey = "";
+  String _accessKey = "";
   String? _authenticationKey;
+
+  bool isAuth = false;
 
   Function _logCallback = (PbLogType logType, String msg) {
     // Default logger
@@ -64,10 +76,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
           },
         ),
       );
-      return;
+    } else {
+      setAuthenticationKey(data["authenticationKey"]);
     }
-
-    setAuthenticationKey(data["authenticationKey"]);
+    isAuth = false;
   }
 
   void _pingCallback(Map<String, dynamic> data) {
@@ -201,6 +213,11 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     currentTxId = null;
   }
 
+  void setKeys(Map<String, String> secrets) {
+    _secretKey = secrets["secretKey"] ?? "";
+    _accessKey = secrets["accessKey"] ?? "";
+  }
+
   void setMerchantId(String merchantId) {
     _merchantId = merchantId;
   }
@@ -228,13 +245,14 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
 
     _paringCallback(false, false, msg: "Connecting to $deviceIdentifier...");
 
-    // _websocket = WebSocketChannel.connect(
-    // Uri.parse("wss://$deviceIdentifier.thumbzup.mobi:8080"));
+    var client = HttpClient();
+    client.badCertificateCallback = (cert, host, port) => true;
 
-    _websocket = WebSocket.fromUpgradedSocket(await SecureSocket.connect(
-        "wss://$deviceIdentifier.thumbzup.mobi", 8080, onBadCertificate: (certificate) => true,));
+    _websocket = await WebSocket.connect(
+      "wss://$deviceIdentifier.thumbzup.mobi:8080",
+      customClient: client,
+    );
 
-    // _websocket!.stream.listen
     _websocket!.listen((event) {
       log(event);
       final eventJson = json.decode(event);
@@ -280,7 +298,6 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   Future<void> disconnect() async {
     if (_websocket != null) {
       await _websocket!.close(status.normalClosure);
-      // await _websocket!.sink.close(status.normalClosure);
     }
   }
 
@@ -371,11 +388,12 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
         "launchType": "RETAIL_AUTH",
         "applicationKey": _applicationKey,
         "merchantID": _merchantId,
-        // "merchantUsername": _username,
-        "secretKey": "",
-        "accessKey": ""
+        "secretKey": _secretKey,
+        "accessKey": _accessKey,
       },
     });
+
+    isAuth = true;
   }
 
   Future<void> doSale(int amount, {Map<String, dynamic>? extraParams}) async {
@@ -396,6 +414,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
         "applicationKey": _applicationKey,
         "merchantID": _merchantId,
         "merchantUsername": _username,
+        "authenticationKey": _authenticationKey,
         "transactionAmount": amount,
       }
     };
@@ -405,6 +424,8 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     }
 
     sendMessage(obj);
+
+    isAuth = true;
 
     _handleMethodCall!(
       constructMethodCall(
@@ -500,25 +521,34 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     setUsername(username);
     setMerchantId(merchantId!);
     setSerialNumber(serialNumber!);
+    setKeys(secrets ?? {});
   }
 
   @override
   Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
     // await doAuth();
-    // await
+    doRetailAuth();
+
     currentTxAmount = purchaseAmount + tipAmount;
     currentTxId = posRefId;
     Map<String, dynamic> payload = {
       "transactionReferenceNo": currentTxId,
     };
 
+    while (isAuth) {
+      // Wait and do nothing
+    }
+    log("Authentication key: ${_authenticationKey ?? "NULL"}");
+
     await doSale(currentTxAmount!, extraParams: payload);
   }
 
   @override
   Future<void> initiateRefundTx(String posRefId, int refundAmount) async {
-    await doAuth();
+    // doAuth();
+    doRetailAuth();
+
     currentTxAmount = refundAmount;
     currentTxId = posRefId;
     Map<String, dynamic> payload = {

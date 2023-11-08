@@ -47,7 +47,7 @@ class SpiModel extends ChangeNotifier {
     notifyListeners();
     // start spi
     // Non thumbzup machine
-    
+
     // await FlutterSpi.init(
     //     posId: posId!,
     //     serialNumber: serialNumber!,
@@ -55,13 +55,20 @@ class SpiModel extends ChangeNotifier {
     //     apiKey: apiKey!,
     //     tenantCode: tenantCode!,
     //     secrets: secrets != null ? secrets!.toJSON() : null);
-    
+
+    // TODO: Add keys
     // Thumbzup machine
     await FlutterSpi.init(
-        appKey: "05705f64-4bcc-49a4-a197-6891eaed6c7f",
-        merchantId: "42298585635787",
-        serialNumber: serialNumber,
-        spiType: "THUMBZUP");
+      appKey: "05705f64-4bcc-49a4-a197-6891eaed6c7f",
+      merchantId: "42298585635787",
+      serialNumber: serialNumber,
+      secrets: {
+        "secretKey": "",
+        "accessKey": "",
+      },
+      spiType: "THUMBZUP",
+      username: "default",
+    );
     await FlutterSpi.start();
   }
 

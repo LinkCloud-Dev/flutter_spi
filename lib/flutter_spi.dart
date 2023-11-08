@@ -292,14 +292,16 @@ class FlutterSpi {
       flutterSpi = ThumbzUpWebSocket();
     }
     flutterSpi.init(
-        posId: posId,
-        serialNumber: serialNumber,
-        eftposAddress: eftposAddress,
-        apiKey: apiKey,
-        tenantCode: tenantCode,
-        secrets: secrets,
-        appKey: appKey,
-        merchantId: merchantId);
+      posId: posId,
+      serialNumber: serialNumber,
+      eftposAddress: eftposAddress,
+      apiKey: apiKey,
+      tenantCode: tenantCode,
+      secrets: secrets,
+      appKey: appKey,
+      merchantId: merchantId,
+      username: username,
+    );
   }
 
   static Future<void> start() async {
