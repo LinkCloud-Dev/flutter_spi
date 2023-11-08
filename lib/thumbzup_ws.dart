@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
+// import 'dart:io';
 
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/services.dart';
@@ -33,7 +33,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     } else if (logType == PbLogType.transmitData) {
       log("Transmit data: $msg");
     } else {
-      log("Websocket error: $msg", error: WebSocketException(msg));
+      log("Websocket error: $msg", error: WebSocketChannelException(msg));
     }
   };
 
@@ -245,7 +245,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       //     break;
       //   case "message":
       // TODO: to be confirmed if key is correct
-      _logCallback(PbLogType.receiveData, eventJson);
+      _logCallback(PbLogType.receiveData, event);
       final data = eventJson;
 
       // Posbuddy response
@@ -357,6 +357,30 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
         "applicationKey": _applicationKey,
         "merchantID": _merchantId,
         "merchantUsername": _username,
+      },
+    });
+  }
+
+  Future<void> doRetailAuth() async {
+    if (_websocket == null) {
+      _authCallback({
+        "errorBundle": {
+          "description": "Error",
+          "message": "Websocket not connected"
+        }
+      });
+      return;
+    }
+
+    sendMessage({
+      "commandId": "PAY_APP_RQST",
+      "commandPayload": {
+        "launchType": "RETAIL_AUTH",
+        "applicationKey": _applicationKey,
+        "merchantID": _merchantId,
+        // "merchantUsername": _username,
+        "secretKey": "",
+        "accessKey": ""
       },
     });
   }
@@ -488,7 +512,8 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   @override
   Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
-    await doAuth();
+    // await doAuth();
+    // await 
     currentTxAmount = purchaseAmount + tipAmount;
     currentTxId = posRefId;
     Map<String, dynamic> payload = {
