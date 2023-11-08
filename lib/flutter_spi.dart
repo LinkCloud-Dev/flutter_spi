@@ -190,9 +190,9 @@ class TransactionFlowState {
       isRequestSent: obj['isRequestSent'],
       requestTime: obj['requestTime'],
       lastStateRequestTime: obj['lastStateRequestTime'],
-      attemptingToCancel: obj['attemptingToCancel'],
-      awaitingSignatureCheck: obj['awaitingSignatureCheck'],
-      awaitingPhoneForAuth: obj['awaitingPhoneForAuth'],
+      attemptingToCancel: obj['attemptingToCancel'] ?? false,
+      awaitingSignatureCheck: obj['awaitingSignatureCheck'] ?? false,
+      awaitingPhoneForAuth: obj['awaitingPhoneForAuth'] ?? false,
       finished: obj['finished'],
       success: obj['success'],
       response:
