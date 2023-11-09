@@ -35,8 +35,6 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   String _accessKey = "";
   String? _authenticationKey;
 
-  bool isAuth = false;
-
   Function _logCallback = (PbLogType logType, String msg) {
     // Default logger
     if (logType == PbLogType.info) {
@@ -78,8 +76,8 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       );
     } else {
       setAuthenticationKey(data["authenticationKey"]);
+      realDoTransaction();
     }
-    isAuth = false;
   }
 
   void _pingCallback(Map<String, dynamic> data) {
@@ -369,6 +367,18 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
         "merchantUsername": _username,
       },
     });
+
+    _handleMethodCall!(
+      constructMethodCall(
+        SpiMethodCallEvents.txFlowStateChanged,
+        {
+          "posRefId": currentTxId,
+          "type": "PURCHASE",
+          "amountCents": currentTxAmount,
+          "finished": false,
+        },
+      ),
+    );
   }
 
   Future<void> doRetailAuth() async {
@@ -393,7 +403,19 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       },
     });
 
-    isAuth = true;
+
+    _handleMethodCall!(
+      constructMethodCall(
+        SpiMethodCallEvents.txFlowStateChanged,
+        {
+          "posRefId": currentTxId,
+          "type": "PURCHASE",
+          "amountCents": currentTxAmount,
+          "finished": false,
+        },
+      ),
+    );
+
   }
 
   Future<void> doSale(int amount, {Map<String, dynamic>? extraParams}) async {
@@ -424,8 +446,6 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     }
 
     sendMessage(obj);
-
-    isAuth = true;
 
     _handleMethodCall!(
       constructMethodCall(
@@ -527,21 +547,30 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   @override
   Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
-    // await doAuth();
-    doRetailAuth();
 
     currentTxAmount = purchaseAmount + tipAmount;
     currentTxId = posRefId;
+    
+    // doAuth();
+    doRetailAuth();
+
+    // Map<String, dynamic> payload = {
+    //   "transactionReferenceNo": currentTxId,
+    // };
+
+    // while (isAuth) {
+    //   // Wait and do nothing
+    // }
+    // log("Authentication key: ${_authenticationKey ?? "NULL"}");
+
+    // await doSale(currentTxAmount!, extraParams: payload);
+  }
+
+  void realDoTransaction(){
     Map<String, dynamic> payload = {
       "transactionReferenceNo": currentTxId,
     };
-
-    while (isAuth) {
-      // Wait and do nothing
-    }
-    log("Authentication key: ${_authenticationKey ?? "NULL"}");
-
-    await doSale(currentTxAmount!, extraParams: payload);
+    doSale(currentTxAmount!, extraParams: payload);
   }
 
   @override
