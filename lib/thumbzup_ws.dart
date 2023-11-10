@@ -65,6 +65,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
             "amountCents": currentTxAmount,
             "finished": true,
             "success": "FAILED",
+            "attemptingToCancel": false,
+            "awaitingSignatureCheck": false,
+            "awaitingPhoneForAuth": false,
+            "awaitingGltResponse": false,
             "response": {
               "data": {
                 "host_response_text":
@@ -146,6 +150,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
             "amountCents": currentTxAmount,
             "finished": true,
             "success": "FAILED",
+            "attemptingToCancel": false,
+            "awaitingSignatureCheck": false,
+            "awaitingPhoneForAuth": false,
+            "awaitingGltResponse": false,
             "response": {
               "data": {
                 "host_response_text":
@@ -167,6 +175,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
               "amountCents": int.parse(data["transactionAmount"]),
               "finished": true,
               "success": "SUCCESS",
+              "attemptingToCancel": false,
+              "awaitingSignatureCheck": false,
+              "awaitingPhoneForAuth": false,
+              "awaitingGltResponse": false,
               "response": {
                 "data": {
                   "host_response_text": "Transaction successful",
@@ -186,6 +198,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
               "amountCents": int.parse(data["transactionAmount"]),
               "finished": true,
               "success": "FAILED",
+              "attemptingToCancel": false,
+              "awaitingSignatureCheck": false,
+              "awaitingPhoneForAuth": false,
+              "awaitingGltResponse": false,
               "displayMessage": "Transaction declined, invalid PIN",
             },
           ),
@@ -201,6 +217,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
               "amountCents": int.parse(data["transactionAmount"]),
               "finished": true,
               "success": "FAILED",
+              "attemptingToCancel": false,
+              "awaitingSignatureCheck": false,
+              "awaitingPhoneForAuth": false,
+              "awaitingGltResponse": false,
               "displayMessage": "Transaction declined, check with your bank",
             },
           ),
@@ -378,6 +398,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
           "type": "PURCHASE",
           "amountCents": currentTxAmount,
           "finished": false,
+          "attemptingToCancel": false,
+          "awaitingSignatureCheck": false,
+          "awaitingPhoneForAuth": false,
+          "awaitingGltResponse": false,
         },
       ),
     );
@@ -414,6 +438,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
           "type": "PURCHASE",
           "amountCents": currentTxAmount,
           "finished": false,
+          "attemptingToCancel": false,
+          "awaitingSignatureCheck": false,
+          "awaitingPhoneForAuth": false,
+          "awaitingGltResponse": false,
         },
       ),
     );
@@ -457,6 +485,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
           "type": "PURCHASE",
           "amountCents": amount,
           "finished": false,
+          "attemptingToCancel": false,
+          "awaitingSignatureCheck": false,
+          "awaitingPhoneForAuth": false,
+          "awaitingGltResponse": false,
         },
       ),
     );
@@ -500,6 +532,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
           "type": "REFUND",
           "amountCents": amount,
           "finished": false,
+          "attemptingToCancel": false,
+          "awaitingSignatureCheck": false,
+          "awaitingPhoneForAuth": false,
+          "awaitingGltResponse": false,
         },
       ),
     );
@@ -553,8 +589,8 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     currentTxAmount = purchaseAmount + tipAmount;
     currentTxId = posRefId;
     
-    // doAuth();
-    doRetailAuth();
+    doAuth();
+    // doRetailAuth();
 
     // Map<String, dynamic> payload = {
     //   "transactionReferenceNo": currentTxId,
