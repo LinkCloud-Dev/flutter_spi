@@ -216,10 +216,12 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     _accessKey = secrets["accessKey"] ?? "";
   }
 
+  @override
   void setMerchantId(String merchantId) {
     _merchantId = merchantId;
   }
 
+  @override
   void setUsername(String username) {
     _username = username;
   }
@@ -603,8 +605,19 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
 
   @override
   Future<void> setSerialNumber(String serialNumber) async {
-    _serialNumber = serialNumber;
+    _serialNumber = serialNumber.replaceAll(RegExp("-"), "");
   }
+
+   @override
+  void setAppKey(String appKey) {
+    _applicationKey = appKey;
+  }
+  
+  @override
+  void setSecrets(Map<String, String> secrets) {
+    _accessKey = secrets["accessKey"]!;
+    _secretKey = secrets["secretKey"]!;
+  } 
 
   /*======================================================
   
@@ -757,4 +770,6 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   Future<void> setEftposAddress(String address) async {
     // NOT NEEDED
   }
+  
+ 
 }

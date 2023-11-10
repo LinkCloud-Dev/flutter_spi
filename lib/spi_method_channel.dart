@@ -247,4 +247,24 @@ class SpiMethodChannel implements FlutterSpiPlatform {
       "printMerchantCopy": printMerchantCopy,
     });
   }
+
+  @override
+  void setAppKey(String appKey) {
+    // NOT NEEDED
+  }
+
+  @override
+  void setMerchantId(String merchantId) {
+    // NOT NEEDED
+  }
+
+  @override
+  void setSecrets(Map<String, String> secrets) {
+    // NOT NEEDED
+  }
+
+  @override
+  void setUsername(String username) {
+    // NOT NEEDED
+  }
 }

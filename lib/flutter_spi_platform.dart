@@ -27,6 +27,14 @@ abstract class FlutterSpiPlatform {
 
   Future<void> setPosInfo(String posVendorId, String posVersion);
 
+  void setAppKey(String appKey);
+
+  void setMerchantId(String merchantId);
+
+  void setUsername(String username);
+
+  void setSecrets(Map<String, String> secrets);
+
   Future<List<Tenant>> getTenantsList(String apiKey,
       {String countryCode = "AU"});
 
