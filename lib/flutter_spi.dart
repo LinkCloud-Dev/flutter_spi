@@ -328,6 +328,22 @@ class FlutterSpi {
     flutterSpi.setPosInfo(posVendorId, posVersion);
   }
 
+  static void setAppKey(String appKey){
+    flutterSpi.setAppKey(appKey);
+  }
+
+  static void setMerchantId(String merchantId){
+    flutterSpi.setMerchantId(merchantId);
+  }
+
+  static void setSecrets(Map<String, String> secrets){
+    flutterSpi.setSecrets(secrets);
+  }
+
+  static void setUsername(String username){
+    flutterSpi.setUsername(username);
+  }
+
   static Future<List<Tenant>> getTenantsList(String apiKey,
       {String countryCode = "AU"}) async {
     return flutterSpi.getTenantsList(apiKey);
