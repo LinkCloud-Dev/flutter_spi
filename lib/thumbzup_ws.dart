@@ -319,6 +319,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     if (_websocket != null) {
       await _websocket!.close(status.normalClosure);
     }
+    _statusCallback(PbStatus.disconnected);
   }
 
   Future<void> sendMessage(dynamic obj) async {
