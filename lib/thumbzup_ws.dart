@@ -268,10 +268,16 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     var client = HttpClient();
     client.badCertificateCallback = (cert, host, port) => true;
 
-    _websocket = await WebSocket.connect(
-      "wss://$deviceIdentifier.thumbzup.mobi:8080",
-      customClient: client,
-    );
+    try {
+      _websocket = await WebSocket.connect(
+        "wss://$deviceIdentifier.thumbzup.mobi:8080",
+        customClient: client,
+      );
+    } catch (e) {
+      _paringCallback(true, false, msg: e.toString());
+      log("Error: ${e.toString()}");
+      return;
+    }
 
     _websocket!.listen((event) {
       log(event);
