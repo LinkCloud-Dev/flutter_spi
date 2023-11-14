@@ -430,7 +430,6 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       },
     });
 
-
     _handleMethodCall!(
       constructMethodCall(
         SpiMethodCallEvents.txFlowStateChanged,
@@ -446,7 +445,6 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
         },
       ),
     );
-
   }
 
   Future<void> doSale(int amount, {Map<String, dynamic>? extraParams}) async {
@@ -586,10 +584,9 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   @override
   Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
-
     currentTxAmount = purchaseAmount + tipAmount;
     currentTxId = posRefId;
-    
+
     doAuth();
     // doRetailAuth();
 
@@ -605,7 +602,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     // await doSale(currentTxAmount!, extraParams: payload);
   }
 
-  void realDoTransaction(){
+  void realDoTransaction() {
     Map<String, dynamic> payload = {
       "transactionReferenceNo": currentTxId,
     };
@@ -638,6 +635,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   @override
   Future<void> pairingCancel() async {
     await disconnect();
+    _paringCallback(true, false, msg: "Connection cancelled");
   }
 
   @override
@@ -645,16 +643,16 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     _serialNumber = serialNumber.replaceAll(RegExp("-"), "");
   }
 
-   @override
+  @override
   void setAppKey(String appKey) {
     _applicationKey = appKey;
   }
-  
+
   @override
   void setSecrets(Map<String, String> secrets) {
     _accessKey = secrets["accessKey"]!;
     _secretKey = secrets["secretKey"]!;
-  } 
+  }
 
   /*======================================================
   
@@ -807,6 +805,4 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   Future<void> setEftposAddress(String address) async {
     // NOT NEEDED
   }
-  
- 
 }
