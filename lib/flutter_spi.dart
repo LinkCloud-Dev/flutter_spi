@@ -290,6 +290,8 @@ class FlutterSpi {
       String username = "default"}) async {
     if (spiType == "THUMBZUP") {
       flutterSpi = ThumbzUpWebSocket();
+    }else{
+      flutterSpi = SpiMethodChannel();
     }
     flutterSpi.init(
       posId: posId,
