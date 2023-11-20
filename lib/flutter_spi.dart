@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
 import 'package:flutter_spi/spi_method_channel.dart';
-import 'package:flutter_spi/thumbzup_ws.dart';
+import 'package:flutter_spi/thumbzup/thumbzup_ws.dart';
 
 class SpiMessage {
   String? id;
@@ -277,20 +277,22 @@ class FlutterSpi {
     flutterSpi.handleMethodCall(cb);
   }
 
-  static Future<void> init(
-      {String? posId,
-      String? serialNumber,
-      String? eftposAddress,
-      String? apiKey,
-      String? tenantCode,
-      Map<String, String>? secrets,
-      String? spiType,
-      String? appKey,
-      String? merchantId,
-      String username = "default"}) async {
+  static Future<void> init({
+    String? posId, // MX51
+    String? serialNumber, // MX51, ThumbzUp
+    String? eftposAddress, // MX51,
+    String? apiKey, // MX51
+    String? tenantCode, // MX51
+    Map<String, String>? secrets, // MX51, ThumbzUp
+    String? spiType, // MX51, ThumbzUp
+    String? appKey, // ThumbzUp
+    String? merchantId, // ThumbzUp
+    String username = "default", // ThumbzUp
+  }) async {
     if (spiType == "THUMBZUP") {
       flutterSpi = ThumbzUpWebSocket();
-    }else{
+    } else if (spiType == "WINDCAVE") {
+    } else {
       flutterSpi = SpiMethodChannel();
     }
     flutterSpi.init(
@@ -330,19 +332,19 @@ class FlutterSpi {
     flutterSpi.setPosInfo(posVendorId, posVersion);
   }
 
-  static void setAppKey(String appKey){
+  static void setAppKey(String appKey) {
     flutterSpi.setAppKey(appKey);
   }
 
-  static void setMerchantId(String merchantId){
+  static void setMerchantId(String merchantId) {
     flutterSpi.setMerchantId(merchantId);
   }
 
-  static void setSecrets(Map<String, String> secrets){
+  static void setSecrets(Map<String, String> secrets) {
     flutterSpi.setSecrets(secrets);
   }
 
-  static void setUsername(String username){
+  static void setUsername(String username) {
     flutterSpi.setUsername(username);
   }
 

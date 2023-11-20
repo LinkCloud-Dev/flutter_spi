@@ -6,7 +6,7 @@ import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
-import 'package:flutter_spi/thumbzup_status.dart';
+import 'package:flutter_spi/thumbzup/thumbzup_status.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 
@@ -88,7 +88,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     if (data["errorBundle"] != null) {
       // log("Ping error: ${data["errorBundle"]["description"]}\n ${data["errorBundle"]["message"]}");
       _statusCallback(PbStatus.disconnected);
-      _paringCallback(
+      _pairingCallback(
         true,
         false,
         msg:
@@ -96,10 +96,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
       );
     } else if (data["result"] != "SUCCESS") {
       _statusCallback(PbStatus.disconnected);
-      _paringCallback(true, false, msg: "Websocket not connected");
+      _pairingCallback(true, false, msg: "Websocket not connected");
     } else {
       _statusCallback(PbStatus.connected);
-      _paringCallback(true, true, msg: "Websocket CONNECTED");
+      _pairingCallback(true, true, msg: "Websocket CONNECTED");
     }
   }
 
@@ -127,7 +127,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     }
   }
 
-  void _paringCallback(bool finished, bool successful, {String msg = ""}) {
+  void _pairingCallback(bool finished, bool successful, {String msg = ""}) {
     Map<String, dynamic> payload = {
       "message": msg,
       "awaitingCheckFromEftpos": false,
@@ -263,7 +263,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     deviceIdentifier = deviceIdentifier.replaceAll(RegExp(r"/\s/g"), "");
     _logCallback(PbLogType.info, "Connecting to $deviceIdentifier...");
 
-    _paringCallback(false, false, msg: "Connecting to $deviceIdentifier...");
+    _pairingCallback(false, false, msg: "Connecting to $deviceIdentifier...");
 
     var client = HttpClient();
     client.badCertificateCallback = (cert, host, port) => true;
@@ -274,7 +274,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
         customClient: client,
       );
     } catch (e) {
-      _paringCallback(true, false, msg: e.toString());
+      _pairingCallback(true, false, msg: e.toString());
       log("Error: ${e.toString()}");
       return;
     }
@@ -311,7 +311,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     }, onError: (event) {
       _logCallback(PbLogType.error, "Websocket error: ${event.toString()}");
       _statusCallback(PbStatus.error);
-      _paringCallback(true, false, msg: "Unable to connect");
+      _pairingCallback(true, false, msg: "Unable to connect");
     });
 
     // Wait for ws to connect
@@ -641,7 +641,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   @override
   Future<void> pairingCancel() async {
     await disconnect();
-    _paringCallback(true, false, msg: "Connection cancelled");
+    _pairingCallback(true, false, msg: "Connection cancelled");
   }
 
   @override
