@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spi/flutter_spi.dart';
+import 'package:flutter_spi_example/spi_model.dart';
 
 class WaitingTx extends StatelessWidget {
   final int amount;

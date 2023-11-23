@@ -1,7 +1,11 @@
 import 'dart:async';
 
 import 'package:enum_to_string/enum_to_string.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spi/flutter_spi_platform.dart';
+import 'package:flutter_spi/spi_method_channel.dart';
+import 'package:flutter_spi/thumbzup/thumbzup_ws.dart';
 
 class SpiMessage {
   String? id;
@@ -186,9 +190,9 @@ class TransactionFlowState {
       isRequestSent: obj['isRequestSent'],
       requestTime: obj['requestTime'],
       lastStateRequestTime: obj['lastStateRequestTime'],
-      attemptingToCancel: obj['attemptingToCancel'],
-      awaitingSignatureCheck: obj['awaitingSignatureCheck'],
-      awaitingPhoneForAuth: obj['awaitingPhoneForAuth'],
+      attemptingToCancel: obj['attemptingToCancel'] ?? false,
+      awaitingSignatureCheck: obj['awaitingSignatureCheck'] ?? false,
+      awaitingPhoneForAuth: obj['awaitingPhoneForAuth'] ?? false,
       finished: obj['finished'],
       success: obj['success'],
       response:
@@ -263,206 +267,200 @@ enum SpiMethodCallEvents {
 }
 
 class FlutterSpi {
-  static const MethodChannel _channel = MethodChannel('flutter_spi');
+  static FlutterSpiPlatform flutterSpi = SpiMethodChannel();
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+  static void registerWith(dynamic registrar) {
+    // FlutterSpiPlatform.instance = FlutterSpiWeb();
   }
 
-  static void handleMethodCall(dynamic cb) {
-    _channel.setMethodCallHandler(cb);
+  static void handleMethodCall(cb) {
+    flutterSpi.handleMethodCall(cb);
   }
 
-  static Future<void> init(String posId, String serialNumber, String eftposAddress, 
-      String apiKey, String tenantCode, {Map<String, String>? secrets}) async {
-    await _channel.invokeMethod('init', {
-      "posId": posId,
-      "serialNumber": serialNumber,
-      "eftposAddress": eftposAddress,
-      "apiKey": apiKey,
-      "tenantCode": tenantCode,
-      "secrets": secrets,
-    });
+  static Future<void> init({
+    String? posId, // MX51
+    String? serialNumber, // MX51, ThumbzUp
+    String? eftposAddress, // MX51,
+    String? apiKey, // MX51
+    String? tenantCode, // MX51
+    Map<String, String>? secrets, // MX51, ThumbzUp
+    String? spiType, // MX51, ThumbzUp
+    String? appKey, // ThumbzUp
+    String? merchantId, // ThumbzUp
+    String username = "default", // ThumbzUp
+  }) async {
+    if (spiType == "THUMBZUP") {
+      flutterSpi = ThumbzUpWebSocket();
+    } else if (spiType == "WINDCAVE") {
+    } else {
+      flutterSpi = SpiMethodChannel();
+    }
+    flutterSpi.init(
+      posId: posId,
+      serialNumber: serialNumber,
+      eftposAddress: eftposAddress,
+      apiKey: apiKey,
+      tenantCode: tenantCode,
+      secrets: secrets,
+      appKey: appKey,
+      merchantId: merchantId,
+      username: username,
+    );
   }
 
   static Future<void> start() async {
-    await _channel.invokeMethod('start');
+    flutterSpi.start();
   }
 
   static Future<void> setPosId(String posId) async {
-    await _channel.invokeMethod('setPosId', {"posId": posId});
+    flutterSpi.setPosId(posId);
   }
 
   static Future<void> setSerialNumber(String serialNumber) async {
-    await _channel.invokeMethod('setSerialNumber', {"serialNumber": serialNumber});
+    flutterSpi.setSerialNumber(serialNumber);
   }
 
   static Future<void> setEftposAddress(String address) async {
-    await _channel.invokeMethod('setEftposAddress', {"address": address});
+    flutterSpi.setEftposAddress(address);
   }
 
   static Future<void> setTenantCode(String tenantCode) async {
-    await _channel.invokeMethod('setTenantCode', {"tenantCode": tenantCode});
+    flutterSpi.setTenantCode(tenantCode);
   }
 
   static Future<void> setPosInfo(String posVendorId, String posVersion) async {
-    await _channel.invokeMethod(
-        'setPosInfo', {"posVendorId": posVendorId, "posVersion": posVersion});
+    flutterSpi.setPosInfo(posVendorId, posVersion);
   }
 
-  static Future<List<Tenant>> getTenantsList(String apiKey, {String countryCode = "AU"}) async {
-    final List tenants = await _channel.invokeMethod('getTenantsList', 
-      {"apiKey": apiKey, "countryCode": countryCode});
-    List<Tenant> tenantsList = tenants.map((e) => Tenant.fromMap(e)).toList();
-    return tenantsList;
+  static void setAppKey(String appKey) {
+    flutterSpi.setAppKey(appKey);
+  }
+
+  static void setMerchantId(String merchantId) {
+    flutterSpi.setMerchantId(merchantId);
+  }
+
+  static void setSecrets(Map<String, String> secrets) {
+    flutterSpi.setSecrets(secrets);
+  }
+
+  static void setUsername(String username) {
+    flutterSpi.setUsername(username);
+  }
+
+  static Future<List<Tenant>> getTenantsList(String apiKey,
+      {String countryCode = "AU"}) async {
+    return flutterSpi.getTenantsList(apiKey);
   }
 
   static Future<String> get getDeviceSN async {
-    final String sn = await _channel.invokeMethod('getDeviceSN');
-    return sn;
+    return flutterSpi.getDeviceSN;
   }
 
   static Future<String> get getVersion async {
-    final String spiVersion = await _channel.invokeMethod('getVersion');
-    return spiVersion;
+    return flutterSpi.getVersion;
   }
 
   static Future<String> get getCurrentStatus async {
-    final String status = await _channel.invokeMethod('getCurrentStatus');
-    return status;
+    return flutterSpi.getCurrentStatus;
   }
 
   static Future<String> get getCurrentFlow async {
-    final String flowState = await _channel.invokeMethod('getCurrentFlow');
-    return flowState;
+    return flutterSpi.getCurrentFlow;
   }
 
   static Future<String> get getCurrentPairingFlowState async {
-    final String flowState =
-        await _channel.invokeMethod('getCurrentPairingFlowState');
-    return flowState;
+    return flutterSpi.getCurrentPairingFlowState;
   }
 
   static Future<String> get getCurrentTxFlowState async {
-    final String flowState =
-        await _channel.invokeMethod('getCurrentTxFlowState');
-    return flowState;
+    return flutterSpi.getCurrentTxFlowState;
   }
 
   static Future<Map<String, bool>> get getConfig async {
-    final Map<String, bool> config = await _channel.invokeMethod('getConfig');
-    return config;
+    return flutterSpi.getConfig;
   }
 
   static Future<void> ackFlowEndedAndBackToIdle() async {
-    await _channel.invokeMethod('ackFlowEndedAndBackToIdle');
+    flutterSpi.ackFlowEndedAndBackToIdle();
   }
 
   static Future<void> pair() async {
-    await _channel.invokeMethod('pair');
+    flutterSpi.pair();
   }
 
   static Future<void> pairingConfirmCode() async {
-    await _channel.invokeMethod('pairingConfirmCode');
+    flutterSpi.pairingConfirmCode();
   }
 
   static Future<void> pairingCancel() async {
-    await _channel.invokeMethod('pairingCancel');
+    flutterSpi.pairingCancel();
   }
 
   static Future<void> unpair() async {
-    await _channel.invokeMethod('unpair');
+    flutterSpi.unpair();
   }
 
   static Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount,
       int tipAmount, int cashoutAmount, bool promptForCashout) async {
-    await _channel.invokeMethod('initiatePurchaseTx', {
-      "posRefId": posRefId,
-      "purchaseAmount": purchaseAmount,
-      "tipAmount": tipAmount,
-      "cashoutAmount": cashoutAmount,
-      "promptForCashout": promptForCashout,
-    });
+    flutterSpi.initiatePurchaseTx(
+        posRefId, purchaseAmount, tipAmount, cashoutAmount, promptForCashout);
   }
 
   static Future<void> initiateRefundTx(
       String posRefId, int refundAmount) async {
-    await _channel.invokeMethod('initiateRefundTx', {
-      "posRefId": posRefId,
-      "refundAmount": refundAmount,
-    });
+    flutterSpi.initiateRefundTx(posRefId, refundAmount);
   }
 
   static Future<void> acceptSignature(bool accepted) async {
-    await _channel.invokeMethod('acceptSignature', {
-      "accepted": accepted,
-    });
+    flutterSpi.acceptSignature(accepted);
   }
 
   static Future<void> submitAuthCode(String authCode) async {
-    await _channel.invokeMethod('submitAuthCode', {
-      "authCode": authCode,
-    });
+    flutterSpi.submitAuthCode(authCode);
   }
 
   static Future<void> cancelTransaction() async {
-    await _channel.invokeMethod('cancelTransaction');
+    flutterSpi.cancelTransaction();
   }
 
   static Future<void> initiateCashoutOnlyTx(
       String posRefId, int amountCents) async {
-    await _channel.invokeMethod('initiateCashoutOnlyTx', {
-      "posRefId": posRefId,
-      "amountCents": amountCents,
-    });
+    flutterSpi.initiateCashoutOnlyTx(posRefId, amountCents);
   }
 
   static Future<void> initiateMotoPurchaseTx(
       String posRefId, int amountCents) async {
-    await _channel.invokeMethod('initiateMotoPurchaseTx', {
-      "posRefId": posRefId,
-      "amountCents": amountCents,
-    });
+    flutterSpi.initiateMotoPurchaseTx(posRefId, amountCents);
   }
 
   static Future<void> initiateSettleTx(String id) async {
-    await _channel.invokeMethod('initiateSettleTx', {
-      "id": id,
-    });
+    flutterSpi.initiateSettleTx(id);
   }
 
   static Future<void> initiateSettlementEnquiry(String posRefId) async {
-    await _channel.invokeMethod('initiateSettlementEnquiry', {
-      "posRefId": posRefId,
-    });
+    flutterSpi.initiateSettlementEnquiry(posRefId);
   }
 
   static Future<void> initiateGetLastTx() async {
-    await _channel.invokeMethod('initiateGetLastTx');
+    flutterSpi.initiateGetLastTx();
   }
 
   static Future<void> dispose() async {
-    await _channel.invokeMethod('dispose');
+    flutterSpi.dispose();
   }
 
   static Future<void> setPromptForCustomerCopyOnEftpos(
       bool promptForCustomerCopyOnEftpos) async {
-    await _channel.invokeMethod('setPromptForCustomerCopyOnEftpos', {
-      "promptForCustomerCopyOnEftpos": promptForCustomerCopyOnEftpos,
-    });
+    flutterSpi.setPromptForCustomerCopyOnEftpos(promptForCustomerCopyOnEftpos);
   }
 
   static Future<void> setSignatureFlowOnEftpos(
       bool signatureFlowOnEftpos) async {
-    await _channel.invokeMethod('setSignatureFlowOnEftpos', {
-      "signatureFlowOnEftpos": signatureFlowOnEftpos,
-    });
+    flutterSpi.setSignatureFlowOnEftpos(signatureFlowOnEftpos);
   }
 
   static Future<void> setPrintMerchantCopy(bool printMerchantCopy) async {
-    await _channel.invokeMethod('setPrintMerchantCopy', {
-      "printMerchantCopy": printMerchantCopy,
-    });
+    flutterSpi.setPrintMerchantCopy(printMerchantCopy);
   }
 }

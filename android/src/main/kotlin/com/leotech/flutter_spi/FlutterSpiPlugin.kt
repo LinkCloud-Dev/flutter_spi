@@ -23,14 +23,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
-  private lateinit var channel: MethodChannel
+  private lateinit var spiChannel: MethodChannel
   private lateinit var context: Context
 
   lateinit var mSpi: Spi
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi")
-    channel.setMethodCallHandler(this)
+    spiChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi")
+    spiChannel.setMethodCallHandler(this)
     context = flutterPluginBinding.applicationContext
   }
 
@@ -114,13 +114,13 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
+    spiChannel.setMethodCallHandler(null)
   }
 
   private fun invokeFlutterMethod(flutterMethod: String, message: Any?) {
      val mainHandler = Handler(context.mainLooper)
       mainHandler.post {
-        channel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
+        spiChannel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
           override fun success(o: Any?) {
             Log.d("SUCCESS", "invokeMethod: success")
           }
