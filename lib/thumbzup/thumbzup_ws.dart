@@ -593,8 +593,8 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     currentTxAmount = purchaseAmount + tipAmount;
     currentTxId = posRefId;
 
-    doAuth();
-    // doRetailAuth();
+    // doAuth();
+    doRetailAuth();
 
     // Map<String, dynamic> payload = {
     //   "transactionReferenceNo": currentTxId,
