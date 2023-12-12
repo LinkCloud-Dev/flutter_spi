@@ -4,8 +4,9 @@ PODS:
     - Flutter
     - SPIClient-iOS (~> 2.9.1)
   - RNCryptor-objc (3.0.6)
-  - shared_preferences_ios (0.0.1):
+  - shared_preferences_foundation (0.0.1):
     - Flutter
+    - FlutterMacOS
   - SocketRocket (0.5.1)
   - SPIClient-iOS (2.9.1):
     - RNCryptor-objc
@@ -14,7 +15,7 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_spi (from `.symlinks/plugins/flutter_spi/ios`)
-  - shared_preferences_ios (from `.symlinks/plugins/shared_preferences_ios/ios`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
 
 SPEC REPOS:
   trunk:
@@ -27,17 +28,17 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_spi:
     :path: ".symlinks/plugins/flutter_spi/ios"
-  shared_preferences_ios:
-    :path: ".symlinks/plugins/shared_preferences_ios/ios"
+  shared_preferences_foundation:
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
 
 SPEC CHECKSUMS:
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   flutter_spi: bed58a4910224d8fb61152af1803da394f592bc3
   RNCryptor-objc: d1b228f9c02e2173df063f0617684c134aed890e
-  shared_preferences_ios: 548a61f8053b9b8a49ac19c1ffbc8b92c50d68ad
+  shared_preferences_foundation: 5b919d13b803cadd15ed2dc053125c68730e5126
   SocketRocket: d57c7159b83c3c6655745cd15302aa24b6bae531
   SPIClient-iOS: c6c3ef701c56d61970dff7b7a49ed3609de4dc18
 
 PODFILE CHECKSUM: 7368163408c647b7eb699d0d788ba6718e18fb8d
 
-COCOAPODS: 1.12.0
+COCOAPODS: 1.13.0
