@@ -1,7 +1,6 @@
 name: flutter_spi
 description: A new flutter plugin project.
-version: 0.0.2
-homepage:
+version: 0.0.3
 
 environment:
   sdk: ">=2.18.6 <3.0.0"
