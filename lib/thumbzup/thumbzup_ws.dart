@@ -618,7 +618,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   @override
   Future<void> initiateRefundTx(String posRefId, int refundAmount) async {
     // doAuth();
-    doRetailAuth();
+    // doRetailAuth();
 
     currentTxAmount = refundAmount;
     currentTxId = posRefId;
