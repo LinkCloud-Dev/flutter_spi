@@ -35,10 +35,14 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.leotech.flutter_spi_example"
-        minSdkVersion 20
+        minSdkVersion 21
         targetSdkVersion 31
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+    }
+
+    packagingOptions {
+        pickFirst "META-INF/DEPENDENCIES"
     }
 
     buildTypes {
