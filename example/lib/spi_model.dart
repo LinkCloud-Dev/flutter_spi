@@ -48,27 +48,27 @@ class SpiModel extends ChangeNotifier {
     // start spi
     // Non thumbzup machine
 
-    // await FlutterSpi.init(
-    //     posId: posId!,
-    //     serialNumber: serialNumber!,
-    //     eftposAddress: eftPosAddress!,
-    //     apiKey: apiKey!,
-    //     tenantCode: tenantCode!,
-    //     secrets: secrets != null ? secrets!.toJSON() : null);
-
-    // TODO: Add keys
-    // Thumbzup machine
     await FlutterSpi.init(
-      appKey: "ca1f5a1b-e582-40f3-86e9-c24269783b6f",
-      merchantId: "112223334",
-      serialNumber: serialNumber,
-      secrets: {
-        "secretKey": "GSGjgneRLmDbf/9l*nDMh2nEa/1A*3297S9UX3Pk",
-        "accessKey": "5T73RL8TJUCT4SCM98DU",
-      },
-      spiType: "THUMBZUP",
-      username: "default",
-    );
+        posId: posId!,
+        serialNumber: serialNumber!,
+        eftposAddress: eftPosAddress!,
+        apiKey: apiKey!,
+        tenantCode: tenantCode!,
+        secrets: secrets != null ? secrets!.toJSON() : null);
+
+    // // TODO: Add keys
+    // // Thumbzup machine
+    // await FlutterSpi.init(
+    //   appKey: "ca1f5a1b-e582-40f3-86e9-c24269783b6f",
+    //   merchantId: "112223334",
+    //   serialNumber: serialNumber,
+    //   secrets: {
+    //     "secretKey": "GSGjgneRLmDbf/9l*nDMh2nEa/1A*3297S9UX3Pk",
+    //     "accessKey": "5T73RL8TJUCT4SCM98DU",
+    //   },
+    //   spiType: "THUMBZUP",
+    //   username: "default",
+    // );
     await FlutterSpi.start();
   }
 
