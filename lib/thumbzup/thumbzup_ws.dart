@@ -811,4 +811,9 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   Future<void> setEftposAddress(String address) async {
     // NOT NEEDED
   }
+
+  @override
+  Future<void> test() async {
+    // NOT NEEDED
+  }
 }

@@ -91,4 +91,6 @@ abstract class FlutterSpiPlatform {
   Future<void> setSignatureFlowOnEftpos(bool signatureFlowOnEftpos);
 
   Future<void> setPrintMerchantCopy(bool printMerchantCopy);
+
+  Future<void> test();
 }

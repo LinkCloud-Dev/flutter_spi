@@ -249,6 +249,11 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
+  Future<void> test() async {
+    await _channel.invokeMethod('test');
+  }
+
+  @override
   void setAppKey(String appKey) {
     // NOT NEEDED
   }

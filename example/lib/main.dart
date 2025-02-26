@@ -106,6 +106,10 @@ class _HomeState extends State<Home> {
     }
   }
 
+  void _test(BuildContext context) async {
+    await FlutterSpi.test();
+  }
+
   Future<void> _showDialog<T>(
       {required BuildContext context, required Widget child}) async {
     await showDialog<T>(
@@ -163,6 +167,10 @@ class _HomeState extends State<Home> {
             ElevatedButton(
               onPressed: () => _getTenants(context),
               child: Text('Get Tenants'),
+            ),
+            ElevatedButton(
+              onPressed: () => _test(context),
+              child: Text('Test'),
             ),
           ],
         ),

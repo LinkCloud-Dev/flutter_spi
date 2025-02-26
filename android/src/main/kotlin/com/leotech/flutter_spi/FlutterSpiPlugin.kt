@@ -15,6 +15,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import com.six.timapi.*
 
 
 /** FlutterSpiPlugin */
@@ -108,6 +109,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       setSignatureFlowOnEftpos(call.argument("signatureFlowOnEftpos")!!, result)
     } else if (call.method == "setPrintMerchantCopy") {
       setPrintMerchantCopy(call.argument("printMerchantCopy")!!, result)
+    } else if (call.method == "test") {
+      test(result)
     } else  {
       result.notImplemented()
     }
@@ -570,6 +573,39 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     mSpi.config.setPrintMerchantCopy(printMerchantCopy)
     result.success(null)
   }
+
+  fun test(result: Result) {
+    try {
+      // Create new TerminalSettings instance
+      val settings = TerminalSettings()
+
+      // ----------------------------LOGGING----------------------------
+      // Set the Logging directory path where the log file will be saved
+      // Adjust this path based on your Android file system
+      val logDir = context.getExternalFilesDir(null)?.absolutePath + "/logs"
+      settings.logDir = logDir
+
+      // ----------------------------CONNECTION----------------------------
+      // Set the Terminal ID (Replace with the actual terminal ID)
+      settings.terminalId = "12345678"
+
+      // ----------------------------COMMIT----------------------------
+      // If the ECR (this plugin) should be responsible for commit, set this to false.
+      settings.isAutoCommit = false
+
+      // ----------------------------CREATE TERMINAL INSTANCE----------------------------
+      // Create a terminal instance using the adjusted settings
+      val terminal = Terminal(settings)
+
+      // Return success message
+      Log.d("SUCCESS", "TimApi Test Success")
+      result.success("TimApi Terminal initialized successfully")
+    } catch (e: Exception) {
+      Log.d("ERROR", "TimApi Test Error")
+      result.error("INIT_ERROR", "Failed to initialize TimApi Terminal: ${e.message}", null)
+    }
+  }
+
 
   fun mapSecrets(obj: Secrets?):  HashMap<String, Any>? {
     if (obj == null) return null

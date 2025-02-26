@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:enum_to_string/enum_to_string.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
 import 'package:flutter_spi/spi_method_channel.dart';
 import 'package:flutter_spi/thumbzup/thumbzup_ws.dart';
@@ -462,5 +460,9 @@ class FlutterSpi {
 
   static Future<void> setPrintMerchantCopy(bool printMerchantCopy) async {
     flutterSpi.setPrintMerchantCopy(printMerchantCopy);
+  }
+
+  static Future<void> test() async {
+    flutterSpi.test();
   }
 }
