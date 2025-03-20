@@ -1,4 +1,3 @@
-// lib/timapi/timapi_implementation.dart
 import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
@@ -13,234 +12,238 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
 
   @override
   Future<void> init({
-    String? posId,
-    String? serialNumber,
-    String? eftposAddress,
-    String? apiKey,
-    String? tenantCode,
-    Map<String, String>? secrets,
-    String? spiType,
-    String? appKey,
-    String? merchantId,
-    String username = "default"
+    String? host, // <-- 修改：TIM API 需要 host
+    int? port,    // <-- 修改：TIM API 需要 port
+    String? sslCertificatePath, // <-- TIM API 需要 cert path
+    String? integratorId, // <-- TIM API 需要 integrator ID
+    int timeout = 30,
+    String? posId,         // no need (for TIM API)
+    String? serialNumber,  // no need
+    String? eftposAddress, // no need
+    String? apiKey,        // no need
+    String? tenantCode,    // no need
+    Map<String, String>? secrets, // no need
+    String? spiType,       // no need
+    String? appKey,        // no need
+    String? merchantId,    // no need
+    String username = "default" // no need
   }) async {
-    await _channel.invokeMethod('init', {
-      'posId': posId,
-      'serialNumber': serialNumber,
-      'secrets': secrets,
-      // Other parameters
+    await _channel.invokeMethod('timApiInit', {
+      'host': host,
+      'port': port,
+      'sslCertificatePath': sslCertificatePath,
+      'integratorId': integratorId,
+      'timeout': timeout,
     });
   }
 
   @override
   Future<void> acceptSignature(bool accepted) {
-    // TODO: implement acceptSignature
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> ackFlowEndedAndBackToIdle() {
-    // TODO: implement ackFlowEndedAndBackToIdle
+    // no need
     throw UnimplementedError();
   }
 
   @override
-  Future<void> cancelTransaction() {
-    // TODO: implement cancelTransaction
-    throw UnimplementedError();
+  Future<void> cancelTransaction() async {
+    await _channel.invokeMethod('timApiCancelTransaction');
   }
 
   @override
-  Future<void> dispose() {
-    // TODO: implement dispose
-    throw UnimplementedError();
+  Future<void> dispose() async {
+    await _channel.invokeMethod('timApiDispose');
   }
 
   @override
-  // TODO: implement getConfig
-  Future<Map<String, bool>> get getConfig => throw UnimplementedError();
+  Future<Map<String, bool>> get getConfig => throw UnimplementedError(); // no need
 
   @override
-  // TODO: implement getCurrentFlow
-  Future<String> get getCurrentFlow => throw UnimplementedError();
+  Future<String> get getCurrentFlow => throw UnimplementedError(); // no need
 
   @override
-  // TODO: implement getCurrentPairingFlowState
-  Future<String> get getCurrentPairingFlowState => throw UnimplementedError();
+  Future<String> get getCurrentPairingFlowState => throw UnimplementedError(); // no need
 
   @override
-  // TODO: implement getCurrentStatus
-  Future<String> get getCurrentStatus => throw UnimplementedError();
+  Future<String> get getCurrentStatus async {
+    return (await _channel.invokeMethod<String>('timApiGetTerminalStatus')) ?? "Unknown";
+  }
 
   @override
-  // TODO: implement getCurrentTxFlowState
-  Future<String> get getCurrentTxFlowState => throw UnimplementedError();
+  Future<String> get getCurrentTxFlowState => throw UnimplementedError(); // no need
 
   @override
-  // TODO: implement getDeviceSN
-  Future<String> get getDeviceSN => throw UnimplementedError();
+  Future<String> get getDeviceSN => throw UnimplementedError(); // no need
 
   @override
   Future<List<Tenant>> getTenantsList(String apiKey, {String countryCode = "AU"}) {
-    // TODO: implement getTenantsList
+    // no need
     throw UnimplementedError();
   }
 
   @override
-  // TODO: implement getVersion
-  Future<String> get getVersion => throw UnimplementedError();
+  Future<String> get getVersion async {
+    return (await _channel.invokeMethod<String>('timApiGetVersion')) ?? "Unknown";
+  }
 
   @override
   Future<void> initiateCashoutOnlyTx(String posRefId, int amountCents) {
-    // TODO: implement initiateCashoutOnlyTx
+    // no need
     throw UnimplementedError();
   }
 
   @override
-  Future<void> initiateGetLastTx() {
-    // TODO: implement initiateGetLastTx
-    throw UnimplementedError();
+  Future<void> initiateGetLastTx() async {
+    await _channel.invokeMethod('timApiGetLastTransaction');
   }
 
   @override
   Future<void> initiateMotoPurchaseTx(String posRefId, int amountCents) {
-    // TODO: implement initiateMotoPurchaseTx
+    // no need
     throw UnimplementedError();
   }
 
   @override
-  Future<void> initiatePurchaseTx(String posRefId, int purchaseAmount, int tipAmount, int cashoutAmount, bool promptForCashout) {
-    // TODO: implement initiatePurchaseTx
-    throw UnimplementedError();
+  Future<void> initiatePurchaseTx(
+      String posRefId,
+      int purchaseAmount,
+      int tipAmount,
+      int cashoutAmount,
+      bool promptForCashout) async {
+    // TIM API 建议统一：只有 purchaseAmount
+    await _channel.invokeMethod('timApiStartTransaction', {
+      'posRefId': posRefId,
+      'amount': purchaseAmount,
+    });
   }
 
   @override
   Future<void> initiateRefundTx(String posRefId, int refundAmount) {
-    // TODO: implement initiateRefundTx
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> initiateSettleTx(String id) {
-    // TODO: implement initiateSettleTx
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> initiateSettlementEnquiry(String posRefId) {
-    // TODO: implement initiateSettlementEnquiry
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> pair() {
-    // TODO: implement pair
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> pairingCancel() {
-    // TODO: implement pairingCancel
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> pairingConfirmCode() {
-    // TODO: implement pairingConfirmCode
+    // no need
     throw UnimplementedError();
   }
 
   @override
   void setAppKey(String appKey) {
-    // TODO: implement setAppKey
+    // no need
   }
 
   @override
   Future<void> setEftposAddress(String address) {
-    // TODO: implement setEftposAddress
+    // no need
     throw UnimplementedError();
   }
 
   @override
   void setMerchantId(String merchantId) {
-    // TODO: implement setMerchantId
+    // no need
   }
 
   @override
   Future<void> setPosId(String posId) {
-    // TODO: implement setPosId
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> setPosInfo(String posVendorId, String posVersion) {
-    // TODO: implement setPosInfo
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> setPrintMerchantCopy(bool printMerchantCopy) {
-    // TODO: implement setPrintMerchantCopy
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> setPromptForCustomerCopyOnEftpos(bool promptForCustomerCopyOnEftpos) {
-    // TODO: implement setPromptForCustomerCopyOnEftpos
+    // no need
     throw UnimplementedError();
   }
 
   @override
   void setSecrets(Map<String, String> secrets) {
-    // TODO: implement setSecrets
+    // no need
   }
 
   @override
   Future<void> setSerialNumber(String serialNumber) {
-    // TODO: implement setSerialNumber
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> setSignatureFlowOnEftpos(bool signatureFlowOnEftpos) {
-    // TODO: implement setSignatureFlowOnEftpos
+    // no need
     throw UnimplementedError();
   }
 
   @override
   Future<void> setTenantCode(String tenantCode) {
-    // TODO: implement setTenantCode
+    // no need
     throw UnimplementedError();
   }
 
   @override
   void setUsername(String username) {
-    // TODO: implement setUsername
+    // no need
   }
 
   @override
-  Future<void> start() {
-    // TODO: implement start
-    throw UnimplementedError();
+  Future<void> start() async {
+    await _channel.invokeMethod('timApiStartListening'); // TIM API 如果有事件监听
   }
 
   @override
   Future<void> submitAuthCode(String authCode) {
-    // TODO: implement submitAuthCode
+    // no need
     throw UnimplementedError();
   }
 
   @override
-  Future<void> test() {
-    // TODO: implement test
-    throw UnimplementedError();
+  Future<void> test() async {
+    await _channel.invokeMethod('timApiTestConnection');
   }
 
   @override
   Future<void> unpair() {
-    // TODO: implement unpair
+    // no need
     throw UnimplementedError();
   }
-
-  // Implement other required methods
 }

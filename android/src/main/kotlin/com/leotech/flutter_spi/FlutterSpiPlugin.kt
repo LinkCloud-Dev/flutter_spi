@@ -110,7 +110,27 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       setPrintMerchantCopy(call.argument("printMerchantCopy")!!, result)
     } else if (call.method == "test") {
       test(result)
-    } else  {
+    } else if (call.method == "timApiInit") {
+      timApiInit(call.argument("host")!!, call.argument("port")!!, call.argument("sslCertificatePath")!!, call.argument("integratorId")!!, call.argument("timeout")!!, result)
+    } else if (call.method == "timApiCancelTransaction") {
+      timApiCancelTransaction(result)
+    } else if (call.method == "timApiDispose") {
+      timApiDispose(result)
+    } else if (call.method == "timApiGetTerminalStatus") {
+      timApiGetTerminalStatus(result)
+    } else if (call.method == "timApiGetVersion") {
+      timApiGetVersion(result)
+    } else if (call.method == "timApiGetLastTransaction") {
+      timApiGetLastTransaction(result)
+    } else if (call.method == "timApiStartTransaction") {
+      timApiStartTransaction(call.argument("posRefId")!!, call.argument("amount")!!, result)
+    } else if (call.method == "timApiStartListening") {
+      timApiStartListening(result)
+    } else if (call.method == "timApiTestConnection") {
+      timApiTestConnection(result)
+    }
+    
+    else  {
       result.notImplemented()
     }
   }
@@ -732,6 +752,64 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     return map
   }
 
+  private fun timApiInit(host: String?, port: Int, sslCertificatePath: String?, integratorId: String?, timeout: Int,result: Result) {
+    // 这里写 TIM API 的初始化逻辑
+    println("TIM API Init with host=$host, port=$port, cert=$sslCertificatePath, integratorId=$integratorId, timeout=$timeout")
+
+    // TODO: timApiInstance.initialize(...)
+    result.success(null)
+  }
+
+  private fun timApiCancelTransaction(result: Result) {
+      // TODO: timApiInstance.cancelTransaction()
+      println("Cancel transaction")
+      result.success(null)
+  }
+
+  private fun timApiDispose(result: Result) {
+      // TODO: timApiInstance.dispose()
+      println("Dispose TIM API")
+      result.success(null)
+  }
+
+  private fun timApiGetTerminalStatus(result: Result) {
+      // TODO: 获取终端状态
+      val status = "READY"  // 模拟返回
+      println("Get Terminal Status: $status")
+      result.success(status)
+  }
+
+  private fun timApiGetVersion(result: Result) {
+      // TODO: 获取 TIM API SDK 版本
+      val version = "1.0.0 (mock)"
+      println("Get TIM API Version: $version")
+      result.success(version)
+  }
+
+  private fun timApiGetLastTransaction(result: Result) {
+      // TODO: 查询上次交易信息
+      println("Get Last Transaction")
+      result.success("LastTxInfo (mock)")
+  }
+
+  private fun timApiStartTransaction(posRefId: String?, amount: Int, result: Result) {
+      println("Start transaction with posRefId=$posRefId amount=$amount")
+
+      // TODO: timApiInstance.startTransaction(posRefId, amount)
+      result.success(null)
+  }
+
+  private fun timApiStartListening(result: Result) {
+      // 如果有需要监听事件
+      println("Start listening for TIM API events")
+      result.success(null)
+  }
+
+  private fun timApiTestConnection(result: Result) {
+      // 测试连接
+      println("Test Connection OK")
+      result.success("Connection OK")
+  }  
 
   companion object {
 
@@ -771,7 +849,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         result.error("ERROR", "Error.", null)
       }
     }
-
   }
 }
 
