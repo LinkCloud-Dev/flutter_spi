@@ -24,6 +24,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
   private lateinit var spiChannel: MethodChannel
+  private lateinit var timApiChannel: MethodChannel
   private lateinit var context: Context
 
   lateinit var mSpi: Spi
@@ -31,6 +32,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     spiChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi")
     spiChannel.setMethodCallHandler(this)
+
+    timApiChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi_timapi")
+    timApiChannel.setMethodCallHandler(this)
     context = flutterPluginBinding.applicationContext
   }
 
@@ -137,6 +141,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
     spiChannel.setMethodCallHandler(null)
+    timApiChannel.setMethodCallHandler(null)
   }
 
   private fun invokeFlutterMethod(flutterMethod: String, message: Any?) {
