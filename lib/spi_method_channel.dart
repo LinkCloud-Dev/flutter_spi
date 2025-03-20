@@ -48,7 +48,7 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> setSerialNumber(String serialNumber) async {
+  Future<void>   setSerialNumber(String serialNumber) async {
     await _channel
         .invokeMethod('setSerialNumber', {"serialNumber": serialNumber});
   }

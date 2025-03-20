@@ -54,6 +54,7 @@ class SpiModel extends ChangeNotifier {
         eftposAddress: eftPosAddress!,
         apiKey: apiKey!,
         tenantCode: tenantCode!,
+        spiType: "TIMAPI",
         secrets: secrets != null ? secrets!.toJSON() : null);
 
     // // TODO: Add keys

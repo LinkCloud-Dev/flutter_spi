@@ -4,7 +4,7 @@ import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
 import 'package:flutter_spi/spi_method_channel.dart';
 import 'package:flutter_spi/thumbzup/thumbzup_ws.dart';
-import 'package:flutter_spi/timapi/timapi_impl.dart';
+import 'package:flutter_spi/tim_api_method_channel.dart';
 
 class SpiMessage {
   String? id;
@@ -292,10 +292,9 @@ class FlutterSpi {
       flutterSpi = ThumbzUpWebSocket();
     } else if (spiType == "WINDCAVE") {
     } else if (spiType == "TIMAPI") {
-      flutterSpi = TimApiImplementation();
+      flutterSpi = TimApiMethodChannel();
     }else {
-      // flutterSpi = SpiMethodChannel();
-      flutterSpi = TimApiImplementation();
+      flutterSpi = SpiMethodChannel();
     }
     flutterSpi.init(
       posId: posId,

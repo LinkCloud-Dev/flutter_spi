@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi.dart';
 import 'package:flutter_spi/flutter_spi_platform.dart';
 
-class TimApiImplementation implements FlutterSpiPlatform {
+class TimApiMethodChannel implements FlutterSpiPlatform {
   static const MethodChannel _channel = MethodChannel('flutter_spi_timapi');
 
   @override

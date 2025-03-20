@@ -17,7 +17,6 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import com.six.timapi.*
 
-
 /** FlutterSpiPlugin */
 class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   /// The MethodChannel that will the communication between Flutter and native Android
