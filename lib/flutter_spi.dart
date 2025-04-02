@@ -277,6 +277,11 @@ class FlutterSpi {
   }
 
   static Future<void> init({
+    String? host, // Tim Api
+    int? port, // Tim Api
+    String? sslCertificatePath, // Tim Api
+    String? integratorId, // Tim Api
+    int timeout = 30, // Tim Api
     String? posId, // MX51
     String? serialNumber, // MX51, ThumbzUp
     String? eftposAddress, // MX51,
@@ -297,6 +302,11 @@ class FlutterSpi {
       flutterSpi = SpiMethodChannel();
     }
     flutterSpi.init(
+      host: host,
+      port: port,
+      sslCertificatePath: sslCertificatePath,
+      integratorId: integratorId,
+      timeout: timeout,
       posId: posId,
       serialNumber: serialNumber,
       eftposAddress: eftposAddress,

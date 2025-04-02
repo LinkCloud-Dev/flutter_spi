@@ -4,16 +4,23 @@ abstract class FlutterSpiPlatform {
   void handleMethodCall(dynamic cb);
 
   Future<void> init(
-      {String? posId,
-      String? serialNumber,
-      String? eftposAddress,
-      String? apiKey,
-      String? tenantCode,
-      Map<String, String>? secrets,
-      String? spiType,
-      String? appKey,
-      String? merchantId,
-      String username = "default"});
+      {
+        String? host,
+        int? port,
+        String? sslCertificatePath,
+        String? integratorId,
+        int timeout = 30,
+        String? posId,
+        String? serialNumber,
+        String? eftposAddress,
+        String? apiKey,
+        String? tenantCode,
+        Map<String, String>? secrets,
+        String? spiType,
+        String? appKey,
+        String? merchantId,
+        String username = "default"
+      });
 
   Future<void> start();
 
