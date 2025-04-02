@@ -570,16 +570,23 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   // "username" compulsory
   @override
   Future<void> init(
-      {String? posId,
-      String? serialNumber,
-      String? eftposAddress,
-      String? apiKey,
-      String? tenantCode,
-      Map<String, String>? secrets,
-      String? spiType,
-      String? appKey,
-      String? merchantId,
-      String username = "default"}) async {
+      {
+        String? host,
+        int? port,
+        String? sslCertificatePath,
+        String? integratorId,
+        int timeout = 30,
+        String? posId,
+        String? serialNumber,
+        String? eftposAddress,
+        String? apiKey,
+        String? tenantCode,
+        Map<String, String>? secrets,
+        String? spiType,
+        String? appKey,
+        String? merchantId,
+        String username = "default"
+      }) async {
     setApplicationKey(appKey!);
     setUsername(username);
     setMerchantId(merchantId!);
