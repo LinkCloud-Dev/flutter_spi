@@ -863,6 +863,10 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
         // ----------------------------COMMIT----------------------------
         // If the ECR (this plugin) should be responsible for commit, set this to false.
         settings.isAutoCommit = false
+        settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
+//        settings.setGuides(EnumSet.of(Guides.RETAIL));
+        settings.setConnectionIPString("10.0.2.2")
+        settings.setConnectionIPPort(7784)
 
         // ----------------------------CREATE TERMINAL INSTANCE----------------------------
         // Create a terminal instance using the adjusted settings
