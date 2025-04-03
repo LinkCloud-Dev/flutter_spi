@@ -767,7 +767,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
   private fun timApiCancelTransaction(result: Result) {
       // TODO: timApiInstance.cancelTransaction()
-      println("Cancel transaction")
+      println("Tim Api Cancel transaction")
       result.success(null)
   }
 
@@ -780,7 +780,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   private fun timApiGetTerminalStatus(result: Result) {
       // TODO: 获取终端状态
       val status = "READY"  // 模拟返回
-      println("Get Terminal Status: $status")
+      println("Tim Api Get Terminal Status: $status")
       result.success(status)
   }
 
@@ -793,12 +793,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
   private fun timApiGetLastTransaction(result: Result) {
       // TODO: 查询上次交易信息
-      println("Get Last Transaction")
+      println("Tim Api Get Last Transaction")
       result.success("LastTxInfo (mock)")
   }
 
   private fun timApiStartTransaction(posRefId: String?, amount: Int, result: Result) {
-      println("Start transaction with posRefId=$posRefId amount=$amount")
+      println("Tim Api Start transaction with posRefId=$posRefId amount=$amount")
 
       // TODO: timApiInstance.startTransaction(posRefId, amount)
       result.success(null)
@@ -812,7 +812,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
   private fun timApiTestConnection(result: Result) {
       // 测试连接
-      println("Test Connection OK")
+      println("Tim Api Test Connection OK")
       result.success("Connection OK")
   }  
 
