@@ -140,9 +140,8 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> pair() {
-    // no need
-    throw UnimplementedError();
+  Future<void> pair() async{
+    await _channel.invokeMethod('timApiPair');
   }
 
   @override

@@ -17,6 +17,9 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import com.six.timapi.*
 
+import java.util.EnumSet
+import com.six.timapi.constants.Guides
+
 /** FlutterSpiPlugin */
 class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   /// The MethodChannel that will the communication between Flutter and native Android
@@ -28,6 +31,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
   private lateinit var context: Context
 
   lateinit var mSpi: Spi
+  lateinit var mTim: com.six.timapi.Terminal
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     spiChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi")
@@ -116,6 +120,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
       test(result)
     } else if (call.method == "timApiInit") {
       timApiInit(call.argument("host")!!, call.argument("port")!!, call.argument("sslCertificatePath")!!, call.argument("integratorId")!!, call.argument("timeout")!!, result)
+    } else if (call.method == "timApiPair") {
+      // TODO: timApiPair
     } else if (call.method == "timApiCancelTransaction") {
       timApiCancelTransaction(result)
     } else if (call.method == "timApiDispose") {
@@ -761,8 +767,20 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     // 这里写 TIM API 的初始化逻辑
     println("TIM API Init with host=$host, port=$port, cert=$sslCertificatePath, integratorId=$integratorId, timeout=$timeout")
 
-    // TODO: timApiInstance.initialize(...)
+    val settings: com.six.timapi.TerminalSettings = TerminalSettings()
+    settings.setTerminalId(integratorId)
+    settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
+    settings.setGuides(EnumSet.of(Guides.RETAIL));
+    settings.setConnectionIPString(host)
+    settings.setConnectionIPPort(port.toInt())
+
+    mTim = Terminal(settings)
+
     result.success(null)
+  }
+
+  private fun timApiPair(result: Result) {
+    //TODO-NOW
   }
 
   private fun timApiCancelTransaction(result: Result) {
