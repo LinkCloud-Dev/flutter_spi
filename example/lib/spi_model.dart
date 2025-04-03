@@ -49,27 +49,44 @@ class SpiModel extends ChangeNotifier {
     // Non thumbzup machine
 
     await FlutterSpi.init(
+        // original init method - comment out for timapi testing
+        // posId: posId!,
+        // serialNumber: serialNumber!,
+        // eftposAddress: eftPosAddress!,
+        // apiKey: apiKey!,
+        // tenantCode: tenantCode!,
+        // spiType: "TIMAPI",
+        // secrets: secrets != null ? secrets!.toJSON() : null);
+
+        // // TODO: Add keys
+        // // Thumbzup machine
+        // await FlutterSpi.init(
+        //   appKey: "ca1f5a1b-e582-40f3-86e9-c24269783b6f",
+        //   merchantId: "112223334",
+        //   serialNumber: serialNumber,
+        //   secrets: {
+        //     "secretKey": "GSGjgneRLmDbf/9l*nDMh2nEa/1A*3297S9UX3Pk",
+        //     "accessKey": "5T73RL8TJUCT4SCM98DU",
+        //   },
+        //   spiType: "THUMBZUP",
+        //   username: "default",
+        // );
+
+        // timapi testing
+        host: "127.0.0.1",
+        port: 7784,
+        sslCertificatePath: "/path/to/cert",
+        integratorId: "12345678",
+        timeout: 30,
+
         posId: posId!,
         serialNumber: serialNumber!,
         eftposAddress: eftPosAddress!,
         apiKey: apiKey!,
         tenantCode: tenantCode!,
         spiType: "TIMAPI",
-        secrets: secrets != null ? secrets!.toJSON() : null);
-
-    // // TODO: Add keys
-    // // Thumbzup machine
-    // await FlutterSpi.init(
-    //   appKey: "ca1f5a1b-e582-40f3-86e9-c24269783b6f",
-    //   merchantId: "112223334",
-    //   serialNumber: serialNumber,
-    //   secrets: {
-    //     "secretKey": "GSGjgneRLmDbf/9l*nDMh2nEa/1A*3297S9UX3Pk",
-    //     "accessKey": "5T73RL8TJUCT4SCM98DU",
-    //   },
-    //   spiType: "THUMBZUP",
-    //   username: "default",
-    // );
+        secrets: secrets != null ? secrets!.toJSON() : null
+      );
     await FlutterSpi.start();
   }
 
