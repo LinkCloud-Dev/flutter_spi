@@ -32,6 +32,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
+    namespace 'com.leotech.flutter_spi'
     compileSdkVersion 30
 
     sourceSets {
