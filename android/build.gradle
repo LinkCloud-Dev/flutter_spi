@@ -4,15 +4,14 @@ version '1.0-SNAPSHOT'
 buildscript {
     ext {
 
-
-        agp_version2 = '7.4.0'
+        agp_version2 = '8.1.2'
         agp_version1 = '8.0.0'
         agp_version = '8.1.2'
     }
     ext.kotlin_version = '1.8.20'
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 
     dependencies {
@@ -24,7 +23,7 @@ buildscript {
 rootProject.allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
@@ -33,13 +32,13 @@ apply plugin: 'kotlin-android'
 
 android {
     namespace 'com.leotech.flutter_spi'
-    compileSdkVersion 30
+    compileSdkVersion 35
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 24
     }
 }
 
