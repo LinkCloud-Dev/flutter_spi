@@ -1,7 +1,6 @@
 package com.leotech.flutter_spi
 
 
-
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
@@ -787,8 +786,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
         settings.setGuides(EnumSet.of(Guides.RETAIL));
         settings.setConnectionIPString(host)
         settings.setConnectionIPPort(port.toInt())
-        // TODO-NOW
-//    settings.setAutoCommit = false;
+        settings.setAutoCommit(false);
 
 
         mTim = Terminal(settings)
@@ -807,8 +805,8 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private fun timApiDispose(result: Result) {
-        // TODO: timApiInstance.dispose()
         println("Dispose TIM API")
+        mTim.dispose()
         result.success(null)
     }
 
@@ -862,7 +860,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
 
         // ----------------------------COMMIT----------------------------
         // If the ECR (this plugin) should be responsible for commit, set this to false.
-        settings.isAutoCommit = false
+        settings.isAutoCommit = true
         settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
 //        settings.setGuides(EnumSet.of(Guides.RETAIL));
         settings.setConnectionIPString("10.0.2.2")
