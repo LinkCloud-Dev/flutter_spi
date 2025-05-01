@@ -629,7 +629,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
 
             // ----------------------------COMMIT----------------------------
             // If the ECR (this plugin) should be responsible for commit, set this to false.
-            settings.isAutoCommit = false
+            settings.isAutoCommit = true
 
             // ----------------------------CREATE TERMINAL INSTANCE----------------------------
             // Create a terminal instance using the adjusted settings
@@ -835,8 +835,17 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     private fun timApiStartTransaction(posRefId: String?, amount: Int, result: Result) {
         println("Tim Api Start transaction with posRefId=$posRefId amount=$amount")
 
-        // TODO: timApiInstance.startTransaction(posRefId, amount)
-        result.success(null)
+        if (mTim.getTerminalStatus().getTransactionStatus() === TimapiTransactionStatus.IDLE) {
+            mTim.transactionAsync(
+                TimapiTransactionType.PURCHASE, TimapiAmount(
+                    amount,
+                    TimapiCurrency.AUD
+                )
+            )
+            result.success("TimApi Transaction Started")
+        } else {
+            result.error("ERROR", "TimApi Transaction failed.", null)
+        }
     }
 
     private fun timApiStartListening(result: Result) {
@@ -862,10 +871,10 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
 
         // ----------------------------COMMIT----------------------------
         // If the ECR (this plugin) should be responsible for commit, set this to false.
-        settings.isAutoCommit = false
+        settings.isAutoCommit = true
         settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
 //        settings.setGuides(EnumSet.of(Guides.RETAIL));
-        settings.setConnectionIPString("10.0.2.2")
+        settings.setConnectionIPString("127.0.0.1")
         settings.setConnectionIPPort(7784)
 
         // ----------------------------CREATE TERMINAL INSTANCE----------------------------
