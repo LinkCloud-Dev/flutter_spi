@@ -832,7 +832,11 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
 
     private fun timApiStartTransaction(posRefId: String?, amount: Int, result: Result) {
         println("Tim Api Start transaction with posRefId=$posRefId amount=$amount")
-
+        if (terminal.getTerminalStatus().getTransactionStatus() === TimapiTransactionStatus.IDLE) {
+            // Start transaction. Automatically connects to, loggs in and activates the terminal
+            terminal.transactionAsync(TimapiTransactionType.PURCHASE, TimapiAmount(amount,
+                TimapiCurrency.AUD))
+        }
         // TODO: timApiInstance.startTransaction(posRefId, amount)
         result.success(null)
     }
