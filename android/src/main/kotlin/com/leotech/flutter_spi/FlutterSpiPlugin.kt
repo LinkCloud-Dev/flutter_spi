@@ -799,9 +799,21 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private fun timApiCancelTransaction(result: Result) {
-        // TODO: timApiInstance.cancelTransaction()
-        println("Tim Api Cancel transaction")
-        result.success(null)
+        try {
+            // Check if transaction is in progress and can be canceled
+            if (mTim.getTerminalStatus().getTransactionStatus() != TimapiTransactionStatus.IDLE) {
+                // Cancel the transaction - This attempts to stop the transaction in progress
+                mTim.cancel()
+                Log.d("TimAPI", "Cancel transaction request sent")
+                result.success(true)
+            } else {
+                Log.d("TimAPI", "No transaction in progress to cancel")
+                result.success(false)
+            }
+        } catch (e: Exception) {
+            Log.e("TimAPI", "Error canceling transaction: ${e.message}")
+            result.error("CANCEL_ERROR", "Failed to cancel transaction: ${e.message}", null)
+        }
     }
 
     private fun timApiDispose(result: Result) {
@@ -811,10 +823,22 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private fun timApiGetTerminalStatus(result: Result) {
-        // TODO: 获取终端状态
-        val status = "READY"  // 模拟返回
-        println("Tim Api Get Terminal Status: $status")
-        result.success(status)
+        try {
+            val terminalStatus = mTim.getTerminalStatus()
+            
+            // Create a map with terminal status information
+            val statusMap = HashMap<String, Any?>()
+            statusMap["transactionStatus"] = terminalStatus.getTransactionStatus().toString()
+            
+            // Only include fields that are available in the TerminalStatus class
+            // Remove methods that don't exist in your TimAPI version
+            
+            Log.d("TimAPI", "Terminal status: ${terminalStatus.getTransactionStatus()}")
+            result.success(statusMap)
+        } catch (e: Exception) {
+            Log.e("TimAPI", "Error getting terminal status: ${e.message}")
+            result.error("STATUS_ERROR", "Failed to get terminal status: ${e.message}", null)
+        }
     }
 
     private fun timApiGetVersion(result: Result) {
@@ -825,64 +849,153 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private fun timApiGetLastTransaction(result: Result) {
-        // TODO: 查询上次交易信息
-        println("Tim Api Get Last Transaction")
-        result.success("LastTxInfo (mock)")
+        try {
+            // Check if terminal is in idle state before querying last transaction
+            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+                // Since we don't have getLastTransaction available, we'll return minimal information
+                val txMap = HashMap<String, Any?>()
+                txMap["message"] = "Last transaction information not directly accessible in this TimAPI version"
+                
+                // Return minimal information
+                Log.d("TimAPI", "Last transaction info requested, but not available in this API version")
+                result.success(txMap)
+            } else {
+                Log.d("TimAPI", "Terminal is busy, cannot get last transaction")
+                result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: Exception) {
+            Log.e("TimAPI", "Error getting last transaction: ${e.message}")
+            result.error("TRANSACTION_ERROR", "Failed to get last transaction: ${e.message}", null)
+        }
     }
 
     private fun timApiStartTransaction(posRefId: String?, amount: Int, result: Result) {
-        println("Tim Api Start transaction with posRefId=$posRefId amount=$amount")
-        if (terminal.getTerminalStatus().getTransactionStatus() === TimapiTransactionStatus.IDLE) {
-            // Start transaction. Automatically connects to, loggs in and activates the terminal
-            terminal.transactionAsync(TimapiTransactionType.PURCHASE, TimapiAmount(amount,
-                TimapiCurrency.AUD))
+        try {
+            Log.d("TimAPI", "Starting transaction with posRefId=$posRefId amount=$amount")
+            
+            // Check if terminal is in idle state before starting transaction
+            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+                // Convert the amount from cents to dollars with correct currency
+                // Assuming AUD as currency, change as needed
+                val transactionAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
+                
+                // Start transaction - using synchronous method instead of async
+                mTim.transaction(TimapiTransactionType.PURCHASE, transactionAmount)
+                
+                Log.d("TimAPI", "Transaction request sent")
+                result.success(true)
+            } else {
+                Log.d("TimAPI", "Terminal is busy, cannot start new transaction")
+                result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: Exception) {
+            Log.e("TimAPI", "Error starting transaction: ${e.message}")
+            result.error("TRANSACTION_ERROR", "Failed to start transaction: ${e.message}", null)
         }
-        // TODO: timApiInstance.startTransaction(posRefId, amount)
-        result.success(null)
     }
 
     private fun timApiStartListening(result: Result) {
-        // 如果有需要监听事件
-        println("Start listening for TIM API events")
-        result.success(null)
+        print("hello");
+    }
+
+    private fun invokeTimApiMethod(flutterMethod: String, message: Any?) {
+        val mainHandler = Handler(context.mainLooper)
+        mainHandler.post {
+            timApiChannel.invokeMethod(flutterMethod, message, object : MethodChannel.Result {
+                override fun success(o: Any?) {
+                    Log.d("TimAPI", "invokeMethod: success for $flutterMethod")
+                }
+
+                override fun error(s: String, s1: String?, o: Any?) {
+                    Log.e("TimAPI", "invokeMethod: error for $flutterMethod: $s, $s1")
+                }
+
+                override fun notImplemented() {
+                    Log.d("TimAPI", "invokeMethod: notImplemented for $flutterMethod")
+                }
+            })
+        }
     }
 
     private fun timApiTestConnection(result: Result) {
-        // 测试连接
-        // Create new TerminalSettings instance
-        val settings = TerminalSettings()
+        try {
+            // Create new TerminalSettings instance for testing
+            val settings = TerminalSettings()
 
-        // ----------------------------LOGGING----------------------------
-        // Set the Logging directory path where the log file will be saved
-        // Adjust this path based on your Android file system
-        val logDir = context.getExternalFilesDir(null)?.absolutePath + "/logs"
-        settings.logDir = logDir
+            // ----------------------------LOGGING----------------------------
+            val logDir = context.getExternalFilesDir(null)?.absolutePath + "/logs"
+            settings.logDir = logDir
+            Log.d("TimAPI_TEST", "Log directory set to: $logDir")
 
-        // ----------------------------CONNECTION----------------------------
-        // Set the Terminal ID (Replace with the actual terminal ID)
-        settings.terminalId = "12345678"
+            // ----------------------------CONNECTION----------------------------
+            settings.terminalId = "12345678"
+            settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
+            settings.setConnectionIPString("10.0.2.2") // Use emulator localhost or actual IP
+            settings.setConnectionIPPort(7784)
+            settings.setAutoCommit(false) // Set to false to test manual commit
+            settings.setGuides(EnumSet.of(Guides.RETAIL))
 
-        // ----------------------------COMMIT----------------------------
-        // If the ECR (this plugin) should be responsible for commit, set this to false.
-        settings.isAutoCommit = true
-        settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
-//        settings.setGuides(EnumSet.of(Guides.RETAIL));
-        settings.setConnectionIPString("10.0.2.2")
-        settings.setConnectionIPPort(7784)
-
-        // ----------------------------CREATE TERMINAL INSTANCE----------------------------
-        // Create a terminal instance using the adjusted settings
-        val terminal = Terminal(settings)
-        println("TimApi Terminal initialize ok")
-        // Return success message
-        Log.d("SUCCESS", "TimApi Test Success")
-        println("timApiTestReport: " + terminal.getTerminalStatus().getTransactionStatus())
-        if (terminal.getTerminalStatus().getTransactionStatus() === TimapiTransactionStatus.IDLE) {
-            // Start transaction. Automatically connects to, loggs in and activates the terminal
-            terminal.transactionAsync(TimapiTransactionType.PURCHASE, TimapiAmount(14.00,
-                    TimapiCurrency.CHF))
+            // ----------------------------CREATE TEST TERMINAL INSTANCE----------------------------
+            Log.d("TimAPI_TEST", "Creating test terminal instance...")
+            val testTerminal = Terminal(settings)
+            
+            // ----------------------------TEST RESULTS----------------------------
+            val testResults = HashMap<String, String>()
+            
+            // ----------------------------TEST 1: GET TERMINAL STATUS----------------------------
+            Log.d("TimAPI_TEST", "Test 1: Getting terminal status...")
+            try {
+                val terminalStatus = testTerminal.getTerminalStatus()
+                testResults["getTerminalStatus"] = "SUCCESS - Transaction status: ${terminalStatus.getTransactionStatus()}"
+                Log.d("TimAPI_TEST", testResults["getTerminalStatus"]!!)
+            } catch (e: Exception) {
+                testResults["getTerminalStatus"] = "FAILED - Error: ${e.message}"
+                Log.e("TimAPI_TEST", testResults["getTerminalStatus"]!!)
+            }
+            
+            // ----------------------------TEST 2: SET UP TRANSACTION LISTENER----------------------------
+            
+            // ----------------------------TEST 3: START A SIMPLE TRANSACTION----------------------------
+            if (testTerminal.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+                Log.d("TimAPI_TEST", "Test 3: Starting a test transaction...")
+                try {
+                    // Use a small amount for testing
+                    val txAmount = TimapiAmount(0.10, TimapiCurrency.CHF)
+                    
+                    // Start transaction
+                    testTerminal.transaction(TimapiTransactionType.PURCHASE, txAmount)
+                    
+                    testResults["startTransaction"] = "SUCCESS - Test transaction started"
+                    Log.d("TimAPI_TEST", testResults["startTransaction"]!!)
+                } catch (e: Exception) {
+                    testResults["startTransaction"] = "FAILED - Error: ${e.message}"
+                    Log.e("TimAPI_TEST", testResults["startTransaction"]!!)
+                }
+            } else {
+                testResults["startTransaction"] = "SKIPPED - Terminal not in IDLE state"
+                Log.d("TimAPI_TEST", testResults["startTransaction"]!!)
+            }
+            
+            // Return consolidated test results
+            val resultSummary = StringBuilder()
+            resultSummary.append("TimAPI Test Results:\n")
+            testResults.forEach { (funcName, result) ->
+                resultSummary.append("- $funcName: $result\n")
+            }
+            
+            // Clean up test terminal
+            try {
+                testTerminal.dispose()
+                Log.d("TimAPI_TEST", "Test terminal disposed")
+            } catch (e: Exception) {
+                Log.e("TimAPI_TEST", "Error disposing test terminal: ${e.message}")
+            }
+            
+            result.success(resultSummary.toString())
+        } catch (e: Exception) {
+            Log.e("TimAPI_TEST", "Test initialization error: ${e.message}")
+            result.error("TEST_ERROR", "Failed to initialize TimAPI test: ${e.message}", null)
         }
-        result.success("TimApi Terminal initialized successfully")
     }
 
     companion object {
@@ -925,4 +1038,5 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 }
+
 
