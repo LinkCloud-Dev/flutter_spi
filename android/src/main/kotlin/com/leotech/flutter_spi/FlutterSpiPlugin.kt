@@ -25,6 +25,7 @@ import com.six.timapi.TerminalSettings;
 import com.six.timapi.constants.TransactionType as TimapiTransactionType;
 import com.six.timapi.Amount as TimapiAmount;
 import com.six.timapi.constants.Currency as TimapiCurrency;
+import com.six.timapi.DefaultTerminalListener;
 
 /** FlutterSpiPlugin */
 class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
@@ -916,120 +917,12 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 
-    // Create a default implementation of TerminalListener that we can extend
-    // This handles the "interface bloat" problem by implementing all methods with empty bodies
-    private open class DefaultTerminalListener : com.six.timapi.TerminalListener {
-        // Core transaction methods
-        override fun transactionCompleted(e: com.six.timapi.TimEvent, response: com.six.timapi.TransactionResponse) {}
-        
-        // Basic connection and activation methods
-        override fun connectCompleted(e: com.six.timapi.TimEvent) {}
-        override fun activateCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.ActivateResponse) {}
-        override fun balanceCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.BalanceResponse) {}
-        override fun commitCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.PrintData) {}
-        override fun deactivateCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.DeactivateResponse) {}
-        
-        // Configuration and settings methods
-        override fun applicationInformationCompleted(e: com.six.timapi.TimEvent) {}
-        override fun changeSettingsCompleted(e: com.six.timapi.TimEvent) {}
-        
-        // Counter request and DCC methods
-        override fun counterRequestCompleted(e: com.six.timapi.TimEvent, counters: com.six.timapi.Counters) {}
-        override fun dccRatesCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.PrintData) {}
-        
-        // Terminal status methods
-        override fun terminalStatusChanged(terminal: com.six.timapi.Terminal) {}
-        override fun disconnected(terminal: com.six.timapi.Terminal, exception: com.six.timapi.TimException) {}
-        
-        // Additional methods
-        override fun clientIdentificationCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.ClientIdentificationResponse) {}
-        override fun balanceInquiryCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.BalanceInquiryResponse) {}
-        override fun errorNotification(terminal: com.six.timapi.Terminal, error: com.six.timapi.TimException) {}
-        
-        // Card reader methods
-        override fun closeReaderCompleted(e: com.six.timapi.TimEvent) {}
-        override fun openReaderCompleted(e: com.six.timapi.TimEvent) {}
-        override fun ejectCardCompleted(e: com.six.timapi.TimEvent) {}
-        
-        // Maintenance window methods
-        override fun openMaintenanceWindowCompleted(e: com.six.timapi.TimEvent) {}
-        override fun closeMaintenanceWindowCompleted(e: com.six.timapi.TimEvent) {}
-        
-        // Service menu methods
-        override fun activateServiceMenuCompleted(e: com.six.timapi.TimEvent) {}
-        
-        // Dialog mode methods
-        override fun openDialogModeCompleted(e: com.six.timapi.TimEvent) {}
-        override fun closeDialogModeCompleted(e: com.six.timapi.TimEvent) {}
-        
-        // Age verification method
-        override fun ageCheckCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.TransactionInformation) {}
-        
-        // Login and logout methods
-        override fun loginCompleted(e: com.six.timapi.TimEvent) {}
-        override fun logoutCompleted(e: com.six.timapi.TimEvent) {}
-        
-        // System information and configuration methods
-        override fun systemInformationCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.SystemInformationResponse) {}
-        override fun hardwareInformationCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.HardwareInformationResponse) {}
-        override fun reconfigCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.PrintData) {}
-        override fun rebootCompleted(e: com.six.timapi.TimEvent) {}
-        override fun softwareUpdateCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.constants.UpdateStatus) {}
-        override fun deviceMaintenanceCompleted(e: com.six.timapi.TimEvent) {}
-        
-        // Reconciliation methods
-        override fun reconciliationCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.ReconciliationResponse) {}
-        override fun rollbackCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.PrintData) {}
-        
-        // Receipt methods
-        override fun receiptRequestCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.ReceiptRequestResponse) {}
-        override fun printOnTerminal(e: com.six.timapi.TimEvent) {}
-        
-        // Dialog and signature methods
-        override fun showDialogCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.ShowDialogResponse) {}
-        override fun showSignatureCaptureCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.ShowSignatureCaptureResponse) {}
-        
-        // Card command methods
-        override fun sendCardCommandCompleted(e: com.six.timapi.TimEvent, data: List<com.six.timapi.CommandResponse>) {}
-        
-        // Transaction initialization methods
-        override fun initTransactionCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.CardData) {}
-        override fun initTransactionWithDialogCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.InitTransactionResponse) {}
-        override fun transactionInfoRequestCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.TransactionInfoRequestResponse) {}
-        
-        // Mobile topup methods
-        override fun mobileTopupIssuerInfoCompleted(e: com.six.timapi.TimEvent, data: List<com.six.timapi.MobileTopupValue>) {}
-        override fun mobileTopupCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.MobileTopupData) {}
-        
-        // Value Added Services methods
-        override fun startCheckoutCompleted(e: com.six.timapi.TimEvent) {}
-        override fun finishCheckoutCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.VasCheckoutInformation) {}
-        override fun vasInfo(terminal: com.six.timapi.Terminal, vasInfo: com.six.timapi.VasCheckoutInformation) {}
-        override fun loyaltyDataCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.CardData) {}
-        override fun provideLoyaltyBasketCompleted(e: com.six.timapi.TimEvent, data: List<com.six.timapi.LoyaltyItem>) {}
-        override fun provideVasResultCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.VasResult) {}
-        
-        // Alias methods
-        override fun requestAliasCompleted(e: com.six.timapi.TimEvent, data: String) {}
-        
-        // Notification methods
-        override fun deferredAuth(terminal: com.six.timapi.Terminal, response: com.six.timapi.TransactionResponse) {}
-        override fun keyPressed(terminal: com.six.timapi.Terminal, reason: com.six.timapi.constants.Reason) {}
-        override fun screenshot(terminal: com.six.timapi.Terminal, info: com.six.timapi.ScreenshotInformation) {}
-        override fun thirdPartyAppData(terminal: com.six.timapi.Terminal, data: com.six.timapi.ThirdPartyAppPayload) {}
-        
-        // Deprecated methods (still need to be implemented to satisfy the interface)
-        @Deprecated("Functionality removed") 
-        override fun licenseChanged(terminal: com.six.timapi.Terminal) {}
-    }
-    
     private fun timApiStartListening(result: Result) {
         try {
             Log.d("TimAPI", "Setting up TIM API event listeners")
             
-            // Create a minimal implementation of TerminalListener that only overrides methods we care about
-            mTim.addListener(object : DefaultTerminalListener() {
-                // Only override the methods we actually care about
+            // Use the official DefaultTerminalListener class and only override methods we need
+            mTim.addListener(object : com.six.timapi.DefaultTerminalListener() {
                 override fun transactionCompleted(e: com.six.timapi.TimEvent, response: com.six.timapi.TransactionResponse) {
                     val responseMap = HashMap<String, Any?>()
                     responseMap["transactionStatus"] = "COMPLETED"
@@ -1043,7 +936,6 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
                     }
                 }
                 
-                // Only implement the most important callbacks
                 override fun commitCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.PrintData) {
                     invokeTimApiMethod("commitCompleted", null)
                 }
@@ -1138,7 +1030,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
 
     private fun runTerminalTests(testTerminal: Terminal, testResults: HashMap<String, String>, result: Result) {
         // Create a test listener that will perform the sequence of tests
-        val testListener = object : DefaultTerminalListener() {
+        val testListener = object : com.six.timapi.DefaultTerminalListener() {
             override fun terminalStatusChanged(terminal: com.six.timapi.Terminal) {
                 val status = terminal.getTerminalStatus().getTransactionStatus()
                 Log.d("TimAPI_TEST", "Terminal status changed to: $status")
