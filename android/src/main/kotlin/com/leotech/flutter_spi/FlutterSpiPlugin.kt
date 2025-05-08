@@ -27,6 +27,9 @@ import com.six.timapi.Amount as TimapiAmount;
 import com.six.timapi.constants.Currency as TimapiCurrency;
 import com.six.timapi.DefaultTerminalListener;
 
+import com.six.timapi.*
+import android.os.Looper
+
 /** FlutterSpiPlugin */
 class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     /// The MethodChannel that will the communication between Flutter and native Android
@@ -53,8 +56,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
         if (call.method == "getPlatformVersion") {
             result.success("Android ${android.os.Build.VERSION.RELEASE}")
         } else if (call.method == "init") {
-            init(call.argument("posId")!!, call.argument("serialNumber")!!, call.argument("eftposAddress")!!,
-                    call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("secrets"), result)
+            init(call.argument("posId")!!, call.argument("serialNumber")!!, call.argument("eftposAddress")!!, call.argument("apiKey")!!, call.argument("tenantCode")!!, call.argument("secrets"), result)
         } else if (call.method == "start") {
             start(result)
         } else if (call.method == "setPosId") {
@@ -558,10 +560,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
      * @param txType   The transaction type.
      */
     fun initiateRecovery(posRefId: String, txType: String, result: Result) {
-        result.handleResult(mSpi.initiateRecovery(
-                posRefId,
-                TransactionType.valueOf(txType)
-        ), result)
+        result.handleResult(mSpi.initiateRecovery(posRefId, TransactionType.valueOf(txType)), result)
     }
 
     /**
@@ -582,14 +581,10 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
             val get = c.getMethod("get", String::class.java)
 
             serialNumber = get.invoke(c, "gsm.sn1") as String
-            if (serialNumber == "")
-                serialNumber = get.invoke(c, "ril.serialnumber") as String
-            if (serialNumber == "")
-                serialNumber = get.invoke(c, "ro.serialno") as String
-            if (serialNumber == "")
-                serialNumber = get.invoke(c, "sys.serialnumber") as String
-            if (serialNumber == "")
-                serialNumber = Build.SERIAL
+            if (serialNumber == "") serialNumber = get.invoke(c, "ril.serialnumber") as String
+            if (serialNumber == "") serialNumber = get.invoke(c, "ro.serialno") as String
+            if (serialNumber == "") serialNumber = get.invoke(c, "sys.serialnumber") as String
+            if (serialNumber == "") serialNumber = Build.SERIAL
             result.success(serialNumber)
         } catch (ignored: Exception) {
             result.error("ERROR", "Error.", null)
@@ -728,30 +723,23 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
         map?.forEach { (k, v) ->
             try {
                 when (v) {
-                    is Boolean ->
-                        result.put(k, v)
+                    is Boolean -> result.put(k, v)
 
-                    is Int ->
-                        result.put(k, v)
+                    is Int -> result.put(k, v)
 
-                    is Double ->
-                        result.put(k, v)
+                    is Double -> result.put(k, v)
 
-                    is Float ->
-                        result.put(k, v.toDouble())
+                    is Float -> result.put(k, v.toDouble())
 
-                    is String ->
-                        result.put(k, v)
+                    is String -> result.put(k, v)
 
-                    is Map<*, *> ->
-                        result.put(k, hashMapToWritableMap(v as Map<String, Any?>))
+                    is Map<*, *> -> result.put(k, hashMapToWritableMap(v as Map<String, Any?>))
 
                     is List<*> -> {
                         v.map { it to hashMapToWritableMap(it as Map<String, Any?>) }.toList()
                     }
 
-                    null ->
-                        result.put(k, null)
+                    null -> result.put(k, null)
                 }
             } catch (e: Exception) {
                 result.put(k, "Mapper [com.leotech.assembly.spi.mapper.MessageMapper::hashMapToWritableMap] cannot map data $v")
@@ -826,14 +814,14 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     private fun timApiGetTerminalStatus(result: Result) {
         try {
             val terminalStatus = mTim.getTerminalStatus()
-            
+
             // Create a map with terminal status information
             val statusMap = HashMap<String, Any?>()
             statusMap["transactionStatus"] = terminalStatus.getTransactionStatus().toString()
-            
+
             // Only include fields that are available in the TerminalStatus class
             // Remove methods that don't exist in your TimAPI version
-            
+
             Log.d("TimAPI", "Terminal status: ${terminalStatus.getTransactionStatus()}")
             result.success(statusMap)
         } catch (e: Exception) {
@@ -853,12 +841,12 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
         try {
             // Get current terminal status
             val currentStatus = mTim.getTerminalStatus().getTransactionStatus()
-            
+
             // Create a map to hold the transaction details
             val txMap = HashMap<String, Any?>()
             txMap["timestamp"] = System.currentTimeMillis()
             txMap["status"] = currentStatus.toString()
-            
+
             // Check terminal status
             if (currentStatus == TimapiTransactionStatus.IDLE) {
                 txMap["message"] = "No transaction in progress"
@@ -867,7 +855,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
                 // Terminal is waiting for commit - this means the transaction is complete
                 // but needs to be committed
                 txMap["message"] = "Transaction completed, waiting for commit"
-                
+
                 // If we find the terminal in WAIT_FOR_COMMIT state, we should try to commit
                 // This will handle cases where autoCommit didn't work as expected
                 try {
@@ -879,7 +867,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
                     txMap["commitAttempted"] = false
                     txMap["commitError"] = e.message
                 }
-                
+
                 result.success(txMap)
             } else {
                 // Terminal is in some other state
@@ -895,16 +883,16 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     private fun timApiStartTransaction(posRefId: String?, amount: Int, result: Result) {
         try {
             Log.d("TimAPI", "Starting transaction with posRefId=$posRefId amount=$amount")
-            
+
             // Check if terminal is in idle state before starting transaction
             if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 // Convert the amount from cents to dollars with correct currency
                 // Assuming AUD as currency, change as needed
                 val transactionAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
-                
+
                 // Start transaction - using synchronous method instead of async
                 mTim.transaction(TimapiTransactionType.PURCHASE, transactionAmount)
-                
+
                 Log.d("TimAPI", "Transaction request sent")
                 result.success(true)
             } else {
@@ -920,39 +908,39 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     private fun timApiStartListening(result: Result) {
         try {
             Log.d("TimAPI", "Setting up TIM API event listeners")
-            
+
             // Use the official DefaultTerminalListener class and only override methods we need
             mTim.addListener(object : com.six.timapi.DefaultTerminalListener() {
                 override fun transactionCompleted(e: com.six.timapi.TimEvent, response: com.six.timapi.TransactionResponse) {
                     val responseMap = HashMap<String, Any?>()
                     responseMap["transactionStatus"] = "COMPLETED"
-                    
+
                     // Send transaction completed event to Flutter
                     invokeTimApiMethod("transactionCompleted", responseMap)
-                    
+
                     // If auto-commit is disabled, you need to call commit explicitly
                     if (!mTim.getSettings().isAutoCommit()) {
                         mTim.commit()
                     }
                 }
-                
+
                 override fun commitCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.PrintData) {
                     invokeTimApiMethod("commitCompleted", null)
                 }
-                
+
                 override fun errorNotification(terminal: com.six.timapi.Terminal, error: com.six.timapi.TimException) {
                     val errorMap = HashMap<String, Any?>()
                     errorMap["message"] = error.message
                     invokeTimApiMethod("errorNotification", errorMap)
                 }
-                
+
                 override fun terminalStatusChanged(terminal: com.six.timapi.Terminal) {
                     val statusMap = HashMap<String, Any?>()
                     statusMap["transactionStatus"] = terminal.getTerminalStatus().getTransactionStatus().toString()
                     invokeTimApiMethod("terminalStatusChanged", statusMap)
                 }
             })
-            
+
             Log.d("TimAPI", "TIM API event listeners set up successfully")
             result.success(true)
         } catch (e: Exception) {
@@ -981,176 +969,54 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private fun timApiTestConnection(result: Result) {
-        try {
-            // Create new TerminalSettings instance for testing
-            val settings = TerminalSettings()
+        val trmSettings = TerminalSettings()
+        trmSettings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
+        trmSettings.setConnectionIPString("10.0.2.2") // Use emulator localhost or actual IP
+        trmSettings.setConnectionIPPort(7784)
+        trmSettings.setAutoCommit(false)
+        val terminal = Terminal(trmSettings)
 
-            // ----------------------------LOGGING----------------------------
-            val logDir = context.getExternalFilesDir(null)?.absolutePath + "/logs"
-            settings.logDir = logDir
-            Log.d("TimAPI_TEST", "Log directory set to: $logDir")
+        terminal.addListener(object : DefaultTerminalListener() {
+            override fun activateCompleted(e: TimEvent, data: ActivateResponse) {
+                // 激活请求完成时要调用的代码
+            }
 
-            // ----------------------------CONNECTION----------------------------
-            settings.terminalId = "12345678"
-            settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
-            settings.setConnectionIPString("10.0.2.2") // Use emulator localhost or actual IP
-            settings.setConnectionIPPort(7784)
-            settings.setAutoCommit(false) // Set to false to test manual commit
-            settings.setGuides(EnumSet.of(Guides.RETAIL))
+            override fun transactionCompleted(e: TimEvent, data: TransactionResponse) {
+                // 交易请求完成时要调用的代码
 
-            // ----------------------------TEST RESULTS----------------------------
-            val testResults = HashMap<String, String>()
-
-            // ----------------------------TEST 1: INITIALIZE TERMINAL----------------------------
-            Log.d("TimAPI_TEST", "Test 1: Initializing terminal...")
-            try {
-                val testTerminal = Terminal(settings)
-                testResults["timApiInit"] = "SUCCESS - Terminal initialized with settings"
-                Log.d("TimAPI_TEST", testResults["timApiInit"]!!)
-
-                // Continue with tests using this terminal instance
-                runTerminalTests(testTerminal, testResults, result)
-            } catch (e: Exception) {
-                testResults["timApiInit"] = "FAILED - Error: ${e.message}"
-                Log.e("TimAPI_TEST", testResults["timApiInit"]!!)
-
-                // Return results so far since initialization failed
-                val resultSummary = StringBuilder()
-                resultSummary.append("TimAPI Test Results:\n")
-                testResults.forEach { (funcName, result) ->
-                    resultSummary.append("- $funcName: $result\n")
+                // 交易请求正确完成后，可以执行提交操作
+                // 仅在未启用AutoCommit时需要
+                Handler(Looper.getMainLooper()).post {
+                    terminal.commitAsync()
                 }
-                result.success(resultSummary.toString())
             }
-        } catch (e: Exception) {
-            Log.e("TimAPI_TEST", "Test initialization error: ${e.message}")
-            result.error("TEST_ERROR", "Failed to initialize TimAPI test: ${e.message}", null)
-        }
-    }
 
-    private fun runTerminalTests(testTerminal: Terminal, testResults: HashMap<String, String>, result: Result) {
-        // Create a test listener that will perform the sequence of tests
-        val testListener = object : com.six.timapi.DefaultTerminalListener() {
-            override fun terminalStatusChanged(terminal: com.six.timapi.Terminal) {
-                val status = terminal.getTerminalStatus().getTransactionStatus()
-                Log.d("TimAPI_TEST", "Terminal status changed to: $status")
-            }
-            
-            override fun transactionCompleted(e: com.six.timapi.TimEvent, response: com.six.timapi.TransactionResponse) {
-                Log.d("TimAPI_TEST", "Transaction completed")
-                testResults["timApiStartTransaction"] = "SUCCESS - Transaction completed"
-                
-                // Test timApiCancelTransaction (not possible to test directly after completion,
-                // but we can check the implementation)
-                testResults["timApiCancelTransaction"] = "IMPLEMENTATION VERIFIED - Method checks status and calls terminal.cancel()"
-                
-                // After transaction completes, test getLastTransaction
-                testCounterRequest(testTerminal, testResults, result)
-            }
-            
-            override fun commitCompleted(e: com.six.timapi.TimEvent, data: com.six.timapi.PrintData) {
-                Log.d("TimAPI_TEST", "Commit completed")
-            }
-            
-            override fun counterRequestCompleted(e: com.six.timapi.TimEvent, counters: com.six.timapi.Counters) {
-                Log.d("TimAPI_TEST", "Counter request completed")
-                // Simplify this to avoid referencing specific properties that might not be available
-                testResults["timApiGetLastTransaction"] = "SUCCESS - Counter information retrieved"
-                
-                // Now that all tests are done, clean up and return results
-                finalizeTests(testTerminal, testResults, result)
-            }
-            
-            override fun errorNotification(terminal: com.six.timapi.Terminal, error: com.six.timapi.TimException) {
-                Log.e("TimAPI_TEST", "Error notification: ${error.message}")
-            }
-        }
-        
-        // Add the test listener
-        testTerminal.addListener(testListener)
-        
-        // ----------------------------TEST 2: GET TERMINAL STATUS----------------------------
-        Log.d("TimAPI_TEST", "Test 2: Getting terminal status...")
-        try {
-            val terminalStatus = testTerminal.getTerminalStatus()
-            testResults["timApiGetTerminalStatus"] = "SUCCESS - Transaction status: ${terminalStatus.getTransactionStatus()}"
-            Log.d("TimAPI_TEST", testResults["timApiGetTerminalStatus"]!!)
-            
-            // ----------------------------TEST 3: START A TRANSACTION (if terminal is idle)----------------------------
-            if (terminalStatus.getTransactionStatus() == TimapiTransactionStatus.IDLE) {
-                Log.d("TimAPI_TEST", "Test 3: Starting a test transaction...")
-                try {
-                    // Use a small amount for testing
-                    val txAmount = TimapiAmount(0.10, TimapiCurrency.CHF)
-                    
-                    // Start transaction - This will eventually trigger transactionCompleted listener
-                    testTerminal.transaction(TimapiTransactionType.PURCHASE, txAmount)
-                    
-                    testResults["timApiStartTransaction"] = "REQUEST SENT - Test transaction initiated"
-                    Log.d("TimAPI_TEST", testResults["timApiStartTransaction"]!!)
-                } catch (e: Exception) {
-                    testResults["timApiStartTransaction"] = "FAILED - Error: ${e.message}"
-                    Log.e("TimAPI_TEST", testResults["timApiStartTransaction"]!!)
-                    
-                    // Since transaction failed, test counter request directly
-                    testCounterRequest(testTerminal, testResults, result)
+            // 修正: 添加正确签名的commitCompleted方法
+            override fun commitCompleted(e: TimEvent, data: PrintData) {
+                // 提交请求完成时要调用的代码
+
+                // 在这里可以调用deactivateAsync()
+                Handler(Looper.getMainLooper()).post {
+                    terminal.deactivateAsync()
                 }
-            } else {
-                testResults["timApiStartTransaction"] = "SKIPPED - Terminal not in IDLE state"
-                Log.d("TimAPI_TEST", testResults["timApiStartTransaction"]!!)
-                
-                // Since transaction was skipped, test counter request directly
-                testCounterRequest(testTerminal, testResults, result)
+
+                // 如果启用了AutoDeactivate，可以直接调用balanceAsync()
+                Handler(Looper.getMainLooper()).post {
+                    terminal.balanceAsync()
+                }
             }
-        } catch (e: Exception) {
-            testResults["timApiGetTerminalStatus"] = "FAILED - Error: ${e.message}"
-            Log.e("TimAPI_TEST", testResults["timApiGetTerminalStatus"]!!)
-            
-            // Since status check failed, finish tests
-            finalizeTests(testTerminal, testResults, result)
-        }
-    }
 
-    private fun testCounterRequest(testTerminal: Terminal, testResults: HashMap<String, String>, result: Result) {
-        // Skip the counter request test since it's problematic
-        Log.d("TimAPI_TEST", "Test 4: Getting last transaction info...")
-        try {
-            // Instead of using counterRequest, just check terminal status
-            val terminalStatus = testTerminal.getTerminalStatus()
-            testResults["timApiGetLastTransaction"] = "SIMULATED - Terminal status retrieved: ${terminalStatus.getTransactionStatus()}"
-            Log.d("TimAPI_TEST", testResults["timApiGetLastTransaction"]!!)
-            
-            // Move directly to cleaning up
-            finalizeTests(testTerminal, testResults, result)
-        } catch (e: Exception) {
-            testResults["timApiGetLastTransaction"] = "FAILED - Error: ${e.message}"
-            Log.e("TimAPI_TEST", testResults["timApiGetLastTransaction"]!!)
-            
-            // Since status check failed, finish tests
-            finalizeTests(testTerminal, testResults, result)
-        }
-    }
+            override fun deactivateCompleted(e: TimEvent, data: DeactivateResponse) {
+                // 停用请求完成时要调用的代码
+            }
 
-    private fun finalizeTests(testTerminal: Terminal, testResults: HashMap<String, String>, result: Result) {
-        // ----------------------------TEST 5: DISPOSE TERMINAL----------------------------
-        Log.d("TimAPI_TEST", "Test 5: Disposing terminal...")
-        try {
-            testTerminal.dispose()
-            testResults["timApiDispose"] = "SUCCESS - Terminal disposed"
-            Log.d("TimAPI_TEST", testResults["timApiDispose"]!!)
-        } catch (e: Exception) {
-            testResults["timApiDispose"] = "FAILED - Error: ${e.message}"
-            Log.e("TimAPI_TEST", testResults["timApiDispose"]!!)
-        }
-        
-        // Return consolidated test results
-        val resultSummary = StringBuilder()
-        resultSummary.append("TimAPI Test Results:\n")
-        testResults.forEach { (funcName, testResult) ->
-            resultSummary.append("- $funcName: $testResult\n")
-        }
-        
-        result.success(resultSummary.toString())
+            override fun balanceCompleted(e: TimEvent, data: BalanceResponse) {
+                // 余额请求完成时要调用的代码
+            }
+
+        })
+        terminal.transactionAsync(TimapiTransactionType.PURCHASE, com.six.timapi.Amount(12.50, TimapiCurrency.CHF))
+
     }
 
     companion object {
