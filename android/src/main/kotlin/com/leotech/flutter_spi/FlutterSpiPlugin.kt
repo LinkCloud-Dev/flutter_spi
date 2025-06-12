@@ -624,7 +624,7 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
 
             // ----------------------------CONNECTION----------------------------
             // Set the Terminal ID (Replace with the actual terminal ID)
-            settings.terminalId = "12345678"
+            settings.terminalId = "25196219"
 
             // ----------------------------COMMIT----------------------------
             // If the ECR (this plugin) should be responsible for commit, set this to false.
@@ -928,9 +928,9 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
             Log.d("TimAPI_TEST", "Log directory set to: $logDir")
 
             // ----------------------------CONNECTION----------------------------
-            settings.terminalId = "12345678"
+            settings.terminalId = "25196219"
             settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
-            settings.setConnectionIPString("10.0.2.2") // Use emulator localhost or actual IP
+            settings.setConnectionIPString("172.20.10.2") // Use emulator localhost or actual IP
             settings.setConnectionIPPort(7784)
             settings.setAutoCommit(false) // Set to false to test manual commit
             settings.setGuides(EnumSet.of(Guides.RETAIL))
@@ -960,8 +960,8 @@ class FlutterSpiPlugin : FlutterPlugin, MethodCallHandler {
                 Log.d("TimAPI_TEST", "Test 3: Starting a test transaction...")
                 try {
                     // Use a small amount for testing
-                    val txAmount = TimapiAmount(0.10, TimapiCurrency.CHF)
-                    
+                    val txAmount = TimapiAmount(0.10, TimapiCurrency.USD)
+
                     // Start transaction
                     testTerminal.transaction(TimapiTransactionType.PURCHASE, txAmount)
                     
