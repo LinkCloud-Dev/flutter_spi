@@ -60,11 +60,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             timApiTestConnection(result)
         } else if (call.method == "timApiInit") {
             timApiInit(
-                    call.argument("host")!!,
+                    call.argument("eftposAddress")!!,
+                    call.argument("posId")!!,
                     call.argument("port")!!,
-                    call.argument("sslCertificatePath")!!,
-                    call.argument("integratorId")!!,
-                    call.argument("timeout")!!,
                     result)
         } else if (call.method == "timApiStartListening") {
             dummy(result)
@@ -765,15 +763,15 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     }
 
-    private fun timApiInit(host: String?, port: Int, sslCertificatePath: String?, integratorId: String?, timeout: Int, result: Result) {
+    private fun timApiInit(eftposAddress: String?, posId: String?, port: int?, result: Result) {
         // 这里写 TIM API 的初始化逻辑
-        println("TIM API Init with host=$host, port=$port, cert=$sslCertificatePath, integratorId=$integratorId, timeout=$timeout")
+        println("TIM API Init with eftposAddress=$eftposAddress, posId=$posId")
 
         val settings: com.six.timapi.TerminalSettings = TerminalSettings()
-        settings.setTerminalId(integratorId)
+        settings.setTerminalId(posId)
         settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
         settings.setGuides(EnumSet.of(Guides.RETAIL));
-        settings.setConnectionIPString(host)
+        settings.setConnectionIPString(eftposAddress)
         settings.setConnectionIPPort(port.toInt())
         settings.setAutoCommit(false);
 

@@ -12,7 +12,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
 
   @override
   Future<void> init({
-    int timeout = 30,
+    int? port,            // tim api port
     String? posId,         // Tim Api intergater id
     String? serialNumber,  // no need
     String? eftposAddress, // tim api Ip
@@ -25,9 +25,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     String username = "default" // no need
   }) async {
     await _channel.invokeMethod('timApiInit', {
-      'host': eftposAddress,
-      'integratorId': posId,
-      'timeout': timeout,
+      'eftposAddress': eftposAddress,
+      'posId': posId,
+      'port': port,
     });
   }
 
