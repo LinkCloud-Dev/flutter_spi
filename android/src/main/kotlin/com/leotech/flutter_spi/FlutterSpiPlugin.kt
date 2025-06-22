@@ -778,7 +778,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         settings.setGuides(EnumSet.of(Guides.RETAIL));
         settings.setConnectionIPString(eftposAddress)
         settings.setConnectionIPPort(port ?: 0)
-        settings.setAutoCommit(false);
+        settings.setAutoCommit(ture);
 
 
         mTim = Terminal(settings)
@@ -826,7 +826,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             settings.setConnectionMode(ConnectionMode.ON_FIX_IP)
             settings.setConnectionIPString("172.20.10.2")
             settings.setConnectionIPPort(7784)
-            settings.setAutoCommit(false)
+            settings.setAutoCommit(ture)
             settings.setGuides(EnumSet.of(Guides.RETAIL))
 
             val testTerminal = Terminal(settings)
