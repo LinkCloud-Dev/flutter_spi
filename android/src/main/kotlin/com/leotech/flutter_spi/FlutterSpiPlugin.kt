@@ -60,12 +60,16 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             timApiTestConnection(result)
         } else if (call.method == "timApiInit") {
             timApiInit(
-                    call.argument("host")!!,
-                    call.argument("port")!!,
-                    call.argument("sslCertificatePath")!!,
-                    call.argument("integratorId")!!,
-                    call.argument("timeout")!!,
-                    result)
+                call.argument<String>("eftposAddress")!!, // Specify String type explicitly
+                call.argument<String>("posId")!!,         // Specify String type explicitly
+                call.argument<Int>("port")!!,             // Specify Int type explicitly
+                result)
+        } else if (call.method == "timApiStartTransaction") {
+            timApiStartTransaction(
+                call.argument("posRefId")!!,
+                call.argument("amount")!!,
+                result
+            )
         } else if (call.method == "timApiStartListening") {
             dummy(result)
         } else if (call.method == "setPosId") {
@@ -765,16 +769,15 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     }
 
-    private fun timApiInit(host: String?, port: Int, sslCertificatePath: String?, integratorId: String?, timeout: Int, result: Result) {
-        // 这里写 TIM API 的初始化逻辑
-        println("TIM API Init with host=$host, port=$port, cert=$sslCertificatePath, integratorId=$integratorId, timeout=$timeout")
+    private fun timApiInit(eftposAddress: String?, posId: String?, port: Int?, result: Result) {
+        println("TIM API Init with eftposAddress=$eftposAddress, posId=$posId")
 
         val settings: com.six.timapi.TerminalSettings = TerminalSettings()
-        settings.setTerminalId(integratorId)
+        settings.setTerminalId(posId)
         settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
         settings.setGuides(EnumSet.of(Guides.RETAIL));
-        settings.setConnectionIPString(host)
-        settings.setConnectionIPPort(port.toInt())
+        settings.setConnectionIPString(eftposAddress)
+        settings.setConnectionIPPort(port ?: 0)
         settings.setAutoCommit(false);
 
 
@@ -785,6 +788,31 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun dummy(result: Result) {
         print("hello");
+    }
+
+    private fun timApiStartTransaction(posRefId: String?, amount: Double, result: Result) {
+        try {
+            Log.d("TimAPI", "Starting transaction with posRefId=$posRefId amount=$amount")
+
+            // Check if terminal is in idle state before starting transaction
+            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+                // Convert the amount from cents to dollars with correct currency
+                // Assuming AUD as currency, change as needed
+                val transactionAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
+
+                // Start transaction - using synchronous method instead of async
+                mTim.transaction(TimapiTransactionType.PURCHASE, transactionAmount)
+
+                Log.d("TimAPI", "Transaction request sent")
+                result.success(true)
+            } else {
+                Log.d("TimAPI", "Terminal is busy, cannot start new transaction")
+                result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: Exception) {
+            Log.e("TimAPI", "Error starting transaction: ${e.message}")
+            result.error("TRANSACTION_ERROR", "Failed to start transaction: ${e.message}", null)
+        }
     }
     
     fun timApiTestConnection(result: Result) {

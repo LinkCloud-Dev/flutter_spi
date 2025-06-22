@@ -5,7 +5,7 @@ abstract class FlutterSpiPlatform {
 
   Future<void> init(
       {
-        int timeout = 30,
+        int? port,
         String? posId,
         String? serialNumber,
         String? eftposAddress,
