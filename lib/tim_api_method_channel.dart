@@ -31,6 +31,13 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     });
   }
 
+  Future<void> timApiStartTransaction(String posRefId, double amount) async {
+    await _channel.invokeMethod('timApiStartTransaction', {
+      'posRefId': posRefId,
+      'amount': amount,
+    });
+  }
+
   @override
   Future<void> acceptSignature(bool accepted) {
     // no need
@@ -108,11 +115,8 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
       int tipAmount,
       int cashoutAmount,
       bool promptForCashout) async {
-    // TIM API 建议统一：只有 purchaseAmount
-    await _channel.invokeMethod('timApiStartTransaction', {
-      'posRefId': posRefId,
-      'amount': purchaseAmount,
-    });
+    // no need
+    throw UnimplementedError();
   }
 
   @override

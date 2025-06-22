@@ -72,13 +72,7 @@ class SpiModel extends ChangeNotifier {
         //   username: "default",
         // );
 
-        // timapi testing
-        host: "10.0.2.2",
         port: 7784,
-        sslCertificatePath: "/path/to/cert",
-        integratorId: "12345678",
-        timeout: 30,
-
         posId: posId!,
         serialNumber: serialNumber!,
         eftposAddress: eftPosAddress!,
