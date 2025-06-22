@@ -12,14 +12,10 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
 
   @override
   Future<void> init({
-    String? host, // <-- 修改：TIM API 需要 host
-    int? port,    // <-- 修改：TIM API 需要 port
-    String? sslCertificatePath, // <-- TIM API 需要 cert path
-    String? integratorId, // <-- TIM API 需要 integrator ID
     int timeout = 30,
-    String? posId,         // no need (for TIM API)
+    String? posId,         // Tim Api intergater id
     String? serialNumber,  // no need
-    String? eftposAddress, // no need
+    String? eftposAddress, // tim api Ip
     String? apiKey,        // no need
     String? tenantCode,    // no need
     Map<String, String>? secrets, // no need
@@ -29,10 +25,8 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     String username = "default" // no need
   }) async {
     await _channel.invokeMethod('timApiInit', {
-      'host': host,
-      'port': port,
-      'sslCertificatePath': sslCertificatePath,
-      'integratorId': integratorId,
+      'host': eftposAddress,
+      'integratorId': posId,
       'timeout': timeout,
     });
   }

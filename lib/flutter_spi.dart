@@ -302,10 +302,6 @@ class FlutterSpi {
       flutterSpi = SpiMethodChannel();
     }
     flutterSpi.init(
-      host: host,
-      port: port,
-      sslCertificatePath: sslCertificatePath,
-      integratorId: integratorId,
       timeout: timeout,
       posId: posId,
       serialNumber: serialNumber,

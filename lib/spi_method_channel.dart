@@ -18,10 +18,6 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   @override
   Future<void> init(
       {
-        String? host,
-        int? port,
-        String? sslCertificatePath,
-        String? integratorId,
         int timeout = 30,
         String? posId,
         String? serialNumber,
