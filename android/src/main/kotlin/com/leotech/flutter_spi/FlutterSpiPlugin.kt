@@ -785,7 +785,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
         settings.setGuides(EnumSet.of(Guides.RETAIL));
         settings.setConnectionIPString(eftposAddress)
-        settings.setConnectionIPPort(port ?: 0)
+        settings.setConnectionIPPort(port ?: 7784)
         settings.setAutoCommit(true);
 
 
