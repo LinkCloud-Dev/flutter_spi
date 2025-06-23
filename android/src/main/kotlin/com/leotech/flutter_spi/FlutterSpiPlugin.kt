@@ -786,7 +786,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         settings.setGuides(EnumSet.of(Guides.RETAIL));
         settings.setConnectionIPString(eftposAddress)
         settings.setConnectionIPPort(port ?: 0)
-        settings.setAutoCommit(ture);
+        settings.setAutoCommit(true);
 
 
         mTim = Terminal(settings)
