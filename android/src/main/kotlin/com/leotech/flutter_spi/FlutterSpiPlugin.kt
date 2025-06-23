@@ -60,9 +60,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             timApiTestConnection(result)
         } else if (call.method == "timApiInit") {
             timApiInit(
-                call.argument<String>("eftposAddress")!!, // Specify String type explicitly
-                call.argument<String>("posId")!!,         // Specify String type explicitly
-                call.argument<Int>("port")!!,             // Specify Int type explicitly
+                call.argument<String>("eftposAddress"),
+                call.argument<String>("posId"),
+                call.argument<Int>("port"),
                 result)
         } else if (call.method == "timApiStartTransaction") {
             timApiStartTransaction(
@@ -138,6 +138,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             setSignatureFlowOnEftpos(call.argument("signatureFlowOnEftpos")!!, result)
         } else if (call.method == "setPrintMerchantCopy") {
             setPrintMerchantCopy(call.argument("printMerchantCopy")!!, result)
+        } else if (call.method == "timApiPair") {
+            timApiPair(result)
+        } else if (call.method == "timApiPairingCancel") {
+            timApiPairingCancel(result)
+        } else if (call.method == "timApiPairingConfirmCode") {
+            timApiPairingConfirmCode(result)
+        } else if (call.method == "timApiUnpair") {
+            timApiUnpair(result)
         } else  {
             result.notImplemented()
         }
@@ -597,7 +605,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     fun setPrintMerchantCopy(printMerchantCopy: Boolean, result: Result) {
-        mSpi.config.setPrintMerchantCopy(printMerchantCopy)
+        mSpi.config.isPrintMerchantCopy = printMerchantCopy
         result.success(null)
     }
 
@@ -826,7 +834,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             settings.setConnectionMode(ConnectionMode.ON_FIX_IP)
             settings.setConnectionIPString("172.20.10.2")
             settings.setConnectionIPPort(7784)
-            settings.setAutoCommit(ture)
+            settings.setAutoCommit(true)
             settings.setGuides(EnumSet.of(Guides.RETAIL))
 
             val testTerminal = Terminal(settings)
@@ -875,6 +883,103 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         } catch (e: Exception) {
             Log.e("TimAPI_TEST", "Test initialization error: ${e.message}")
             result.error("TEST_ERROR", "Failed to initialize TimAPI test: ${e.message}", null)
+        }
+    }
+
+    // TIM API specific pairing methods
+    fun timApiPair(result: Result) {
+        try {
+            // For TIM API, pairing is just initializing the connection
+            // Send pairing flow state events to simulate the pairing process
+            val pairingFlowState = HashMap<String, Any>()
+            pairingFlowState["state"] = "IN_PROGRESS"
+            pairingFlowState["message"] = "Connecting to TIM API terminal..."
+            pairingFlowState["awaitingCheckFromPos"] = false
+            pairingFlowState["awaitingCheckFromEftpos"] = false
+            pairingFlowState["finished"] = false
+            pairingFlowState["confirmationCode"] = ""
+            
+            invokeFlutterMethod("pairingFlowStateChanged", pairingFlowState)
+            
+            // Simulate successful pairing after a short delay
+            Handler(context.mainLooper).postDelayed({
+                val successPairingState = HashMap<String, Any>()
+                successPairingState["state"] = "FINISHED"
+                successPairingState["message"] = "TIM API terminal connected successfully"
+                successPairingState["awaitingCheckFromPos"] = false
+                successPairingState["awaitingCheckFromEftpos"] = false
+                successPairingState["finished"] = true
+                successPairingState["confirmationCode"] = ""
+                
+                invokeFlutterMethod("pairingFlowStateChanged", successPairingState)
+                
+                // Update status to paired
+                invokeFlutterMethod("statusChanged", "PAIRED_CONNECTED")
+            }, 2000) // 2 second delay to simulate connection time
+            
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("PAIRING_ERROR", "Failed to pair with TIM API: ${e.message}", null)
+        }
+    }
+
+    fun timApiPairingCancel(result: Result) {
+        try {
+            // Send pairing cancelled event
+            val cancelledPairingState = HashMap<String, Any>()
+            cancelledPairingState["state"] = "CANCELLED"
+            cancelledPairingState["message"] = "TIM API pairing cancelled"
+            cancelledPairingState["awaitingCheckFromPos"] = false
+            cancelledPairingState["awaitingCheckFromEftpos"] = false
+            cancelledPairingState["finished"] = true
+            cancelledPairingState["confirmationCode"] = ""
+            
+            invokeFlutterMethod("pairingFlowStateChanged", cancelledPairingState)
+            
+            // Update status to unpaired
+            invokeFlutterMethod("statusChanged", "UNPAIRED")
+            
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("CANCEL_ERROR", "Failed to cancel TIM API pairing: ${e.message}", null)
+        }
+    }
+
+    fun timApiPairingConfirmCode(result: Result) {
+        try {
+            // For TIM API, confirming the code just acknowledges the successful connection
+            val confirmedPairingState = HashMap<String, Any>()
+            confirmedPairingState["state"] = "FINISHED"
+            confirmedPairingState["message"] = "TIM API terminal connection confirmed"
+            confirmedPairingState["awaitingCheckFromPos"] = false
+            confirmedPairingState["awaitingCheckFromEftpos"] = false
+            confirmedPairingState["finished"] = true
+            confirmedPairingState["confirmationCode"] = ""
+            
+            invokeFlutterMethod("pairingFlowStateChanged", confirmedPairingState)
+            
+            // Update status to paired
+            invokeFlutterMethod("statusChanged", "PAIRED_CONNECTED")
+            
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("CONFIRM_ERROR", "Failed to confirm TIM API pairing: ${e.message}", null)
+        }
+    }
+
+    fun timApiUnpair(result: Result) {
+        try {
+            // Dispose the TIM API connection
+            if (::mTim.isInitialized) {
+                mTim.dispose()
+            }
+            
+            // Update status to unpaired
+            invokeFlutterMethod("statusChanged", "UNPAIRED")
+            
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("UNPAIR_ERROR", "Failed to unpair TIM API: ${e.message}", null)
         }
     }
 

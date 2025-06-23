@@ -96,4 +96,8 @@ abstract class FlutterSpiPlatform {
   Future<void> setPrintMerchantCopy(bool printMerchantCopy);
 
   Future<void> test();
+
+  Future<void> timApiPairing();
+
+  Future<void> timApiCharge();
 }

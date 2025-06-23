@@ -275,4 +275,16 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   void setUsername(String username) {
     // NOT NEEDED
   }
+
+  @override
+  Future<void> timApiCharge() {
+    // TODO: implement timApiCharge
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> timApiPairing() {
+    // TODO: implement timApiPairing
+    throw UnimplementedError();
+  }
 }

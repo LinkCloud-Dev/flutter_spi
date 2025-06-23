@@ -823,4 +823,16 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   Future<void> test() async {
     // NOT NEEDED
   }
+
+  @override
+  Future<void> timApiCharge() {
+    // TODO: implement timApiCharge
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> timApiPairing() {
+    // TODO: implement timApiPairing
+    throw UnimplementedError();
+  }
 }

@@ -470,4 +470,12 @@ class FlutterSpi {
   static Future<void> test() async {
     flutterSpi.test();
   }
+
+  static Future<void> timApiPairing() async {
+    flutterSpi.timApiPairing();
+  }
+
+  static Future<void> timApiCharge() async {
+    flutterSpi.timApiCharge();
+  }
 }

@@ -138,20 +138,26 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> pair() async{
-    await _channel.invokeMethod('timApiPair');
+  Future<void> pair() async {
+    // For TIM API, use the specific TIM API pairing method
+    // await _channel.invokeMethod('timApiPair');
+    await _channel.invokeMethod('timApiInit', {
+      'eftposAddress': '172.20.10.2',
+      'posId': '25196219',
+      'port': 7784,
+    });
   }
 
   @override
-  Future<void> pairingCancel() {
-    // no need
-    throw UnimplementedError();
+  Future<void> pairingCancel() async {
+    // For TIM API, use the specific TIM API pairing cancel method
+    await _channel.invokeMethod('timApiPairingCancel');
   }
 
   @override
-  Future<void> pairingConfirmCode() {
-    // no need
-    throw UnimplementedError();
+  Future<void> pairingConfirmCode() async {
+    // For TIM API, use the specific TIM API pairing confirm method
+    await _channel.invokeMethod('timApiPairingConfirmCode');
   }
 
   @override
@@ -235,12 +241,39 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
 
   @override
   Future<void> test() async {
-    await _channel.invokeMethod('timApiTestConnection');
+    // Call timApiInit with the stored parameters
+    await _channel.invokeMethod('timApiInit', {
+      'eftposAddress': '172.20.10.2',
+      'posId': '25196219',
+      'port': 7784,
+    });
+
+    await _channel.invokeMethod('timApiStartTransaction', {
+      'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
+      'amount': 5000, // Test amount of 10 cents
+    });
   }
 
   @override
-  Future<void> unpair() {
-    // no need
-    throw UnimplementedError();
+  Future<void> unpair() async {
+    // For TIM API, use the specific TIM API unpair method
+    await _channel.invokeMethod('timApiUnpair');
+  }
+
+  // Public method for pairing (timApiInit)
+  Future<void> timApiPairing() async {
+    await _channel.invokeMethod('timApiInit', {
+      'eftposAddress': '172.20.10.2',
+      'posId': '25196219',
+      'port': 7784,
+    });
+  }
+
+  // Public method for charge (timApiStartTransaction)
+  Future<void> timApiCharge() async {
+    await _channel.invokeMethod('timApiStartTransaction', {
+      'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
+      'amount': 5000, // Example/test amount
+    });
   }
 }
