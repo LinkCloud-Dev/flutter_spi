@@ -78,7 +78,7 @@ class SpiModel extends ChangeNotifier {
         eftposAddress: eftPosAddress!,
         apiKey: apiKey!,
         tenantCode: tenantCode!,
-        spiType: "TIMAPI",
+        spiType: "ANZ",
         secrets: secrets != null ? secrets!.toJSON() : null
       );
     await FlutterSpi.start();

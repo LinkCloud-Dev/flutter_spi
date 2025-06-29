@@ -292,7 +292,7 @@ class FlutterSpi {
     if (spiType == "THUMBZUP") {
       flutterSpi = ThumbzUpWebSocket();
     } else if (spiType == "WINDCAVE") {
-    } else if (spiType == "TIMAPI") {
+    } else if (spiType == "ANZ") {
       flutterSpi = TimApiMethodChannel();
     }else {
       flutterSpi = SpiMethodChannel();
