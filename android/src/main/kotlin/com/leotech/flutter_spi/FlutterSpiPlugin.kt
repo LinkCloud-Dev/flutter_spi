@@ -782,6 +782,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
 
         mTim = Terminal(settings)
+        mTim.connect()
+        mTim.login()
+        mTim.activate()
 
         result.success(null)
     }
