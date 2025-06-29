@@ -142,7 +142,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     // For TIM API, use the specific TIM API pairing method
     // await _channel.invokeMethod('timApiPair');
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '172.20.10.2',
+      'eftposAddress': '172.20.10.4',
       'posId': '25196219',
       'port': 7784,
     });
@@ -243,7 +243,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> test() async {
     // Call timApiInit with the stored parameters
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '172.20.10.2',
+      'eftposAddress': '172.20.10.4',
       'posId': '25196219',
       'port': 7784,
     });
@@ -263,7 +263,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   // Public method for pairing (timApiInit)
   Future<void> timApiPairing() async {
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '172.20.10.2',
+      'eftposAddress': '172.20.10.4',
       'posId': '25196219',
       'port': 7784,
     });
