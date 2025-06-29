@@ -138,14 +138,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             setSignatureFlowOnEftpos(call.argument("signatureFlowOnEftpos")!!, result)
         } else if (call.method == "setPrintMerchantCopy") {
             setPrintMerchantCopy(call.argument("printMerchantCopy")!!, result)
-        } else if (call.method == "timApiPair") {
-            timApiPair(result)
-        } else if (call.method == "timApiPairingCancel") {
-            timApiPairingCancel(result)
-        } else if (call.method == "timApiPairingConfirmCode") {
-            timApiPairingConfirmCode(result)
-        } else if (call.method == "timApiUnpair") {
-            timApiUnpair(result)
         } else  {
             result.notImplemented()
         }
