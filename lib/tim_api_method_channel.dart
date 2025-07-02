@@ -4,11 +4,15 @@ import 'package:flutter_spi/flutter_spi_platform.dart';
 
 class TimApiMethodChannel implements FlutterSpiPlatform {
   static const MethodChannel _channel = MethodChannel('flutter_spi_timapi');
+  static const EventChannel _eventChannel = EventChannel("flutter_spi_timapi_events");
 
   @override
   void handleMethodCall(cb) {
     _channel.setMethodCallHandler(cb);
   }
+
+  @override
+  Stream<dynamic> get eventStream => _eventChannel.receiveBroadcastStream();
 
   @override
   Future<void> init({
@@ -142,8 +146,8 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     // For TIM API, use the specific TIM API pairing method
     // await _channel.invokeMethod('timApiPair');
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '172.20.10.4',
-      'posId': '25196219',
+      'eftposAddress': '172.0.0.1',
+      'posId': '12345678',
       'port': 7784,
     });
   }
@@ -243,7 +247,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> test() async {
     // Call timApiInit with the stored parameters
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '172.20.10.4',
+      'eftposAddress': '172.20.10.2',
       'posId': '25196219',
       'port': 7784,
     });
@@ -263,8 +267,8 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   // Public method for pairing (timApiInit)
   Future<void> timApiPairing() async {
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '172.20.10.4',
-      'posId': '25196219',
+      'eftposAddress': '10.0.2.2',
+      'posId': '12345678',
       'port': 7784,
     });
   }

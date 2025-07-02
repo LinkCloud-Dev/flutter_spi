@@ -835,4 +835,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     // TODO: implement timApiPairing
     throw UnimplementedError();
   }
+
+  @override
+  Stream<dynamic> get eventStream => const Stream.empty();
 }

@@ -267,6 +267,7 @@ enum SpiMethodCallEvents {
 
 class FlutterSpi {
   static FlutterSpiPlatform flutterSpi = SpiMethodChannel();
+  static Stream<dynamic> get eventStream => flutterSpi.eventStream;
 
   static void registerWith(dynamic registrar) {
     // FlutterSpiPlatform.instance = FlutterSpiWeb();
@@ -312,6 +313,7 @@ class FlutterSpi {
   }
 
   static Future<void> start() async {
+    print(".......start");
     flutterSpi.start();
   }
 

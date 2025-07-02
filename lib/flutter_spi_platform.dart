@@ -3,6 +3,8 @@ import 'package:flutter_spi/flutter_spi.dart';
 abstract class FlutterSpiPlatform {
   void handleMethodCall(dynamic cb);
 
+  Stream<dynamic> get eventStream => const Stream.empty();
+
   Future<void> init(
       {
         int? port,

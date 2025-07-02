@@ -42,15 +42,22 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   @override
   void initState() {
-    _initSpi();
     super.initState();
+    _initSpi();
   }
 
   void _initSpi() async {
     var spi = Provider.of<SpiModel>(context, listen: false);
     await spi.init();
     FlutterSpi.handleMethodCall(spi.subscribeSpiEvents);
+    await FlutterSpi.start();
+    // TIM API 的事件监听（只需要添加一次）
+    FlutterSpi.eventStream.listen((event) {
+      print("🔔 收到 TIM API 事件: $event");
+
+    });
   }
+
 
   Future<void> _startTransaction(int amount, BuildContext context) async {
     var spi = Provider.of<SpiModel>(context, listen: false);

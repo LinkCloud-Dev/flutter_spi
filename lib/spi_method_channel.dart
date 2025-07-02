@@ -287,4 +287,8 @@ class SpiMethodChannel implements FlutterSpiPlatform {
     // TODO: implement timApiPairing
     throw UnimplementedError();
   }
+
+  @override
+  // TODO: implement eventStream
+  Stream<dynamic> get eventStream => const Stream.empty();
 }

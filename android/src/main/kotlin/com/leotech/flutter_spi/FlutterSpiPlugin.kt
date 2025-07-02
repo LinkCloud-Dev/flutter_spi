@@ -4,9 +4,30 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
 import android.os.Handler
+import android.os.Looper
 import android.os.StrictMode
 import android.util.Log
 import androidx.annotation.NonNull
+import com.six.timapi.ActivateResponse
+import com.six.timapi.BalanceInquiryResponse
+import com.six.timapi.BalanceResponse
+import com.six.timapi.CardData
+import com.six.timapi.ClientIdentificationResponse
+import com.six.timapi.CommandResponse
+import com.six.timapi.Counters
+import com.six.timapi.DeactivateResponse
+import com.six.timapi.HardwareInformationResponse
+import com.six.timapi.InitTransactionResponse
+import com.six.timapi.LoyaltyItem
+import com.six.timapi.MobileTopupData
+import com.six.timapi.MobileTopupValue
+import com.six.timapi.PrintData
+import com.six.timapi.ReceiptRequestResponse
+import com.six.timapi.ReconciliationResponse
+import com.six.timapi.ScreenshotInformation
+import com.six.timapi.ShowDialogResponse
+import com.six.timapi.ShowSignatureCaptureResponse
+import com.six.timapi.SystemInformationResponse
 import io.mx51.spi.Spi;
 import io.mx51.spi.Spi.CompatibilityException;
 import io.mx51.spi.model.*;
@@ -15,6 +36,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.EventChannel
 
 import java.util.EnumSet
 import com.six.timapi.constants.Guides
@@ -25,6 +47,17 @@ import com.six.timapi.constants.TransactionType as TimapiTransactionType;
 import com.six.timapi.Amount as TimapiAmount;
 import com.six.timapi.constants.Currency as TimapiCurrency;
 import com.six.timapi.constants.ConnectionMode;
+import com.six.timapi.TerminalListener
+import com.six.timapi.ThirdPartyAppPayload
+import com.six.timapi.TimEvent
+import com.six.timapi.TimException
+import com.six.timapi.TransactionInfoRequestResponse
+import com.six.timapi.TransactionInformation
+import com.six.timapi.TransactionResponse
+import com.six.timapi.VasCheckoutInformation
+import com.six.timapi.VasResult
+import com.six.timapi.constants.Reason
+import com.six.timapi.constants.UpdateStatus
 
 /** FlutterSpiPlugin */
 class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
@@ -36,6 +69,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var timApiChannel: MethodChannel
     private lateinit var context: Context
 
+    private lateinit var eventChannel: EventChannel
+    private var eventSink: EventChannel.EventSink? = null
+
     lateinit var mSpi: Spi
     lateinit var mTim: com.six.timapi.Terminal
 
@@ -46,6 +82,20 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         timApiChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi_timapi")
         timApiChannel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
+
+        eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "flutter_spi_timapi_events")
+        eventChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                eventSink = events
+                println("✅ EventChannel onListen triggered")
+
+                    }
+
+            override fun onCancel(arguments: Any?) {
+                eventSink = null
+            }
+        })
+
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
@@ -770,7 +820,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     private fun timApiInit(eftposAddress: String?, posId: String?, port: Int?, result: Result) {
-        println("TIM API Init with eftposAddress=$eftposAddress, posId=$posId")
+        println("......TIM API Init with eftposAddress=$eftposAddress, posId=$posId")
 
         val settings: com.six.timapi.TerminalSettings = TerminalSettings()
         settings.setTerminalId(posId)
@@ -782,9 +832,297 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
 
         mTim = Terminal(settings)
+
+
+        mTim.addListener(object : TerminalListener {
+            override fun connectCompleted(p0: TimEvent?) {
+                println("✅ connectCompleted triggered")
+            }
+
+            override fun activateCompleted(p0: TimEvent?, p1: ActivateResponse?) {
+                println("✅ activateCompleted triggered")
+            }
+
+            override fun applicationInformationCompleted(p0: TimEvent?) {
+                println("✅ applicationInformationCompleted triggered")
+            }
+
+            override fun balanceCompleted(p0: TimEvent?, p1: BalanceResponse?) {
+                println("Not yet implemented")
+            }
+
+            override fun changeSettingsCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun commitCompleted(p0: TimEvent?, p1: PrintData?) {
+                println("Not yet implemented")
+            }
+
+            override fun counterRequestCompleted(p0: TimEvent?, p1: Counters?) {
+                println("Not yet implemented")
+            }
+
+            override fun deactivateCompleted(p0: TimEvent?, p1: DeactivateResponse?) {
+                println("Not yet implemented")
+            }
+
+            override fun dccRatesCompleted(p0: TimEvent?, p1: PrintData?) {
+                println("Not yet implemented")
+            }
+
+            override fun hardwareInformationCompleted(
+                p0: TimEvent?,
+                p1: HardwareInformationResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun initTransactionCompleted(p0: TimEvent?, p1: CardData?) {
+                println("✅ initTransactionCompleted triggered")
+            }
+
+            override fun initTransactionWithDialogCompleted(
+                p0: TimEvent?,
+                p1: InitTransactionResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun loginCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun logoutCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun rebootCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun reconciliationCompleted(
+                p0: TimEvent?,
+                p1: ReconciliationResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun receiptRequestCompleted(
+                p0: TimEvent?,
+                p1: ReceiptRequestResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun transactionInfoRequestCompleted(
+                p0: TimEvent?,
+                p1: TransactionInfoRequestResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun reconfigCompleted(p0: TimEvent?, p1: PrintData?) {
+                println("Not yet implemented")
+            }
+
+            override fun rollbackCompleted(p0: TimEvent?, p1: PrintData?) {
+                println("Not yet implemented")
+            }
+
+            override fun softwareUpdateCompleted(p0: TimEvent?, p1: UpdateStatus?) {
+                println("Not yet implemented")
+            }
+
+            override fun systemInformationCompleted(
+                p0: TimEvent?,
+                p1: SystemInformationResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun transactionCompleted(event: TimEvent, data: TransactionResponse) {
+                println("🟢 transactionCompleted callback triggered")
+                val exception = event.getException()
+
+                Handler(Looper.getMainLooper()).post {
+                    if (exception == null) {
+                        eventSink?.success(mapOf(
+                            "type" to "transactionCompleted",
+                            "amount" to data.amount.amount,
+                            "currency" to data.amount.currency.name
+                        ))
+                    } else {
+                        eventSink?.success(mapOf(
+                            "type" to "error",
+                            "message" to "Transaction failed: ${exception.message}"
+                        ))
+                    }
+                }
+
+            }
+
+            override fun clientIdentificationCompleted(
+                p0: TimEvent?,
+                p1: ClientIdentificationResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun terminalStatusChanged(p0: Terminal?) {
+                println("Not yet implemented")
+            }
+
+            override fun disconnected(p0: Terminal?, p1: TimException?) {
+                println("Not yet implemented")
+            }
+
+            override fun closeReaderCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun openReaderCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun ejectCardCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun openMaintenanceWindowCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun closeMaintenanceWindowCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun activateServiceMenuCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun openDialogModeCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun closeDialogModeCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun showSignatureCaptureCompleted(
+                p0: TimEvent?,
+                p1: ShowSignatureCaptureResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun showDialogCompleted(p0: TimEvent?, p1: ShowDialogResponse?) {
+                println("Not yet implemented")
+            }
+
+            override fun sendCardCommandCompleted(
+                p0: TimEvent?,
+                p1: MutableList<CommandResponse>?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun printOnTerminal(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun balanceInquiryCompleted(
+                p0: TimEvent?,
+                p1: BalanceInquiryResponse?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun deferredAuth(p0: Terminal?, p1: TransactionResponse?) {
+                println("Not yet implemented")
+            }
+
+            override fun keyPressed(p0: Terminal?, p1: Reason?) {
+                println("Not yet implemented")
+            }
+
+            override fun screenshot(p0: Terminal?, p1: ScreenshotInformation?) {
+                println("Not yet implemented")
+            }
+
+            override fun errorNotification(p0: Terminal?, p1: TimException?) {
+                println("Not yet implemented")
+            }
+
+            override fun licenseChanged(p0: Terminal?) {
+                println("Not yet implemented")
+            }
+
+            override fun vasInfo(p0: Terminal?, p1: VasCheckoutInformation?) {
+                println("Not yet implemented")
+            }
+
+            override fun loyaltyDataCompleted(p0: TimEvent?, p1: CardData?) {
+                println("Not yet implemented")
+            }
+
+            override fun startCheckoutCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun finishCheckoutCompleted(
+                p0: TimEvent?,
+                p1: VasCheckoutInformation?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun provideLoyaltyBasketCompleted(
+                p0: TimEvent?,
+                p1: MutableList<LoyaltyItem>?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun provideVasResultCompleted(p0: TimEvent?, p1: VasResult?) {
+                println("Not yet implemented")
+            }
+
+            override fun mobileTopupIssuerInfoCompleted(
+                p0: TimEvent?,
+                p1: MutableList<MobileTopupValue>?
+            ) {
+                println("Not yet implemented")
+            }
+
+            override fun mobileTopupCompleted(p0: TimEvent?, p1: MobileTopupData?) {
+                println("Not yet implemented")
+            }
+
+            override fun thirdPartyAppData(p0: Terminal?, p1: ThirdPartyAppPayload?) {
+                println("Not yet implemented")
+            }
+
+            override fun requestAliasCompleted(p0: TimEvent?, p1: String?) {
+                println("Not yet implemented")
+            }
+
+            override fun deviceMaintenanceCompleted(p0: TimEvent?) {
+                println("Not yet implemented")
+            }
+
+            override fun ageCheckCompleted(p0: TimEvent?, p1: TransactionInformation?) {
+                println("Not yet implemented")
+            }
+        })
+
+
+
         mTim.connect()
         mTim.login()
         mTim.activate()
+
+
 
         result.success(null)
     }
@@ -797,23 +1135,18 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             Log.d("TimAPI", "Starting transaction with posRefId=$posRefId amount=$amount")
 
-            // Check if terminal is in idle state before starting transaction
             if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
-                // Convert the amount from cents to dollars with correct currency
-                // Assuming AUD as currency, change as needed
                 val transactionAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
 
-                // Start transaction - using synchronous method instead of async
-                mTim.transaction(TimapiTransactionType.PURCHASE, transactionAmount)
+                // ✅ 使用异步方式
+                mTim.transactionAsync(TimapiTransactionType.PURCHASE, transactionAmount)
 
-                Log.d("TimAPI", "Transaction request sent")
-                result.success(true)
+                // ⚠️ 不返回 result.success(true)，因为交易还没结束
+                result.success(null)  // 表示“调用已成功发出”，不是“交易完成”
             } else {
-                Log.d("TimAPI", "Terminal is busy, cannot start new transaction")
                 result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
             }
         } catch (e: Exception) {
-            Log.e("TimAPI", "Error starting transaction: ${e.message}")
             result.error("TRANSACTION_ERROR", "Failed to start transaction: ${e.message}", null)
         }
     }

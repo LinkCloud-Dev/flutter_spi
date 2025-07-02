@@ -27,6 +27,8 @@ rootProject.allprojects {
         jcenter()
         flatDir {
             dirs project(':flutter_spi').file('libs')
+//            dirs 'libs' //use it when build gradle
+
         }
     }
 }
