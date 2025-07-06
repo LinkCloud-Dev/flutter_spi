@@ -838,4 +838,16 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
 
   @override
   Stream<dynamic> get eventStream => const Stream.empty();
+
+  @override
+  Future<void> timApiRefund() {
+    // TODO: implement timApiRefund
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> timApiRefRefund() {
+    // TODO: implement timApiRefRefund
+    throw UnimplementedError();
+  }
 }

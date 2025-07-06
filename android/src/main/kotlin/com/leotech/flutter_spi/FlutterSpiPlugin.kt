@@ -54,6 +54,8 @@ import com.six.timapi.TimException
 import com.six.timapi.TransactionInfoRequestResponse
 import com.six.timapi.TransactionInformation
 import com.six.timapi.TransactionResponse
+import com.six.timapi.TransactionRequest
+import com.six.timapi.TransactionData
 import com.six.timapi.VasCheckoutInformation
 import com.six.timapi.VasResult
 import com.six.timapi.constants.Reason
@@ -118,6 +120,19 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             timApiStartTransaction(
                 call.argument("posRefId")!!,
                 call.argument("amount")!!,
+                result
+            )
+        } else if (call.method == "timApiDoRefund") {
+            timApiDoRefund(
+                call.argument("posRefId")!!,
+                call.argument("amount")!!,
+                result
+            )
+        } else if (call.method == "timApiDoRefRefund") {
+            timApiDoRefRefund(
+                call.argument("posRefId")!!,
+                call.argument("amount")!!,
+                call.argument("acqTransRef")!!,
                 result
             )
         } else if (call.method == "timApiStartListening") {
@@ -945,12 +960,22 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("🟢 transactionCompleted callback triggered")
                 val exception = event.getException()
 
+                val transRef = data.transactionInformation?.transRef
+                val transSeq = data.transactionInformation?.transSeq
+                val cardRef = data.transactionInformation?.cardId
+                val acqTransRef = data.transactionInformation?.acqTransRef
+
                 Handler(Looper.getMainLooper()).post {
                     if (exception == null) {
                         eventSink?.success(mapOf(
                             "type" to "transactionCompleted",
                             "amount" to data.amount.amount,
-                            "currency" to data.amount.currency.name
+                            "currency" to data.amount.currency.name,
+                            "transactionType" to data.transactionType.name,
+                            "transRef" to transRef,
+                            "transSeq" to transSeq,
+                            "cardRef" to cardRef,
+                            "acqTransRef" to acqTransRef
                         ))
                     } else {
                         eventSink?.success(mapOf(
@@ -1148,6 +1173,56 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             }
         } catch (e: Exception) {
             result.error("TRANSACTION_ERROR", "Failed to start transaction: ${e.message}", null)
+        }
+    }
+
+
+    private fun timApiDoRefund(posRefId: String?, amount: Double, result: Result) { //for standard refund
+        try {
+            Log.d("TimAPI", "Starting standard refund with posRefId=$posRefId amount=$amount")
+
+            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+                val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
+
+                // ✅ 退款使用 CREDIT 类型
+                mTim.transactionAsync(TimapiTransactionType.CREDIT, refundAmount)
+
+                // ⚠️ 不返回交易结果，只表示发起成功
+                result.success(null)
+            } else {
+                result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: Exception) {
+            result.error("REFUND_ERROR", "Failed to start refund: ${e.message}", null)
+        }
+    }
+
+    private fun timApiDoRefRefund(posRefId: String?,amount: Double, acqTransRef: String?, result: Result) { //for reference refund
+        try {
+            Log.d("TimAPI", "Starting reference refund with posRefId=$posRefId & acqTransRef=$acqTransRef amount=$amount")
+
+            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+                val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
+
+                // 构建 TransactionData，并设置 acquirer reference
+                // TODO:确认request必须的构成
+                val txnData = TransactionData()
+                txnData.setAcqTransRef(acqTransRef)
+
+                // 构建 TransactionRequest 并设置数据
+                val request = TransactionRequest()
+                request.setAmount(refundAmount)
+                request.setTransactionData(txnData)
+
+                // 发起 CREDIT 类型交易（退款）
+                mTim.transactionAsync(TimapiTransactionType.CREDIT, request)
+
+                result.success(null)
+            } else {
+                result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: Exception) {
+            result.error("REFUND_ERROR", "Failed to start reference refund: ${e.message}", null)
         }
     }
     

@@ -291,4 +291,16 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   @override
   // TODO: implement eventStream
   Stream<dynamic> get eventStream => const Stream.empty();
+
+  @override
+  Future<void> timApiRefund() {
+    // TODO: implement timApiRefund
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> timApiRefRefund() {
+    // TODO: implement timApiRefRefund
+    throw UnimplementedError();
+  }
 }

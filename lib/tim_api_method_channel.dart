@@ -280,4 +280,19 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
       'amount': 5000, // Example/test amount
     });
   }
+
+  Future<void> timApiRefund() async { //for standard refund
+    await _channel.invokeMethod('timApiDoRefund', {
+      'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
+      'amount': 5000, // Example/test amount
+    });
+  }
+
+  Future<void> timApiRefRefund() async { //for reference refund
+    await _channel.invokeMethod('timApiDoRefRefund', {
+      'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
+      'acqTransRef': '0100000000002202', // input org tx ref manually
+      'amount': 6000, // Example/test amount must smaller than org tx amount
+    });
+  }
 }
