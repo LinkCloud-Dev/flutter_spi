@@ -488,4 +488,8 @@ class FlutterSpi {
   static Future<void> timApiRefRefund() async {
     flutterSpi.timApiRefRefund();
   }
+
+  static Future<void> timApiBalance()async {
+    flutterSpi.timApiBalance();
+  }
 }

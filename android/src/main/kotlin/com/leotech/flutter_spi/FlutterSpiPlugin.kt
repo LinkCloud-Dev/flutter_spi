@@ -135,6 +135,11 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 call.argument("acqTransRef")!!,
                 result
             )
+        } else if (call.method == "timApiDoBalance") {
+            timApiDoBalance(
+                call.argument("posRefId")!!,
+                result
+            )
         } else if (call.method == "timApiStartListening") {
             dummy(result)
         } else if (call.method == "setPosId") {
@@ -862,8 +867,13 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("✅ applicationInformationCompleted triggered")
             }
 
-            override fun balanceCompleted(p0: TimEvent?, p1: BalanceResponse?) {
-                println("Not yet implemented")
+            override fun balanceCompleted(event: TimEvent?, data: BalanceResponse?) {
+                Handler(Looper.getMainLooper()).post {
+                    eventSink?.success(mapOf(
+                        "type" to "balanceCompleted",
+                        // 暂时不传 counters 等详细数据
+                    ))
+                }
             }
 
             override fun changeSettingsCompleted(p0: TimEvent?) {
@@ -1223,6 +1233,19 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             }
         } catch (e: Exception) {
             result.error("REFUND_ERROR", "Failed to start reference refund: ${e.message}", null)
+        }
+    }
+
+    private fun timApiDoBalance(posRefId: String?,result: Result) {
+        try {
+            Log.d("TimAPI", "Starting balance with posRefId=$posRefId")
+
+            mTim.balanceAsync() // 异步触发 Balance 操作，先自动发送deactivate request
+
+            result.success(null)
+
+        } catch (e: Exception) {
+            result.error("BALANCE_ERROR", "Failed to start balance: ${e.message}", null)
         }
     }
     

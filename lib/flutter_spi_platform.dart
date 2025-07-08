@@ -106,4 +106,6 @@ abstract class FlutterSpiPlatform {
   Future<void> timApiRefund();
 
   Future<void> timApiRefRefund();
+
+  Future<void> timApiBalance();
 }

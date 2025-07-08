@@ -303,4 +303,10 @@ class SpiMethodChannel implements FlutterSpiPlatform {
     // TODO: implement timApiRefRefund
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> timApiBalance() {
+    // TODO: implement timApiBalance
+    throw UnimplementedError();
+  }
 }

@@ -295,4 +295,11 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
       'amount': 6000, // Example/test amount must smaller than org tx amount
     });
   }
+
+  Future<void> timApiBalance() async {
+    await _channel.invokeMethod('timApiDoBalance', {
+      'posRefId': 'test_Balance_${DateTime.now().millisecondsSinceEpoch}',
+    });
+  }
+
 }

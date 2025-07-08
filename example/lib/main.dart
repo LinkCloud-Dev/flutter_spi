@@ -142,6 +142,10 @@ class _HomeState extends State<Home> {
     await FlutterSpi.timApiRefRefund();
   }
 
+  void _timApiBalance(BuildContext context) async {
+    await FlutterSpi.timApiBalance();
+  }
+
   @override
   Widget build(BuildContext context) {
     var spi = Provider.of<SpiModel>(context, listen: true);
@@ -210,6 +214,10 @@ class _HomeState extends State<Home> {
             ElevatedButton(
               onPressed: () => _timApiRefRefund(context),
               child: const Text('Reference Refund (TIM API)'),
+            ),
+            ElevatedButton(
+              onPressed: () => _timApiBalance(context),
+              child: const Text('Balance (TIM API)'),
             ),
           ],
         ),
