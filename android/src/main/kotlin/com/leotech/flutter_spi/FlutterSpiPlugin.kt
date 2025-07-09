@@ -39,6 +39,8 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.EventChannel
 
 import java.util.EnumSet
+import java.util.logging.Logger
+import java.util.logging.Level
 import com.six.timapi.constants.Guides
 import com.six.timapi.constants.TransactionStatus as TimapiTransactionStatus
 import com.six.timapi.Terminal
@@ -850,9 +852,18 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         settings.setConnectionIPPort(port ?: 7784)
         settings.setAutoCommit(true);
 
+        val logPath = context.filesDir.absolutePath + "/six_logs"
+        settings.setLogDir(logPath)
 
         mTim = Terminal(settings)
 
+        // start logging
+        val logger = Logger.getLogger(mTim.loggerName)
+        logger.level = Level.ALL
+
+        for (handler in logger.handlers) {
+            (handler as java.util.logging.Handler).level = Level.FINEST
+        }
 
         mTim.addListener(object : TerminalListener {
             override fun connectCompleted(p0: TimEvent?) {
