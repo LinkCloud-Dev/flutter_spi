@@ -492,4 +492,8 @@ class FlutterSpi {
   static Future<void> timApiBalance()async {
     flutterSpi.timApiBalance();
   }
+
+  static Future<void> timApiPrint(String ticket)async {
+    flutterSpi.timApiPrint(ticket);
+  }
 }

@@ -40,6 +40,10 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+
+  List<String> _lastReceipts = [];
+  bool _canPrint = false;
+
   @override
   void initState() {
     super.initState();
@@ -54,7 +58,21 @@ class _HomeState extends State<Home> {
     // TIM API 的事件监听（只需要添加一次）
     FlutterSpi.eventStream.listen((event) {
       print("🔔 收到 TIM API 事件: $event");
-
+      if (event['type'] == 'transactionCompleted') {
+        final receipts = List<String>.from(event['receipts'] ?? []);
+        if (receipts.isNotEmpty) {
+          print("🧾 收到 receipts，可以选择打印");
+          setState(() {
+            _lastReceipts = receipts;
+            _canPrint = true;
+          });
+        } else {
+          setState(() {
+            _lastReceipts = [];
+            _canPrint = false;
+          });
+        }
+      }
     });
   }
 
@@ -131,6 +149,7 @@ class _HomeState extends State<Home> {
   }
 
   void _timApiCharge(BuildContext context) async {
+    print('.........dart --- tim api charge');
     await FlutterSpi.timApiCharge();
   }
 
@@ -144,6 +163,10 @@ class _HomeState extends State<Home> {
 
   void _timApiBalance(BuildContext context) async {
     await FlutterSpi.timApiBalance();
+  }
+
+  void _timApiPrint(String ticket) async {
+    await FlutterSpi.timApiPrint(ticket);
   }
 
   @override
@@ -218,6 +241,16 @@ class _HomeState extends State<Home> {
             ElevatedButton(
               onPressed: () => _timApiBalance(context),
               child: const Text('Balance (TIM API)'),
+            ),
+            ElevatedButton( // Function disallowed in API
+              onPressed: _canPrint
+                  ? () {
+                for (final ticket in _lastReceipts) {
+                   _timApiPrint(ticket);
+                }
+              }
+                  : null,
+              child: Text("Print (TIM API)"),
             ),
           ],
         ),

@@ -267,9 +267,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   // Public method for pairing (timApiInit)
   Future<void> timApiPairing() async {
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '10.0.2.2',
-      'posId': '12345678',
-      'port': 7784,
+      'eftposAddress': '192.168.020.015',
+      'posId': '25196219',
+      'port': 7784, //8115
     });
   }
 
@@ -299,6 +299,12 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> timApiBalance() async {
     await _channel.invokeMethod('timApiDoBalance', {
       'posRefId': 'test_Balance_${DateTime.now().millisecondsSinceEpoch}',
+    });
+  }
+
+  Future<void> timApiPrint(String ticket) async {
+    await _channel.invokeMethod('timApiPrint', {
+      'ticket': ticket,
     });
   }
 

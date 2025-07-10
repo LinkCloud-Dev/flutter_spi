@@ -856,4 +856,12 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     // TODO: implement timApiBalance
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> timApiPrint(String ticket) {
+    // TODO: implement timApiPrint
+    throw UnimplementedError();
+  }
+
+  
 }

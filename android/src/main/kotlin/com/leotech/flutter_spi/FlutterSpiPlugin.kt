@@ -60,8 +60,12 @@ import com.six.timapi.TransactionRequest
 import com.six.timapi.TransactionData
 import com.six.timapi.VasCheckoutInformation
 import com.six.timapi.VasResult
+import com.six.timapi.PrintOption
 import com.six.timapi.constants.Reason
 import com.six.timapi.constants.UpdateStatus
+import com.six.timapi.constants.ReceiptRequestType
+import com.six.timapi.constants.Recipient
+import com.six.timapi.constants.*
 
 /** FlutterSpiPlugin */
 class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
@@ -142,7 +146,11 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 call.argument("posRefId")!!,
                 result
             )
-        } else if (call.method == "timApiStartListening") {
+        }else if (call.method == "timApiPrint") {
+            timApiPrint(
+                call.argument("ticket")!!,
+                result)
+        }else if (call.method == "timApiStartListening") {
             dummy(result)
         } else if (call.method == "setPosId") {
             setPosId(call.argument("posId")!!, result)
@@ -865,6 +873,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             (handler as java.util.logging.Handler).level = Level.FINEST
         }
 
+        val printOption = PrintOption(
+            Recipient.BOTH,
+            PrintFormat.ON_DEVICE_WITH_RECEIPT,
+            32,
+            EnumSet.noneOf(PrintFlag::class.java)
+        )
+        mTim.setPrintOptions(listOf(printOption))
+
         mTim.addListener(object : TerminalListener {
             override fun connectCompleted(p0: TimEvent?) {
                 println("✅ connectCompleted triggered")
@@ -945,10 +961,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             }
 
             override fun receiptRequestCompleted(
-                p0: TimEvent?,
-                p1: ReceiptRequestResponse?
+                event: TimEvent?,
+                data: ReceiptRequestResponse?
             ) {
-                println("Not yet implemented")
+                println("receiptRequestCompleted triggered")
+                if (data == null) {
+                    println("❌ data is null")
+                } else {
+                    println("✅ Receipt data received")
+                    println("↪️ hasMoreReceipts: ${data.hasMoreReceipts()}")
+                    println("↪️ printData: ${data.getPrintData()}")
+                }
             }
 
             override fun transactionInfoRequestCompleted(
@@ -986,6 +1009,19 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 val cardRef = data.transactionInformation?.cardId
                 val acqTransRef = data.transactionInformation?.acqTransRef
 
+                // 提取 receipts 为字符串数组（或列表）
+                val receiptList = mutableListOf<String>()
+                val printData = data.printData
+                if (printData != null) {
+                    val allReceipts = printData.receipts
+                    for (receipt in allReceipts) {
+                        val ticket = receipt?.value
+                        if (!ticket.isNullOrBlank()) {
+                            receiptList.add(ticket)
+                        }
+                    }
+                }
+
                 Handler(Looper.getMainLooper()).post {
                     if (exception == null) {
                         eventSink?.success(mapOf(
@@ -996,7 +1032,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                             "transRef" to transRef,
                             "transSeq" to transSeq,
                             "cardRef" to cardRef,
-                            "acqTransRef" to acqTransRef
+                            "acqTransRef" to acqTransRef,
+                            "receipts" to receiptList
                         ))
                     } else {
                         eventSink?.success(mapOf(
@@ -1257,6 +1294,19 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
         } catch (e: Exception) {
             result.error("BALANCE_ERROR", "Failed to start balance: ${e.message}", null)
+        }
+    }
+
+    private fun timApiPrint(ticket:String?, result: Result) {
+        try {
+            Log.d("TimAPI", "Requesting last receipt...")
+
+            mTim.printOnTerminalAsync(ticket) // Function disallowed in API, check later
+
+            result.success(null)
+        } catch (e: Exception) {
+            Log.e("TimAPI", "❌ Receipt request failed: ${e.message}")
+            result.error("RECEIPT_REQUEST_FAILED", e.message, null)
         }
     }
     
