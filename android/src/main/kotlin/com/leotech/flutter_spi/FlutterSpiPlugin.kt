@@ -946,7 +946,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             }
 
             override fun loginCompleted(p0: TimEvent?) {
-                println("Not yet implemented")
+                println("✅ loginCompleted triggered")
             }
 
             override fun logoutCompleted(p0: TimEvent?) {
@@ -1219,6 +1219,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             addTerminalListeners(mTim)
 
             mTim.connect()
+            mTim.login()
+            mTim.activate()
 
             result.success(null)
         } catch (e: TimException) {

@@ -267,7 +267,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   // Public method for pairing (timApiInit)
   Future<void> timApiPairing() async {
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '192.168.020.015',
+      'eftposAddress': '192.168.020.011',
       'posId': '25196219',
       'port': 7784, //8115
     });
