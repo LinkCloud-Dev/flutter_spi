@@ -849,39 +849,41 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     }
 
-    private fun timApiInit(eftposAddress: String?, posId: String?, port: Int?, result: Result) {
-        println("......TIM API Init with eftposAddress=$eftposAddress, posId=$posId")
-
+    private fun initTerminalSettings(eftposAddress: String?, posId: String?, port: Int?): TerminalSettings {
         val settings: com.six.timapi.TerminalSettings = TerminalSettings()
         settings.setTerminalId(posId)
         settings.setConnectionMode(com.six.timapi.constants.ConnectionMode.ON_FIX_IP)
-        settings.setGuides(EnumSet.of(Guides.RETAIL));
+        settings.setGuides(EnumSet.of(Guides.RETAIL))
         settings.setConnectionIPString(eftposAddress)
         settings.setConnectionIPPort(port ?: 7784)
-        settings.setAutoCommit(true);
+        settings.setAutoCommit(true)
 
         val logPath = context.filesDir.absolutePath + "/six_logs"
         settings.setLogDir(logPath)
 
-        mTim = Terminal(settings)
+        return settings
+    }
 
-        // start logging
-        val logger = Logger.getLogger(mTim.loggerName)
+    private fun setupLoggerForTim(terminal: Terminal) {
+        val logger = Logger.getLogger(terminal.loggerName)
         logger.level = Level.ALL
-
         for (handler in logger.handlers) {
-            (handler as java.util.logging.Handler).level = Level.FINEST
+            handler.level = Level.FINEST
         }
+    }
 
+    private fun setPrintOptionsForTim(terminal: Terminal) {
         val printOption = PrintOption(
             Recipient.BOTH,
             PrintFormat.ON_DEVICE_WITH_RECEIPT,
             32,
             EnumSet.noneOf(PrintFlag::class.java)
         )
-        mTim.setPrintOptions(listOf(printOption))
+        terminal.setPrintOptions(listOf(printOption))
+    }
 
-        mTim.addListener(object : TerminalListener {
+    private fun addTerminalListeners(terminal: Terminal) {
+        terminal.addListener(object : TerminalListener {
             override fun connectCompleted(p0: TimEvent?) {
                 println("✅ connectCompleted triggered")
             }
@@ -896,10 +898,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
             override fun balanceCompleted(event: TimEvent?, data: BalanceResponse?) {
                 Handler(Looper.getMainLooper()).post {
-                    eventSink?.success(mapOf(
-                        "type" to "balanceCompleted",
-                        // 暂时不传 counters 等详细数据
-                    ))
+                    eventSink?.success(
+                        mapOf(
+                            "type" to "balanceCompleted",
+                            // 暂时不传 counters 等详细数据
+                        )
+                    )
                 }
             }
 
@@ -1024,22 +1028,26 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
                 Handler(Looper.getMainLooper()).post {
                     if (exception == null) {
-                        eventSink?.success(mapOf(
-                            "type" to "transactionCompleted",
-                            "amount" to data.amount.amount,
-                            "currency" to data.amount.currency.name,
-                            "transactionType" to data.transactionType.name,
-                            "transRef" to transRef,
-                            "transSeq" to transSeq,
-                            "cardRef" to cardRef,
-                            "acqTransRef" to acqTransRef,
-                            "receipts" to receiptList
-                        ))
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "transactionCompleted",
+                                "amount" to data.amount.amount,
+                                "currency" to data.amount.currency.name,
+                                "transactionType" to data.transactionType.name,
+                                "transRef" to transRef,
+                                "transSeq" to transSeq,
+                                "cardRef" to cardRef,
+                                "acqTransRef" to acqTransRef,
+                                "receipts" to receiptList
+                            )
+                        )
                     } else {
-                        eventSink?.success(mapOf(
-                            "type" to "error",
-                            "message" to "Transaction failed: ${exception.message}"
-                        ))
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "error",
+                                "message" to "Transaction failed: ${exception.message}"
+                            )
+                        )
                     }
                 }
 
@@ -1198,16 +1206,24 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("Not yet implemented")
             }
         })
+    }
+    private fun timApiInit(eftposAddress: String?, posId: String?, port: Int?, result: Result) {
+        try {
+            println("......TIM API Init with eftposAddress=$eftposAddress, posId=$posId")
 
+            val settings = initTerminalSettings(eftposAddress, posId, port)
+            mTim = Terminal(settings)
 
+            setupLoggerForTim(mTim)
+            setPrintOptionsForTim(mTim)
+            addTerminalListeners(mTim)
 
-        mTim.connect()
-        mTim.login()
-        mTim.activate()
+            mTim.connect()
 
-
-
-        result.success(null)
+            result.success(null)
+        } catch (e: TimException) {
+            result.error("INIT_FAILED", e.localizedMessage, null)
+        }
     }
 
     private fun dummy(result: Result) {
@@ -1221,7 +1237,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 val transactionAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
 
-                // ✅ 使用异步方式
+                // Use async
                 mTim.transactionAsync(TimapiTransactionType.PURCHASE, transactionAmount)
 
                 // ⚠️ 不返回 result.success(true)，因为交易还没结束
