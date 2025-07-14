@@ -1038,7 +1038,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("Not yet implemented")
             }
 
-            override fun transactionCompleted(event: TimEvent, data: TransactionResponse) {
+            override fun transactionCompleted(event: TimEvent, data: TransactionResponse?) {
                 println("🟢 transactionCompleted callback triggered")
                 val exception = event.getException()
                 if (data == null) {
