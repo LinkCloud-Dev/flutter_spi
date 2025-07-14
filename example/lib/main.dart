@@ -72,6 +72,8 @@ class _HomeState extends State<Home> {
             _canPrint = false;
           });
         }
+      }else if(event['type'] == 'error') {
+        print("🔔 recieve error${event['message']}");
       }
     });
   }

@@ -884,8 +884,30 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun addTerminalListeners(terminal: Terminal) {
         terminal.addListener(object : TerminalListener {
-            override fun connectCompleted(p0: TimEvent?) {
+            override fun connectCompleted(event: TimEvent?) {
                 println("✅ connectCompleted triggered")
+                val exception = event?.getException()
+
+                Handler(Looper.getMainLooper()).post {
+                    if (exception == null) {
+                        // ✅ 连接成功，通知 Dart
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "connectCompleted",
+                                "status" to "success"
+                            )
+                        )
+                    } else {
+                        // ❌ 连接失败，通知 Dart 错误信息
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "error",
+                                "message" to "Connect failed: ${exception.localizedMessage ?: "Unknown error"}"
+                            )
+                        )
+                    }
+                }
+
             }
 
             override fun activateCompleted(p0: TimEvent?, p1: ActivateResponse?) {
@@ -897,6 +919,18 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             }
 
             override fun balanceCompleted(event: TimEvent?, data: BalanceResponse?) {
+                val exception = event?.getException()
+                if (data == null) {
+                    Handler(Looper.getMainLooper()).post {
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "error",
+                                "message" to "Balance failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}"
+                            )
+                        )
+                    }
+                    return
+                }
                 Handler(Looper.getMainLooper()).post {
                     eventSink?.success(
                         mapOf(
@@ -1007,7 +1041,18 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             override fun transactionCompleted(event: TimEvent, data: TransactionResponse) {
                 println("🟢 transactionCompleted callback triggered")
                 val exception = event.getException()
-
+                if (data == null) {
+                    // ⛔️ data为null时，只能依靠event里的exception信息反馈给Dart层
+                    Handler(Looper.getMainLooper()).post {
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "error",
+                                "message" to "Transaction failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}"
+                            )
+                        )
+                    }
+                    return
+                }
                 val transRef = data.transactionInformation?.transRef
                 val transSeq = data.transactionInformation?.transSeq
                 val cardRef = data.transactionInformation?.cardId
