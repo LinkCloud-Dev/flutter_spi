@@ -111,4 +111,9 @@ abstract class FlutterSpiPlatform {
 
   Future<void> timApiPrint(String ticket);
 
+  Future<void> timApiLogin();
+
+  Future<void> timApiActivate();
+
+  Future<void> timApiConnect();
 }

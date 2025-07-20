@@ -476,6 +476,15 @@ class FlutterSpi {
   static Future<void> timApiPairing() async {
     flutterSpi.timApiPairing();
   }
+  static Future<void> timApiConnect() async {
+    flutterSpi.timApiConnect();
+  }
+  static Future<void> timApiLogin() async {
+    flutterSpi.timApiLogin();
+  }
+  static Future<void> timApiActivate() async {
+    flutterSpi.timApiActivate();
+  }
 
   static Future<void> timApiCharge() async {
     flutterSpi.timApiCharge();

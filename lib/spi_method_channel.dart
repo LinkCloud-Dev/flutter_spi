@@ -316,5 +316,23 @@ class SpiMethodChannel implements FlutterSpiPlatform {
     throw UnimplementedError();
   }
 
+  @override
+  Future<void> timApiActivate() {
+    // TODO: implement timApiActivate
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> timApiConnect() {
+    // TODO: implement timApiConnect
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> timApiLogin() {
+    // TODO: implement timApiLogin
+    throw UnimplementedError();
+  }
+
   
 }

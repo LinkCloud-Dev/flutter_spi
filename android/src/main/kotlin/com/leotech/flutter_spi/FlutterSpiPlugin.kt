@@ -122,6 +122,15 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 call.argument<String>("posId"),
                 call.argument<Int>("port"),
                 result)
+        } else if (call.method == "timApiConnect") {
+            timApiConnect(
+                result)
+        } else if (call.method == "timApiLogin") {
+            timApiLogin(
+                result)
+        } else if (call.method == "timApiActivate") {
+            timApiActivate(
+                result)
         } else if (call.method == "timApiStartTransaction") {
             timApiStartTransaction(
                 call.argument("posRefId")!!,
@@ -881,37 +890,70 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         )
         terminal.setPrintOptions(listOf(printOption))
     }
+    private fun sendTimError(eventSink: EventChannel.EventSink?, source: String, exception: Exception?) {
+        val errorMessage = exception?.localizedMessage ?: "Unknown error"
 
+        Handler(Looper.getMainLooper()).post {
+            eventSink?.success(
+                mapOf(
+                    "type" to "error",
+                    "source" to source, // 用来标记是哪一环节出错，例如 "login", "activate"
+                    "message" to "$source failed: $errorMessage"
+                )
+            )
+        }
+    }
     private fun addTerminalListeners(terminal: Terminal) {
         terminal.addListener(object : TerminalListener {
             override fun connectCompleted(event: TimEvent?) {
                 println("✅ connectCompleted triggered")
                 val exception = event?.getException()
 
-                Handler(Looper.getMainLooper()).post {
-                    if (exception == null) {
-                        // ✅ 连接成功，通知 Dart
+                if (exception == null) {
+                    // 然后通过主线程通知 Dart
+                    Handler(Looper.getMainLooper()).post {
                         eventSink?.success(
                             mapOf(
                                 "type" to "connectCompleted",
                                 "status" to "success"
                             )
                         )
-                    } else {
-                        // ❌ 连接失败，通知 Dart 错误信息
+                    }
+                } else {
+                    // ❌ 连接失败，通知 Dart 错误信息
+                    Handler(Looper.getMainLooper()).post {
                         eventSink?.success(
                             mapOf(
                                 "type" to "error",
-                                "message" to "Connect failed: ${exception.localizedMessage ?: "Unknown error"}"
+                                "message" to "Connect failed: ${exception.errorMessage ?: "Unknown error"}"
                             )
                         )
                     }
                 }
-
             }
-
-            override fun activateCompleted(p0: TimEvent?, p1: ActivateResponse?) {
+            override fun activateCompleted(event: TimEvent?, p1: ActivateResponse?) {
                 println("✅ activateCompleted triggered")
+                val exception = event?.getException()
+
+                Handler(Looper.getMainLooper()).post {
+                    if (exception == null) {
+                        // ✅ 登录成功，通知 Dart
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "activateCompleted",
+                                "status" to "success"
+                            )
+                        )
+                    } else {
+                        // ❌ 登录失败，通知 Dart 错误信息
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "error",
+                                "message" to "Activate failed: ${exception.errorMessage ?: "Unknown error"}"
+                            )
+                        )
+                    }
+                }
             }
 
             override fun applicationInformationCompleted(p0: TimEvent?) {
@@ -979,8 +1021,39 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("Not yet implemented")
             }
 
-            override fun loginCompleted(p0: TimEvent?) {
+            override fun loginCompleted(event: TimEvent?) {
                 println("✅ loginCompleted triggered")
+                val exception = event?.getException()
+
+                if (exception == null) {
+                    // ✅ 登录成功，先调用 activateAsync（不在主线程里）
+//                    try {
+//                        terminal.activateAsync()
+//                    } catch (e: Exception) {
+//                        sendTimError(eventSink, "activate", e)
+//                        return
+//                    }
+
+                    // ✅ 登录成功，通知 Dart
+                    Handler(Looper.getMainLooper()).post {
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "loginCompleted",
+                                "status" to "success"
+                            )
+                        )
+                    }
+                } else {
+                    // ❌ 登录失败，通知 Dart
+                    Handler(Looper.getMainLooper()).post {
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "error",
+                                "message" to "Login failed: ${exception.localizedMessage ?: "Unknown error"}"
+                            )
+                        )
+                    }
+                }
             }
 
             override fun logoutCompleted(p0: TimEvent?) {
@@ -1105,12 +1178,54 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("Not yet implemented")
             }
 
-            override fun terminalStatusChanged(p0: Terminal?) {
-                println("Not yet implemented")
+            override fun terminalStatusChanged(terminal: Terminal?) {
+                println("✅ terminalStatusChanged triggered")
+                
+                if (terminal == null) {
+                    println("❌ Terminal is null")
+                    return
+                }
+                
+                try {
+                    // 使用 getTerminalStatus() 方法获取状态
+                    val terminalStatus = terminal.getTerminalStatus()
+                    val connectionStatus = terminalStatus.connectionStatus?.name ?: "Unknown"
+                    
+                    println("📊 Terminal Status: $connectionStatus")
+                    
+                    // 发送简化的状态变化事件到 Flutter
+                    Handler(Looper.getMainLooper()).post {
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "terminalStatusChanged",
+                                "connectionStatus" to connectionStatus
+                            )
+                        )
+                    }
+                    
+                } catch (e: Exception) {
+                    println("❌ Error processing terminal status: ${e.message}")
+                }
             }
 
-            override fun disconnected(p0: Terminal?, p1: TimException?) {
-                println("Not yet implemented")
+            override fun disconnected(terminal: Terminal?, exception: TimException?) {
+                println("❌ Terminal disconnected")
+                
+                if (exception != null) {
+                    println("  - Error: ${exception.errorMessage}")
+                    println("  - Localized: ${exception.localizedMessage}")
+                }
+                
+                // 发送断开连接事件到 Flutter
+                Handler(Looper.getMainLooper()).post {
+                    eventSink?.success(
+                        mapOf(
+                            "type" to "disconnected",
+                            "errorMessage" to (exception?.errorMessage ?: "Unknown error"),
+                            "localizedMessage" to (exception?.localizedMessage ?: "Connection lost")
+                        )
+                    )
+                }
             }
 
             override fun closeReaderCompleted(p0: TimEvent?) {
@@ -1263,13 +1378,52 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             setPrintOptionsForTim(mTim)
             addTerminalListeners(mTim)
 
-            mTim.connect()
-            mTim.login()
-            mTim.activate()
-
             result.success(null)
         } catch (e: TimException) {
             result.error("INIT_FAILED", e.localizedMessage, null)
+        }
+    }
+
+    private fun timApiConnect(result: Result) {
+        try {
+            if (mTim == null) {
+                result.error("Connect_FAILED", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+            mTim.connectAsync()
+
+            result.success(null)
+        } catch (e: TimException) {
+            result.error("Connect_FAILED", e.localizedMessage, null)
+        }
+    }
+
+    private fun timApiLogin(result: Result) {
+        try {
+            if (mTim == null) {
+                result.error("Login_FAILED", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+            mTim.loginAsync()
+
+            result.success(null)
+        } catch (e: TimException) {
+            result.error("Login_FAILED", e.localizedMessage, null)
+        }
+    }
+
+    private fun timApiActivate(result: Result) {
+        try {
+            if (mTim == null) {
+                result.error("Activate_FAILED", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+
+            mTim.activateAsync()
+
+            result.success(null)
+        } catch (e: TimException) {
+            result.error("Activate_FAILED", e.localizedMessage, null)
         }
     }
 
@@ -1308,7 +1462,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 // ✅ 退款使用 CREDIT 类型
                 mTim.transactionAsync(TimapiTransactionType.CREDIT, refundAmount)
 
-                // ⚠️ 不返回交易结果，只表示发起成功
                 result.success(null)
             } else {
                 result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)

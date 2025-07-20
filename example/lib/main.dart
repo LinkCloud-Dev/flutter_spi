@@ -9,6 +9,9 @@ import 'package:flutter_spi_example/spi_pair.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import 'anz_connect_UI.dart';
+import 'anz_state.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -18,8 +21,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => SpiModel(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SpiModel()),
+        ChangeNotifierProvider(create: (_) => AnzState()),
+      ],
       child: MaterialApp(
         title: 'Spi Demo',
         initialRoute: '/',
@@ -55,29 +61,9 @@ class _HomeState extends State<Home> {
     await spi.init();
     FlutterSpi.handleMethodCall(spi.subscribeSpiEvents);
     await FlutterSpi.start();
-    // TIM API 的事件监听（只需要添加一次）
-    FlutterSpi.eventStream.listen((event) {
-      print("🔔 收到 TIM API 事件: $event");
-      if (event['type'] == 'transactionCompleted') {
-        final receipts = List<String>.from(event['receipts'] ?? []);
-        if (receipts.isNotEmpty) {
-          print("🧾 收到 receipts，可以选择打印");
-          setState(() {
-            _lastReceipts = receipts;
-            _canPrint = true;
-          });
-        } else {
-          setState(() {
-            _lastReceipts = [];
-            _canPrint = false;
-          });
-        }
-      }else if(event['type'] == 'error') {
-        print("🔔 recieve error${event['message']}");
-      }
-    });
+    final anzState = Provider.of<AnzState>(context, listen: false);
+    anzState.init();
   }
-
 
   Future<void> _startTransaction(int amount, BuildContext context) async {
     var spi = Provider.of<SpiModel>(context, listen: false);
@@ -173,6 +159,7 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    var anzState = Provider.of<AnzState>(context);
     var spi = Provider.of<SpiModel>(context, listen: true);
     return Scaffold(
       appBar: AppBar(
@@ -226,7 +213,74 @@ class _HomeState extends State<Home> {
             ),
             ElevatedButton(
               onPressed: () => _timApiPairing(context),
-              child: const Text('Pair (TIM API)'),
+              child: const Text('Init (TIM API)'),
+            ),
+            
+            // ANZ Terminal section
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blue),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'ANZ Terminal Status',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: anzState.getStatusColor(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Status: ${anzState.getStatusText()}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: anzState.getStatusColor(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _timApiPairing(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                          ),
+                          child: const Text(
+                            'Init',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (_) => const AnzConnectUI(),
+                            );
+                            await anzState.startConnection();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: anzState.isReady ? Colors.green : Colors.orange,
+                          ),
+                          child: Text(
+                            anzState.isReady ? 'Ready' : 'Connect',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             ElevatedButton(
               onPressed: () => _timApiCharge(context),
