@@ -17,7 +17,8 @@ abstract class FlutterSpiPlatform {
         String? spiType,
         String? appKey,
         String? merchantId,
-        String username = "default"
+        String username = "default",
+        bool enablePrinting = false
       });
 
   Future<void> start();
@@ -99,7 +100,7 @@ abstract class FlutterSpiPlatform {
 
   Future<void> test();
 
-  Future<void> timApiPairing();
+  Future<void> timApiPairing({bool enablePrinting = false});
 
   Future<void> timApiCharge();
 
@@ -109,7 +110,7 @@ abstract class FlutterSpiPlatform {
 
   Future<void> timApiBalance();
 
-  Future<void> timApiPrint(String ticket);
+  // Future<void> timApiPrint(String ticket); // Disabled for credentialing
 
   Future<void> timApiLogin();
 

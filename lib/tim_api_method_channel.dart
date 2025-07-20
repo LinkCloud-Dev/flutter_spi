@@ -26,12 +26,14 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     String? spiType,       // no need
     String? appKey,        // no need
     String? merchantId,    // no need
-    String username = "default" // no need
+    String username = "default", // no need
+    bool enablePrinting = false, // For accreditation - control receipt printing
   }) async {
     await _channel.invokeMethod('timApiInit', {
       'eftposAddress': eftposAddress,
       'posId': posId,
       'port': 7784,
+      'enablePrinting': enablePrinting,
     });
   }
 
@@ -246,6 +248,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
       'eftposAddress': '172.20.10.2',
       'posId': '25196219',
       'port': 7784,
+      'enablePrinting': false, // Disable printing for testing
     });
 
     await _channel.invokeMethod('timApiStartTransaction', {
@@ -261,11 +264,12 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   }
 
   // Public method for pairing (timApiInit)
-  Future<void> timApiPairing() async { //for example
+  Future<void> timApiPairing({bool enablePrinting = false}) async { //for example
     await _channel.invokeMethod('timApiInit', {
       'eftposAddress': '192.168.236.212', // 10.0.2.2 or 192.168.020.011 or 192.168.236.212
       'posId': '25196219', //12345678 or 25196219
       'port': 7784, //8115
+      'enablePrinting': enablePrinting, // For credentialing - control receipt printing
     });
   }
 
@@ -311,10 +315,10 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     });
   }
 
-  Future<void> timApiPrint(String ticket) async {
+  /*Future<void> timApiPrint(String ticket) async {
     await _channel.invokeMethod('timApiPrint', {
       'ticket': ticket,
     });
-  }
+  }*/
 
 }

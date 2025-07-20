@@ -28,7 +28,8 @@ class SpiMethodChannel implements FlutterSpiPlatform {
         String? spiType,
         String? appKey,
         String? merchantId,
-        String username = "default"
+        String username = "default",
+        bool enablePrinting = false
       }) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
@@ -283,7 +284,7 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> timApiPairing() {
+  Future<void> timApiPairing({bool enablePrinting = false}) {
     // TODO: implement timApiPairing
     throw UnimplementedError();
   }
@@ -311,10 +312,10 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> timApiPrint(String ticket) {
+  /*Future<void> timApiPrint(String ticket) {
     // TODO: implement timApiPrint
     throw UnimplementedError();
-  }
+  }*/
 
   @override
   Future<void> timApiActivate() {

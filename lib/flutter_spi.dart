@@ -289,6 +289,7 @@ class FlutterSpi {
     String? appKey, // ThumbzUp
     String? merchantId, // ThumbzUp
     String username = "default", // ThumbzUp
+    bool enablePrinting = false, // For accreditation - control receipt printing
   }) async {
     if (spiType == "THUMBZUP") {
       flutterSpi = ThumbzUpWebSocket();
@@ -309,6 +310,7 @@ class FlutterSpi {
       appKey: appKey,
       merchantId: merchantId,
       username: username,
+      enablePrinting: enablePrinting,
     );
   }
 
@@ -473,8 +475,8 @@ class FlutterSpi {
     flutterSpi.test();
   }
 
-  static Future<void> timApiPairing() async {
-    flutterSpi.timApiPairing();
+  static Future<void> timApiPairing({bool enablePrinting = false}) async {
+    flutterSpi.timApiPairing(enablePrinting: enablePrinting);
   }
   static Future<void> timApiConnect() async {
     flutterSpi.timApiConnect();
@@ -502,7 +504,7 @@ class FlutterSpi {
     flutterSpi.timApiBalance();
   }
 
-  static Future<void> timApiPrint(String ticket)async {
+  /*static Future<void> timApiPrint(String ticket)async {
     flutterSpi.timApiPrint(ticket);
-  }
+  }*/
 }

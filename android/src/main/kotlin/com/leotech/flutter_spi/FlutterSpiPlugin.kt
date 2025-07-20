@@ -121,6 +121,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 call.argument<String>("eftposAddress"),
                 call.argument<String>("posId"),
                 call.argument<Int>("port"),
+                call.argument<Boolean>("enablePrinting") ?: false, // For accreditation - control receipt printing
                 result)
         } else if (call.method == "timApiConnect") {
             timApiConnect(
@@ -155,10 +156,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 call.argument("posRefId")!!,
                 result
             )
-        }else if (call.method == "timApiPrint") {
+        /*}else if (call.method == "timApiPrint") {
             timApiPrint(
                 call.argument("ticket")!!,
-                result)
+                result)*/
         }else if (call.method == "timApiStartListening") {
             dummy(result)
         } else if (call.method == "setPosId") {
@@ -882,6 +883,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     private fun setPrintOptionsForTim(terminal: Terminal) {
+        // For accreditation - this method is only called when enablePrinting is true
         val printOption = PrintOption(
             Recipient.BOTH,
             PrintFormat.ON_DEVICE_WITH_RECEIPT,
@@ -890,7 +892,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         )
         terminal.setPrintOptions(listOf(printOption))
     }
-    private fun sendTimError(eventSink: EventChannel.EventSink?, source: String, exception: Exception?) {
+
+/*    private fun sendTimError(eventSink: EventChannel.EventSink?, source: String, exception: Exception?) {
         val errorMessage = exception?.localizedMessage ?: "Unknown error"
 
         Handler(Looper.getMainLooper()).post {
@@ -902,7 +905,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 )
             )
         }
-    }
+    }*/
     private fun addTerminalListeners(terminal: Terminal) {
         terminal.addListener(object : TerminalListener {
             override fun connectCompleted(event: TimEvent?) {
@@ -1292,15 +1295,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             }
         })
     }
-    private fun timApiInit(eftposAddress: String?, posId: String?, port: Int?, result: Result) {
+    private fun timApiInit(eftposAddress: String?, posId: String?, port: Int?, enablePrinting: Boolean, result: Result) {
         try {
-            println("......TIM API Init with eftposAddress=$eftposAddress, posId=$posId")
+            println("......TIM API Init with eftposAddress=$eftposAddress, posId=$posId, enablePrinting=$enablePrinting")
 
             val settings = initTerminalSettings(eftposAddress, posId, port)
             mTim = Terminal(settings)
 
             setupLoggerForTim(mTim)
-            setPrintOptionsForTim(mTim)
+            if (enablePrinting) {
+                setPrintOptionsForTim(mTim)
+            }
             addTerminalListeners(mTim)
 
             result.success(null)
@@ -1438,7 +1443,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         }
     }
 
-    private fun timApiPrint(ticket:String?, result: Result) {
+    /*private fun timApiPrint(ticket:String?, result: Result) {// function not accepted
         try {
             Log.d("TimAPI", "Requesting last receipt...")
 
@@ -1449,7 +1454,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             Log.e("TimAPI", "❌ Receipt request failed: ${e.message}")
             result.error("RECEIPT_REQUEST_FAILED", e.message, null)
         }
-    }
+    }*/
     
     fun timApiTestConnection(result: Result) {
         try {

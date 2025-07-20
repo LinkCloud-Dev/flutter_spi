@@ -133,7 +133,8 @@ class _HomeState extends State<Home> {
   }
 
   void _timApiPairing(BuildContext context) async {
-    await FlutterSpi.timApiPairing();
+    // For credentialing - disable printing by default
+    await FlutterSpi.timApiPairing(enablePrinting: false);
   }
 
   void _timApiCharge(BuildContext context) async {
@@ -153,9 +154,9 @@ class _HomeState extends State<Home> {
     await FlutterSpi.timApiBalance();
   }
 
-  void _timApiPrint(String ticket) async {
+  /*void _timApiPrint(String ticket) async {
     await FlutterSpi.timApiPrint(ticket);
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +299,7 @@ class _HomeState extends State<Home> {
               onPressed: () => _timApiBalance(context),
               child: const Text('Balance (TIM API)'),
             ),
-            ElevatedButton( // Function disallowed in API
+            /*ElevatedButton( // Function disallowed in API
               onPressed: _canPrint
                   ? () {
                 for (final ticket in _lastReceipts) {
@@ -307,7 +308,7 @@ class _HomeState extends State<Home> {
               }
                   : null,
               child: Text("Print (TIM API)"),
-            ),
+            ),*/
           ],
         ),
       ),
