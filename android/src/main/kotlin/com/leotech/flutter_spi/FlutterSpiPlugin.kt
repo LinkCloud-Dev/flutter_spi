@@ -897,7 +897,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             eventSink?.success(
                 mapOf(
                     "type" to "error",
-                    "source" to source, // 用来标记是哪一环节出错，例如 "login", "activate"
+                    "source" to source, // Source identifier for error tracking (e.g., "login", "activate")
                     "message" to "$source failed: $errorMessage"
                 )
             )
@@ -909,26 +909,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("✅ connectCompleted triggered")
                 val exception = event?.getException()
 
-                if (exception == null) {
-                    // 然后通过主线程通知 Dart
-                    Handler(Looper.getMainLooper()).post {
-                        eventSink?.success(
-                            mapOf(
-                                "type" to "connectCompleted",
-                                "status" to "success"
-                            )
-                        )
-                    }
-                } else {
-                    // ❌ 连接失败，通知 Dart 错误信息
-                    Handler(Looper.getMainLooper()).post {
-                        eventSink?.success(
+                Handler(Looper.getMainLooper()).post {
+                    eventSink?.success(
+                        if (exception == null) {
+                            mapOf("type" to "connectCompleted", "status" to "success")
+                        } else {
                             mapOf(
                                 "type" to "error",
                                 "message" to "Connect failed: ${exception.errorMessage ?: "Unknown error"}"
                             )
-                        )
-                    }
+                        }
+                    )
                 }
             }
             override fun activateCompleted(event: TimEvent?, p1: ActivateResponse?) {
@@ -936,23 +927,16 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 val exception = event?.getException()
 
                 Handler(Looper.getMainLooper()).post {
-                    if (exception == null) {
-                        // ✅ 登录成功，通知 Dart
-                        eventSink?.success(
-                            mapOf(
-                                "type" to "activateCompleted",
-                                "status" to "success"
-                            )
-                        )
-                    } else {
-                        // ❌ 登录失败，通知 Dart 错误信息
-                        eventSink?.success(
+                    eventSink?.success(
+                        if (exception == null) {
+                            mapOf("type" to "activateCompleted", "status" to "success")
+                        } else {
                             mapOf(
                                 "type" to "error",
                                 "message" to "Activate failed: ${exception.errorMessage ?: "Unknown error"}"
                             )
-                        )
-                    }
+                        }
+                    )
                 }
             }
 
@@ -962,23 +946,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
             override fun balanceCompleted(event: TimEvent?, data: BalanceResponse?) {
                 val exception = event?.getException()
-                if (data == null) {
-                    Handler(Looper.getMainLooper()).post {
-                        eventSink?.success(
+                
+                Handler(Looper.getMainLooper()).post {
+                    eventSink?.success(
+                        if (data != null) {
+                            mapOf("type" to "balanceCompleted")
+                        } else {
                             mapOf(
                                 "type" to "error",
                                 "message" to "Balance failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}"
                             )
-                        )
-                    }
-                    return
-                }
-                Handler(Looper.getMainLooper()).post {
-                    eventSink?.success(
-                        mapOf(
-                            "type" to "balanceCompleted",
-                            // 暂时不传 counters 等详细数据
-                        )
+                        }
                     )
                 }
             }
@@ -1025,34 +1003,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("✅ loginCompleted triggered")
                 val exception = event?.getException()
 
-                if (exception == null) {
-                    // ✅ 登录成功，先调用 activateAsync（不在主线程里）
-//                    try {
-//                        terminal.activateAsync()
-//                    } catch (e: Exception) {
-//                        sendTimError(eventSink, "activate", e)
-//                        return
-//                    }
-
-                    // ✅ 登录成功，通知 Dart
-                    Handler(Looper.getMainLooper()).post {
-                        eventSink?.success(
-                            mapOf(
-                                "type" to "loginCompleted",
-                                "status" to "success"
-                            )
-                        )
-                    }
-                } else {
-                    // ❌ 登录失败，通知 Dart
-                    Handler(Looper.getMainLooper()).post {
-                        eventSink?.success(
+                Handler(Looper.getMainLooper()).post {
+                    eventSink?.success(
+                        if (exception == null) {
+                            mapOf("type" to "loginCompleted", "status" to "success")
+                        } else {
                             mapOf(
                                 "type" to "error",
                                 "message" to "Login failed: ${exception.localizedMessage ?: "Unknown error"}"
                             )
-                        )
-                    }
+                        }
+                    )
                 }
             }
 
@@ -1076,12 +1037,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 data: ReceiptRequestResponse?
             ) {
                 println("receiptRequestCompleted triggered")
-                if (data == null) {
-                    println("❌ data is null")
+                if (data != null) {
+                    println("✅ Receipt data received - hasMoreReceipts: ${data.hasMoreReceipts()}")
                 } else {
-                    println("✅ Receipt data received")
-                    println("↪️ hasMoreReceipts: ${data.hasMoreReceipts()}")
-                    println("↪️ printData: ${data.getPrintData()}")
+                    println("❌ Receipt data is null")
                 }
             }
 
@@ -1114,61 +1073,33 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             override fun transactionCompleted(event: TimEvent, data: TransactionResponse?) {
                 println("🟢 transactionCompleted callback triggered")
                 val exception = event.getException()
-                if (data == null) {
-                    // ⛔️ data为null时，只能依靠event里的exception信息反馈给Dart层
-                    Handler(Looper.getMainLooper()).post {
-                        eventSink?.success(
-                            mapOf(
-                                "type" to "error",
-                                "message" to "Transaction failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}"
-                            )
-                        )
-                    }
-                    return
-                }
-                val transRef = data.transactionInformation?.transRef
-                val transSeq = data.transactionInformation?.transSeq
-                val cardRef = data.transactionInformation?.cardId
-                val acqTransRef = data.transactionInformation?.acqTransRef
-
-                // 提取 receipts 为字符串数组（或列表）
-                val receiptList = mutableListOf<String>()
-                val printData = data.printData
-                if (printData != null) {
-                    val allReceipts = printData.receipts
-                    for (receipt in allReceipts) {
-                        val ticket = receipt?.value
-                        if (!ticket.isNullOrBlank()) {
-                            receiptList.add(ticket)
-                        }
-                    }
-                }
-
+                
                 Handler(Looper.getMainLooper()).post {
-                    if (exception == null) {
-                        eventSink?.success(
+                    eventSink?.success(
+                        if (data != null && exception == null) {
+                            // Extract transaction data
+                            val transInfo = data.transactionInformation
+                            val receiptList = data.printData?.receipts?.mapNotNull { it?.value }?.filter { it.isNotBlank() } ?: emptyList()
+                            
                             mapOf(
                                 "type" to "transactionCompleted",
                                 "amount" to data.amount.amount,
                                 "currency" to data.amount.currency.name,
                                 "transactionType" to data.transactionType.name,
-                                "transRef" to transRef,
-                                "transSeq" to transSeq,
-                                "cardRef" to cardRef,
-                                "acqTransRef" to acqTransRef,
+                                "transRef" to transInfo?.transRef,
+                                "transSeq" to transInfo?.transSeq,
+                                "cardRef" to transInfo?.cardId,
+                                "acqTransRef" to transInfo?.acqTransRef,
                                 "receipts" to receiptList
                             )
-                        )
-                    } else {
-                        eventSink?.success(
+                        } else {
                             mapOf(
                                 "type" to "error",
-                                "message" to "Transaction failed: ${exception.message}"
+                                "message" to "Transaction failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}"
                             )
-                        )
-                    }
+                        }
+                    )
                 }
-
             }
 
             override fun clientIdentificationCompleted(
@@ -1187,13 +1118,9 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 }
                 
                 try {
-                    // 使用 getTerminalStatus() 方法获取状态
-                    val terminalStatus = terminal.getTerminalStatus()
-                    val connectionStatus = terminalStatus.connectionStatus?.name ?: "Unknown"
-                    
+                    val connectionStatus = terminal.getTerminalStatus().connectionStatus?.name ?: "Unknown"
                     println("📊 Terminal Status: $connectionStatus")
                     
-                    // 发送简化的状态变化事件到 Flutter
                     Handler(Looper.getMainLooper()).post {
                         eventSink?.success(
                             mapOf(
@@ -1202,7 +1129,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                             )
                         )
                     }
-                    
                 } catch (e: Exception) {
                     println("❌ Error processing terminal status: ${e.message}")
                 }
@@ -1216,7 +1142,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                     println("  - Localized: ${exception.localizedMessage}")
                 }
                 
-                // 发送断开连接事件到 Flutter
                 Handler(Looper.getMainLooper()).post {
                     eventSink?.success(
                         mapOf(
@@ -1441,8 +1366,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 // Use async
                 mTim.transactionAsync(TimapiTransactionType.PURCHASE, transactionAmount)
 
-                // ⚠️ 不返回 result.success(true)，因为交易还没结束
-                result.success(null)  // 表示“调用已成功发出”，不是“交易完成”
+                // ⚠️ Don't return result.success(true) because transaction is not finished yet
+                result.success(null)  // Indicates "call was successfully sent", not "transaction completed"
             } else {
                 result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
             }
@@ -1459,7 +1384,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
 
-                // ✅ 退款使用 CREDIT 类型
+                // ✅ Refund uses CREDIT 
                 mTim.transactionAsync(TimapiTransactionType.CREDIT, refundAmount)
 
                 result.success(null)
@@ -1478,17 +1403,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
 
-                // 构建 TransactionData，并设置 acquirer reference
-                // TODO:确认request必须的构成
+                // Build TransactionData and set acquirer reference
+                // TODO: Confirm required request structure
                 val txnData = TransactionData()
                 txnData.setAcqTransRef(acqTransRef)
 
-                // 构建 TransactionRequest 并设置数据
+                // Build TransactionRequest and set data
                 val request = TransactionRequest()
                 request.setAmount(refundAmount)
                 request.setTransactionData(txnData)
 
-                // 发起 CREDIT 类型交易（退款）
+                // Initiate CREDIT type transaction (refund)
                 mTim.transactionAsync(TimapiTransactionType.CREDIT, request)
 
                 result.success(null)
@@ -1504,7 +1429,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             Log.d("TimAPI", "Starting balance with posRefId=$posRefId")
 
-            mTim.balanceAsync() // 异步触发 Balance 操作，先自动发送deactivate request
+            mTim.balanceAsync() // Asynchronously trigger Balance operation, automatically sends deactivate request first
 
             result.success(null)
 
