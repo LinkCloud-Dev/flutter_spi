@@ -8,13 +8,67 @@ enum ANZTerminalStatus {
   loggingIn,       // 正在登录
   loggedIn,        // 登录成功，准备激活
   activating,      // 正在激活
-  activated,           // 激活成功，终端就绪
+  activated,       // 激活成功，终端就绪
 }
 
 enum ANZConnectionStatus {
   disconnected,    // TIM API: DISCONNECTED
   loggedIn,        // TIM API: LOGGED_IN
   loggedOut,       // TIM API: LOGGED_OUT
+}
+
+enum ANZTransactionStatus {
+  idle,           // 空闲状态
+  processing,     // 交易处理中
+  completed,      // 交易完成
+  failed,         // 交易失败 (包括取消、错误等)
+}
+
+class ANZTransactionData {
+  final String? posRefId;
+  final double? amount;
+  final String? currency;
+  final String? transactionType;
+  final String? transRef;
+  final String? transSeq;
+  final String? cardRef;
+  final String? acqTransRef;
+  final List<String>? receipts;
+  final String? errorMessage;
+
+  ANZTransactionData({
+    this.posRefId,
+    this.amount,
+    this.currency,
+    this.transactionType,
+    this.transRef,
+    this.transSeq,
+    this.cardRef,
+    this.acqTransRef,
+    this.receipts,
+    this.errorMessage,
+  });
+
+  factory ANZTransactionData.fromMap(Map<String, dynamic> map) {
+    return ANZTransactionData(
+      posRefId: map['posRefId']?.toString(),
+      amount: map['amount']?.toDouble(),
+      currency: map['currency']?.toString(),
+      transactionType: map['transactionType']?.toString(),
+      transRef: map['transRef']?.toString(),
+      transSeq: map['transSeq']?.toString(),
+      cardRef: map['cardRef']?.toString(),
+      acqTransRef: map['acqTransRef']?.toString(),
+      receipts: map['receipts'] != null 
+          ? List<String>.from((map['receipts'] as List).map((item) => item.toString()))
+          : null,
+      errorMessage: map['errorMessage']?.toString(),
+    );
+  }
+
+  factory ANZTransactionData.error(String errorMessage) {
+    return ANZTransactionData(errorMessage: errorMessage);
+  }
 }
 
 class AnzState extends ChangeNotifier {
@@ -25,6 +79,16 @@ class AnzState extends ChangeNotifier {
   // TIM API 的连接状态
   ANZConnectionStatus _connectionStatus = ANZConnectionStatus.disconnected;
   ANZConnectionStatus get connectionStatus => _connectionStatus;
+  
+  // Transaction 相关状态
+  ANZTransactionStatus _transactionStatus = ANZTransactionStatus.idle;
+  ANZTransactionStatus get transactionStatus => _transactionStatus;
+  
+  ANZTransactionData? _lastTransaction;
+  ANZTransactionData? get lastTransaction => _lastTransaction;
+  
+  String? _currentTransactionId;
+  String? get currentTransactionId => _currentTransactionId;
   
   bool _initialized = false;
 
@@ -41,6 +105,11 @@ class AnzState extends ChangeNotifier {
 
   void _updateConnectionStatus(ANZConnectionStatus newStatus) {
     _connectionStatus = newStatus;
+    notifyListeners();
+  }
+
+  void _updateTransactionStatus(ANZTransactionStatus newStatus) {
+    _transactionStatus = newStatus;
     notifyListeners();
   }
 
@@ -71,6 +140,73 @@ class AnzState extends ChangeNotifier {
     } catch (e) {
       print("❌ Activate failed: $e");
       _updateStatus(ANZTerminalStatus.loggedIn);
+    }
+  }
+
+  // Transaction methods
+  Future<void> startTransaction(String posRefId, double amount) async {
+    if (_status != ANZTerminalStatus.activated) {
+      print("❌ Terminal not ready for transaction");
+      return;
+    }
+
+    // 重置之前的交易状态
+    _resetTransactionState();
+    
+    try {
+      _currentTransactionId = posRefId;
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiCharge(amount);
+    } catch (e) {
+      print("❌ Start transaction failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start transaction: $e");
+    }
+  }
+
+  void _resetTransactionState() {
+    _updateTransactionStatus(ANZTransactionStatus.idle);
+    _lastTransaction = null;
+    _currentTransactionId = null;
+  }
+
+  Future<void> startRefund(String posRefId, double amount) async {
+    if (_status != ANZTerminalStatus.activated) {
+      print("❌ Terminal not ready for refund");
+      return;
+    }
+
+    // 重置之前的交易状态
+    _resetTransactionState();
+
+    try {
+      _currentTransactionId = posRefId;
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiRefund(amount);
+    } catch (e) {
+      print("❌ Start refund failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start refund: $e");
+    }
+  }
+
+  Future<void> startBalance() async {
+    if (_status != ANZTerminalStatus.activated) {
+      print("❌ Terminal not ready for balance");
+      return;
+    }
+
+    // 重置之前的交易状态
+    _resetTransactionState();
+
+    try {
+      _currentTransactionId = "balance_${DateTime.now().millisecondsSinceEpoch}";
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiBalance();
+    } catch (e) {
+      print("❌ Start balance failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start balance: $e");
     }
   }
 
@@ -124,10 +260,13 @@ class AnzState extends ChangeNotifier {
           _handleDisconnected(eventMap);
           break;
         case 'transactionCompleted':
-          print("✅ Transaction completed.");
+          _handleTransactionCompleted(eventMap);
+          break;
+        case 'balanceCompleted':
+          _handleBalanceCompleted(eventMap);
           break;
         case 'error':
-          print("❌ TIM API 错误: ${eventMap['message']}");
+          _handleError(eventMap);
           break;
         default:
           print("⚠️ 未处理事件类型: $eventType");
@@ -166,9 +305,65 @@ class AnzState extends ChangeNotifier {
     print("  - Error: $errorMessage");
     print("  - Message: $localizedMessage");
     
-    // 重置两个状态
+    // 重置所有状态
     _updateStatus(ANZTerminalStatus.disconnected);
     _updateConnectionStatus(ANZConnectionStatus.disconnected);
+    _updateTransactionStatus(ANZTransactionStatus.idle);
+    _currentTransactionId = null;
+  }
+
+  void _handleTransactionCompleted(Map<String, dynamic> event) {
+    print("✅ Transaction completed: $event");
+    
+    try {
+      // 添加详细的调试信息
+      print("🔍 Parsing transaction data:");
+      print("  - posRefId: ${event['posRefId']} (${event['posRefId']?.runtimeType})");
+      print("  - amount: ${event['amount']} (${event['amount']?.runtimeType})");
+      print("  - currency: ${event['currency']} (${event['currency']?.runtimeType})");
+      print("  - transactionType: ${event['transactionType']} (${event['transactionType']?.runtimeType})");
+      print("  - transRef: ${event['transRef']} (${event['transRef']?.runtimeType})");
+      print("  - transSeq: ${event['transSeq']} (${event['transSeq']?.runtimeType})");
+      print("  - cardRef: ${event['cardRef']} (${event['cardRef']?.runtimeType})");
+      print("  - acqTransRef: ${event['acqTransRef']} (${event['acqTransRef']?.runtimeType})");
+      print("  - receipts: ${event['receipts']} (${event['receipts']?.runtimeType})");
+      
+      _lastTransaction = ANZTransactionData.fromMap(event);
+      _updateTransactionStatus(ANZTransactionStatus.completed);
+      _currentTransactionId = null;
+    } catch (e) {
+      print("❌ Error parsing transaction data: $e");
+      print("❌ Stack trace: ${StackTrace.current}");
+      _lastTransaction = ANZTransactionData.error("Error parsing transaction data: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+    }
+  }
+
+  void _handleBalanceCompleted(Map<String, dynamic> event) {
+    print("✅ Balance completed: $event");
+    
+    try {
+      _lastTransaction = ANZTransactionData.fromMap({
+        ...event,
+        'transactionType': 'BALANCE',
+        'posRefId': _currentTransactionId,
+      });
+      _updateTransactionStatus(ANZTransactionStatus.completed);
+      _currentTransactionId = null;
+    } catch (e) {
+      print("❌ Error parsing balance data: $e");
+      _lastTransaction = ANZTransactionData.error("Error parsing balance data: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+    }
+  }
+
+  void _handleError(Map<String, dynamic> event) {
+    final message = event['message'] as String? ?? "Unknown error";
+    print("❌ TIM API 错误: $message");
+    
+    _lastTransaction = ANZTransactionData.error(message);
+    _updateTransactionStatus(ANZTransactionStatus.failed);
+    _currentTransactionId = null;
   }
 
   // Helper methods for UI
@@ -202,6 +397,19 @@ class AnzState extends ChangeNotifier {
     }
   }
 
+  String getTransactionStatusText() {
+    switch (_transactionStatus) {
+      case ANZTransactionStatus.idle:
+        return "Idle";
+      case ANZTransactionStatus.processing:
+        return "Processing...";
+      case ANZTransactionStatus.completed:
+        return "Completed";
+      case ANZTransactionStatus.failed:
+        return "Failed";
+    }
+  }
+
   Color getStatusColor() {
     switch (_status) {
       case ANZTerminalStatus.disconnected:
@@ -218,5 +426,20 @@ class AnzState extends ChangeNotifier {
     }
   }
 
+  Color getTransactionStatusColor() {
+    switch (_transactionStatus) {
+      case ANZTransactionStatus.idle:
+        return Colors.grey;
+      case ANZTransactionStatus.processing:
+        return Colors.orange;
+      case ANZTransactionStatus.completed:
+        return Colors.green;
+      case ANZTransactionStatus.failed:
+        return Colors.red;
+    }
+  }
+
   bool get isReady => _status == ANZTerminalStatus.activated;
+  bool get isTransactionInProgress => _transactionStatus == ANZTransactionStatus.processing;
+  bool get hasTransactionData => _lastTransaction != null;
 }

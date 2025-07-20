@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 import 'anz_connect_UI.dart';
 import 'anz_state.dart';
+import 'charge_dialog.dart';
 
 void main() {
   runApp(const MyApp());
@@ -139,11 +140,26 @@ class _HomeState extends State<Home> {
 
   void _timApiCharge(BuildContext context) async {
     print('.........dart --- tim api charge');
-    await FlutterSpi.timApiCharge();
+    
+    // 显示交易对话框
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const ChargeDialog();
+      },
+    );
+    
+    // 开始交易
+    final anzState = Provider.of<AnzState>(context, listen: false);
+    await anzState.startTransaction(
+      'charge_${DateTime.now().millisecondsSinceEpoch}',
+      1500,
+    );
   }
 
   void _timApiRefund(BuildContext context) async {
-    await FlutterSpi.timApiRefund();
+    await FlutterSpi.timApiRefund(1500);
   }
 
   void _timApiRefRefund(BuildContext context) async {
@@ -280,6 +296,7 @@ class _HomeState extends State<Home> {
                       ),
                     ],
                   ),
+                 
                 ],
               ),
             ),

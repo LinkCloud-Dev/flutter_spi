@@ -102,9 +102,9 @@ abstract class FlutterSpiPlatform {
 
   Future<void> timApiPairing({bool enablePrinting = false});
 
-  Future<void> timApiCharge();
+  Future<void> timApiCharge(double amount);
 
-  Future<void> timApiRefund();
+  Future<void> timApiRefund(double amount);
 
   Future<void> timApiRefRefund();
 

@@ -287,17 +287,17 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   }
 
   // Public method for charge (timApiStartTransaction)
-  Future<void> timApiCharge() async {
+  Future<void> timApiCharge(double amount) async {
     await _channel.invokeMethod('timApiStartTransaction', {
       'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
-      'amount': 5000, // Example/test amount
+      'amount': amount,
     });
   }
 
-  Future<void> timApiRefund() async { //for standard refund
+  Future<void> timApiRefund(double amount) async { //for standard refund
     await _channel.invokeMethod('timApiDoRefund', {
-      'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
-      'amount': 5000, // Example/test amount
+      'posRefId': 'test_refund_${DateTime.now().millisecondsSinceEpoch}',
+      'amount': amount,
     });
   }
 

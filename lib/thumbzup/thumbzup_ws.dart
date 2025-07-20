@@ -826,7 +826,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> timApiCharge() {
+  Future<void> timApiCharge(double amount) {
     // TODO: implement timApiCharge
     throw UnimplementedError();
   }
@@ -841,7 +841,7 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   Stream<dynamic> get eventStream => const Stream.empty();
 
   @override
-  Future<void> timApiRefund() {
+  Future<void> timApiRefund(double amount) {
     // TODO: implement timApiRefund
     throw UnimplementedError();
   }

@@ -488,12 +488,12 @@ class FlutterSpi {
     flutterSpi.timApiActivate();
   }
 
-  static Future<void> timApiCharge() async {
-    flutterSpi.timApiCharge();
+  static Future<void> timApiCharge(double amount) async {
+    flutterSpi.timApiCharge(amount);
   }
 
-  static Future<void> timApiRefund() async {
-    flutterSpi.timApiRefund();
+  static Future<void> timApiRefund(double amount) async {
+    flutterSpi.timApiRefund(amount);
   }
 
   static Future<void> timApiRefRefund() async {
