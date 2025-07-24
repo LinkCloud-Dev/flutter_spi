@@ -266,10 +266,10 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   // Public method for pairing (timApiInit)
   Future<void> timApiPairing({bool enablePrinting = false}) async { //for example
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '192.168.236.212', // 10.0.2.2 or 192.168.020.011 or 192.168.236.212
+      'eftposAddress': '192.168.020.011', // 10.0.2.2 or 192.168.020.011 or 192.168.236.212
       'posId': '25196219', //12345678 or 25196219
       'port': 7784, //8115
-      'enablePrinting': enablePrinting, // For credentialing - control receipt printing
+      'enablePrinting': true, // For credentialing - control receipt printing
     });
   }
 
@@ -301,7 +301,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     });
   }
 
-  Future<void> timApiRefRefund() async { //for reference refund
+  Future<void> timApiRefRefund() async { //for reference refund //TODO: check with ANZ on needed params
     await _channel.invokeMethod('timApiDoRefRefund', {
       'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
       'acqTransRef': '0100000000002202', // input org tx ref manually
@@ -312,6 +312,13 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> timApiBalance() async {
     await _channel.invokeMethod('timApiDoBalance', {
       'posRefId': 'test_Balance_${DateTime.now().millisecondsSinceEpoch}',
+    });
+  }
+
+  Future<void> timApiReversal({String? transSeq}) async {
+    await _channel.invokeMethod('timApiDoReversal', {
+      'posRefId': 'test_reversal_${DateTime.now().millisecondsSinceEpoch}',
+      'transSeq': transSeq,
     });
   }
 

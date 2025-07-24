@@ -117,4 +117,6 @@ abstract class FlutterSpiPlatform {
   Future<void> timApiActivate();
 
   Future<void> timApiConnect();
+
+  Future<void> timApiReversal({String? transSeq});
 }

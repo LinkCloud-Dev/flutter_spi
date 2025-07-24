@@ -210,6 +210,26 @@ class AnzState extends ChangeNotifier {
     }
   }
 
+  Future<void> startReversal() async {
+  if (_status != ANZTerminalStatus.activated) {
+    print("❌ Terminal not ready for reversal");
+    return;
+  }
+  if (_lastTransaction?.transSeq == null) {
+    print("❌ No previous transaction to reverse");
+    return;
+  }
+  try {
+    _currentTransactionId = "reversal_${DateTime.now().millisecondsSinceEpoch}";
+    _updateTransactionStatus(ANZTransactionStatus.processing);
+    await FlutterSpi.timApiReversal(transSeq: _lastTransaction!.transSeq!);
+  } catch (e) {
+    print("❌ Start reversal failed: $e");
+    _updateTransactionStatus(ANZTransactionStatus.failed);
+    _lastTransaction = ANZTransactionData.error("Failed to start reversal: $e");
+  }
+}
+
   void _subscribeTimEvents() {
     FlutterSpi.eventStream.listen((event) {
       print("🔔 ANZState 收到 TIM API 事件: $event");

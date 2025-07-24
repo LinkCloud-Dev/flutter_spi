@@ -170,6 +170,11 @@ class _HomeState extends State<Home> {
     await FlutterSpi.timApiBalance();
   }
 
+  void _timApiReversal(BuildContext context) async {
+    final anzState = Provider.of<AnzState>(context, listen: false);
+    await anzState.startReversal();
+  }
+
   /*void _timApiPrint(String ticket) async {
     await FlutterSpi.timApiPrint(ticket);
   }*/
@@ -315,6 +320,10 @@ class _HomeState extends State<Home> {
             ElevatedButton(
               onPressed: () => _timApiBalance(context),
               child: const Text('Balance (TIM API)'),
+            ),
+            ElevatedButton(
+              onPressed: () => _timApiReversal(context),
+              child: const Text('Reversal (TIM API)'),
             ),
             /*ElevatedButton( // Function disallowed in API
               onPressed: _canPrint

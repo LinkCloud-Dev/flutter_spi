@@ -156,6 +156,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 call.argument("posRefId")!!,
                 result
             )
+        } else if (call.method == "timApiDoReversal") {
+            timApiDoReversal(
+                call.argument("posRefId"),
+                call.argument("transSeq"),
+                result
+            )
         /*}else if (call.method == "timApiPrint") {
             timApiPrint(
                 call.argument("ticket")!!,
@@ -1443,7 +1449,45 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         }
     }
 
-    /*private fun timApiPrint(ticket:String?, result: Result) {// function not accepted
+    private fun timApiDoReversal(posRefId: String?, transSeq: String?, result: Result) {
+        try {
+            Log.d("TimAPI", "Starting reversal with posRefId=$posRefId, transSeq=$transSeq")
+
+            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+                //val reversalAmount = TimapiAmount(0.0, TimapiCurrency.AUD)
+                val txnData = TransactionData()
+                if (transSeq != null) {
+                    txnData.setTransSeq(transSeq.toLong())
+                }
+                val request = TransactionRequest()
+                request.setTransactionData(txnData)
+                //request.setAmount(reversalAmount)
+
+                mTim.transactionAsync(TimapiTransactionType.REVERSAL, request)
+                result.success(null)
+            } else {
+                result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: Exception) {
+            result.error("REVERSAL_ERROR", "Failed to start reversal: ${e.message}", null)
+        }
+    }
+
+    /*private fun timApiPrint(ticket:String?, result: Result) {// funcprivate fun timApiDoReversal(posRefId: String?, result: Result) {
+    try {
+        Log.d("TimAPI", "Starting reversal with posRefId=$posRefId")
+
+        if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+            val reversalAmount = TimapiAmount(0.0, TimapiCurrency.AUD) // 或者传实际金额
+            mTim.transactionAsync(TimapiTransactionType.REVERSAL, reversalAmount)
+            result.success(null)
+        } else {
+            result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+        }
+    } catch (e: Exception) {
+        result.error("REVERSAL_ERROR", "Failed to start reversal: ${e.message}", null)
+    }
+}ion not accepted
         try {
             Log.d("TimAPI", "Requesting last receipt...")
 

@@ -504,6 +504,10 @@ class FlutterSpi {
     flutterSpi.timApiBalance();
   }
 
+  static Future<void> timApiReversal({String? transSeq}) async {
+    flutterSpi.timApiReversal(transSeq: transSeq);
+  }
+
   /*static Future<void> timApiPrint(String ticket)async {
     flutterSpi.timApiPrint(ticket);
   }*/

@@ -882,5 +882,11 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     throw UnimplementedError();
   }
 
+  @override
+  Future<void> timApiReversal({String? transSeq}) {
+    // TODO: implement timApiReversal
+    throw UnimplementedError();
+  }
+
   
 }
