@@ -1,16 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spi/flutter_spi.dart';
 
-enum ANZTerminalStatus {
-  disconnected,    // 未连接
-  connecting,      // 正在连接
-  connected,       // 连接成功，准备登录
-  loggingIn,       // 正在登录
-  loggedIn,        // 登录成功，准备激活
-  activating,      // 正在激活
-  activated,       // 激活成功，终端就绪
-}
-
 enum ANZConnectionStatus {
   disconnected,    // TIM API: DISCONNECTED
   loggedIn,        // TIM API: LOGGED_IN
@@ -71,10 +61,21 @@ class ANZTransactionData {
   }
 }
 
+enum ANZPairStatus {
+  disconnected, // 未连接
+  connected,    // 物理/网络已连，未登录
+  loggedIn,     // 已登录
+  activated,    // 终端就绪
+}
+
+enum ANZUnpairStatus {
+  idle,            // 未解绑
+  disposed,        // dispose完成
+  failed,          // 解绑失败
+}
+
 class AnzState extends ChangeNotifier {
-  // 我们的流程状态
-  ANZTerminalStatus _status = ANZTerminalStatus.disconnected;
-  ANZTerminalStatus get status => _status;
+
   
   // TIM API 的连接状态
   ANZConnectionStatus _connectionStatus = ANZConnectionStatus.disconnected;
@@ -92,14 +93,57 @@ class AnzState extends ChangeNotifier {
   
   bool _initialized = false;
 
+  ANZPairStatus _pairStatus = ANZPairStatus.disconnected;
+  ANZPairStatus get pairStatus => _pairStatus;
+
+  ANZUnpairStatus _unpairStatus = ANZUnpairStatus.idle;
+  ANZUnpairStatus get unpairStatus => _unpairStatus;
+
   void init() {
     if (_initialized) return;
     _initialized = true;
     _subscribeTimEvents();
   }
 
-  void _updateStatus(ANZTerminalStatus newStatus) {
-    _status = newStatus;
+  void initWhenNeeded() {
+    if (!_initialized) {
+      init();
+    }
+  }
+
+  // void syncWithSpiStatus(SpiStatus? spiStatus) {
+  //   if (spiStatus == null) {
+  //     _updatePairStatus(ANZPairStatus.disconnected);
+  //     return;
+  //   }
+  //
+  //   switch (spiStatus) {
+  //     case SpiStatus.UNPAIRED:
+  //     // UNPAIRED state always corresponds to disconnected
+  //       _updatePairStatus(ANZPairStatus.disconnected);
+  //       _updateUnpairStatus(ANZUnpairStatus.idle);
+  //       break;
+  //     case SpiStatus.PAIRED_CONNECTING:
+  //       _updatePairStatus(ANZPairStatus.connecting);
+  //       _updateUnpairStatus(ANZUnpairStatus.idle);
+  //       break;
+  //     case SpiStatus.PAIRED_CONNECTED:
+  //     // If SPI is connected, but ANZ hasn't completed the activation process, stay in the current state
+  //       if (_pairStatus == ANZPairStatus.disconnected) {
+  //         _updatePairStatus(ANZPairStatus.connected);
+  //         _updateUnpairStatus(ANZUnpairStatus.idle);
+  //       }
+  //       break;
+  //   }
+  // }
+
+  void _updatePairStatus(ANZPairStatus newStatus) {
+    _pairStatus = newStatus;
+    notifyListeners();
+  }
+
+  void _updateUnpairStatus(ANZUnpairStatus newStatus) {
+    _unpairStatus = newStatus;
     notifyListeners();
   }
 
@@ -115,42 +159,34 @@ class AnzState extends ChangeNotifier {
 
   Future<void> startConnection() async {
     try {
-      _updateStatus(ANZTerminalStatus.connecting);
       await FlutterSpi.timApiConnect();
     } catch (e) {
       print("❌ Connect failed: $e");
-      _updateStatus(ANZTerminalStatus.disconnected);
+      _updatePairStatus(ANZPairStatus.disconnected);
     }
   }
 
-  Future<void> _login() async {
+  Future<void> startDeactivate() async {
     try {
-      _updateStatus(ANZTerminalStatus.loggingIn);
-      await FlutterSpi.timApiLogin();
+      await FlutterSpi.timApiDeactivate();
     } catch (e) {
-      print("❌ Login failed: $e");
-      _updateStatus(ANZTerminalStatus.connected);
+      print('❌ Start deactivate failed: $e');
+      _updateUnpairStatus(ANZUnpairStatus.failed);
     }
   }
 
-  Future<void> _activate() async {
-    try {
-      _updateStatus(ANZTerminalStatus.activating);
-      await FlutterSpi.timApiActivate();
-    } catch (e) {
-      print("❌ Activate failed: $e");
-      _updateStatus(ANZTerminalStatus.loggedIn);
-    }
-  }
 
+  void _resetTransactionState() {
+    _updateTransactionStatus(ANZTransactionStatus.idle);
+    _lastTransaction = null;
+    _currentTransactionId = null;
+  }
   // Transaction methods
   Future<void> startTransaction(String posRefId, double amount) async {
-    if (_status != ANZTerminalStatus.activated) {
+    if (_pairStatus != ANZPairStatus.activated) { //TODO: check later
       print("❌ Terminal not ready for transaction");
       return;
     }
-
-    // 重置之前的交易状态
     _resetTransactionState();
     
     try {
@@ -164,19 +200,12 @@ class AnzState extends ChangeNotifier {
     }
   }
 
-  void _resetTransactionState() {
-    _updateTransactionStatus(ANZTransactionStatus.idle);
-    _lastTransaction = null;
-    _currentTransactionId = null;
-  }
-
   Future<void> startRefund(String posRefId, double amount) async {
-    if (_status != ANZTerminalStatus.activated) {
+    if (_pairStatus != ANZPairStatus.activated) {
       print("❌ Terminal not ready for refund");
       return;
     }
 
-    // 重置之前的交易状态
     _resetTransactionState();
 
     try {
@@ -191,18 +220,18 @@ class AnzState extends ChangeNotifier {
   }
 
   Future<void> startBalance() async {
-    if (_status != ANZTerminalStatus.activated) {
+    if (_pairStatus != ANZPairStatus.activated) {
       print("❌ Terminal not ready for balance");
       return;
     }
 
-    // 重置之前的交易状态
     _resetTransactionState();
 
     try {
       _currentTransactionId = "balance_${DateTime.now().millisecondsSinceEpoch}";
       _updateTransactionStatus(ANZTransactionStatus.processing);
       await FlutterSpi.timApiBalance();
+      _updatePairStatus(ANZPairStatus.disconnected);
     } catch (e) {
       print("❌ Start balance failed: $e");
       _updateTransactionStatus(ANZTransactionStatus.failed);
@@ -211,79 +240,65 @@ class AnzState extends ChangeNotifier {
   }
 
   Future<void> startReversal() async {
-  if (_status != ANZTerminalStatus.activated) {
-    print("❌ Terminal not ready for reversal");
-    return;
+    if (_pairStatus != ANZPairStatus.activated) {
+      print("❌ Terminal not ready for reversal");
+      return;
+    }
+    if (_lastTransaction?.transSeq == null) {
+      print("❌ No previous transaction to reverse");
+      return;
+    }
+    try {
+      _currentTransactionId = "reversal_${DateTime.now().millisecondsSinceEpoch}";
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiReversal(transSeq: _lastTransaction!.transSeq!);
+    } catch (e) {
+      print("❌ Start reversal failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start reversal: $e");
+    }
   }
-  if (_lastTransaction?.transSeq == null) {
-    print("❌ No previous transaction to reverse");
-    return;
-  }
-  try {
-    _currentTransactionId = "reversal_${DateTime.now().millisecondsSinceEpoch}";
-    _updateTransactionStatus(ANZTransactionStatus.processing);
-    await FlutterSpi.timApiReversal(transSeq: _lastTransaction!.transSeq!);
-  } catch (e) {
-    print("❌ Start reversal failed: $e");
-    _updateTransactionStatus(ANZTransactionStatus.failed);
-    _lastTransaction = ANZTransactionData.error("Failed to start reversal: $e");
-  }
-}
 
   void _subscribeTimEvents() {
     FlutterSpi.eventStream.listen((event) {
-      print("🔔 ANZState 收到 TIM API 事件: $event");
-
-      // 确保 event 是 Map 类型
-      if (event is! Map) {
-        print("⚠️ 收到非 Map 类型事件: $event");
-        return;
-      }
-
       final eventMap = Map<String, dynamic>.from(event);
       final eventType = eventMap['type'] as String?;
 
       switch (eventType) {
         case 'connectCompleted':
-          if (eventMap['status'] == 'success') {
-            print("✅ Connect completed, calling login");
-            _updateStatus(ANZTerminalStatus.connected);
-            _login();
-          } else {
-            print("❌ Connect failed");
-            _updateStatus(ANZTerminalStatus.disconnected);
-          }
+          _handleConnectCompleted(eventMap);
           break;
         case 'loginCompleted':
-          if (eventMap['status'] == 'success') {
-            print("✅ Login completed, calling activate");
-            _updateStatus(ANZTerminalStatus.loggedIn);
-            _activate();
-          } else {
-            print("❌ Login failed");
-            _updateStatus(ANZTerminalStatus.connected);
-          }
+          _handleLoginCompleted(eventMap);
           break;
         case 'activateCompleted':
-          if (eventMap['status'] == 'success') {
-            print("✅ Activate completed, terminal is ready");
-            _updateStatus(ANZTerminalStatus.activated);
-          } else {
-            print("❌ Activate failed");
-            _updateStatus(ANZTerminalStatus.loggedIn);
-          }
+          _handleActivateCompleted(eventMap);
           break;
         case 'terminalStatusChanged':
           _handleTerminalStatusChanged(eventMap);
-          break;
-        case 'disconnected':
-          _handleDisconnected(eventMap);
           break;
         case 'transactionCompleted':
           _handleTransactionCompleted(eventMap);
           break;
         case 'balanceCompleted':
-          _handleBalanceCompleted(eventMap);
+          print("✅ Balance completed: $eventMap");
+          break;
+        case 'deactivateCompleted':
+          FlutterSpi.timApiLogout();
+          break;
+        case 'logoutCompleted':
+          FlutterSpi.timApiDisconnect();
+          break;
+        case 'disconnected':
+          _handleDisconnected(eventMap);
+          break;
+        case 'disposed':
+          _handleDisposed(eventMap);
+          notifyListeners();
+          break;
+        case 'unpairError':
+          _updateUnpairStatus(ANZUnpairStatus.failed);
+          notifyListeners();
           break;
         case 'error':
           _handleError(eventMap);
@@ -294,22 +309,51 @@ class AnzState extends ChangeNotifier {
     });
   }
 
+  void _handleConnectCompleted(Map<String, dynamic> event)async {
+    if (event['status'] == 'success') {
+      _updatePairStatus(ANZPairStatus.connected);
+       await FlutterSpi.timApiLogin();
+    } else {
+      _updatePairStatus(ANZPairStatus.disconnected);
+    }
+  }
+
+  void _handleLoginCompleted(Map<String, dynamic> event) async{
+    if (event['status'] == 'success') {
+      _updatePairStatus(ANZPairStatus.loggedIn);
+      await FlutterSpi.timApiActivate();
+    } else {
+      _updatePairStatus(ANZPairStatus.connected);
+    }
+  }
+
+  void _handleActivateCompleted(Map<String, dynamic> event) {
+    if (event['status'] == 'success') {
+      _updatePairStatus(ANZPairStatus.activated);
+    } else {
+      _updatePairStatus(ANZPairStatus.loggedIn);
+    }
+  }
+
   void _handleTerminalStatusChanged(Map<String, dynamic> event) {
     final connectionStatus = event['connectionStatus'] as String?;
     
     print("📊 TIM API ConnectionStatus: $connectionStatus");
     
-    // 更新 TIM API 连接状态
     if (connectionStatus != null) {
       switch (connectionStatus) {
         case 'DISCONNECTED':
           _updateConnectionStatus(ANZConnectionStatus.disconnected);
+          _updatePairStatus(ANZPairStatus.disconnected);
+          _updateUnpairStatus(ANZUnpairStatus.idle);
           break;
         case 'LOGGED_IN':
           _updateConnectionStatus(ANZConnectionStatus.loggedIn);
           break;
         case 'LOGGED_OUT':
           _updateConnectionStatus(ANZConnectionStatus.loggedOut);
+          _updatePairStatus(ANZPairStatus.disconnected);
+          _updateUnpairStatus(ANZUnpairStatus.idle);
           break;
         default:
           print("⚠️ Unknown TIM API connection status: $connectionStatus");
@@ -318,25 +362,31 @@ class AnzState extends ChangeNotifier {
   }
 
   void _handleDisconnected(Map<String, dynamic> event) {
-    final errorMessage = event['errorMessage'] as String?;
-    final localizedMessage = event['localizedMessage'] as String?;
-    
-    print("❌ Terminal disconnected:");
-    print("  - Error: $errorMessage");
-    print("  - Message: $localizedMessage");
-    
-    // 重置所有状态
-    _updateStatus(ANZTerminalStatus.disconnected);
-    _updateConnectionStatus(ANZConnectionStatus.disconnected);
-    _updateTransactionStatus(ANZTransactionStatus.idle);
-    _currentTransactionId = null;
+    //TODO: check later
+    // reset all status
+    // _updateConnectionStatus(ANZConnectionStatus.disconnected);
+    // _updateTransactionStatus(ANZTransactionStatus.idle);
+    // _updatePairStatus(ANZPairStatus.disconnected);
+    // _updateUnpairStatus(ANZUnpairStatus.idle);
+    // _currentTransactionId = null;
+  }
+
+  void _handleDisposed(Map<String, dynamic> event) {
+      if (event['status'] == 'success') {
+        _updateUnpairStatus(ANZUnpairStatus.disposed);
+        _updateConnectionStatus(ANZConnectionStatus.disconnected);
+        _updatePairStatus(ANZPairStatus.disconnected);
+        _currentTransactionId = null;
+      } else {
+        _updateUnpairStatus(ANZUnpairStatus.failed);
+      } 
+      notifyListeners();
   }
 
   void _handleTransactionCompleted(Map<String, dynamic> event) {
     print("✅ Transaction completed: $event");
     
     try {
-      // 添加详细的调试信息
       print("🔍 Parsing transaction data:");
       print("  - posRefId: ${event['posRefId']} (${event['posRefId']?.runtimeType})");
       print("  - amount: ${event['amount']} (${event['amount']?.runtimeType})");
@@ -359,24 +409,6 @@ class AnzState extends ChangeNotifier {
     }
   }
 
-  void _handleBalanceCompleted(Map<String, dynamic> event) {
-    print("✅ Balance completed: $event");
-    
-    try {
-      _lastTransaction = ANZTransactionData.fromMap({
-        ...event,
-        'transactionType': 'BALANCE',
-        'posRefId': _currentTransactionId,
-      });
-      _updateTransactionStatus(ANZTransactionStatus.completed);
-      _currentTransactionId = null;
-    } catch (e) {
-      print("❌ Error parsing balance data: $e");
-      _lastTransaction = ANZTransactionData.error("Error parsing balance data: $e");
-      _updateTransactionStatus(ANZTransactionStatus.failed);
-    }
-  }
-
   void _handleError(Map<String, dynamic> event) {
     final message = event['message'] as String? ?? "Unknown error";
     print("❌ TIM API 错误: $message");
@@ -386,39 +418,22 @@ class AnzState extends ChangeNotifier {
     _currentTransactionId = null;
   }
 
+
   // Helper methods for UI
-  String getStatusText() {
-    switch (_status) {
-      case ANZTerminalStatus.disconnected:
+  String getStatusText(dynamic status) {
+    switch (status) {
+      case ANZPairStatus.disconnected:
         return "Disconnected";
-      case ANZTerminalStatus.connecting:
-        return "Connecting...";
-      case ANZTerminalStatus.connected:
+      case ANZPairStatus.connected:
         return "Connected";
-      case ANZTerminalStatus.loggingIn:
-        return "Logging In...";
-      case ANZTerminalStatus.loggedIn:
+      case ANZPairStatus.loggedIn:
         return "Logged In";
-      case ANZTerminalStatus.activating:
-        return "Activating...";
-      case ANZTerminalStatus.activated:
+      case ANZPairStatus.activated:
         return "Activated";
-    }
-  }
-
-  String getConnectionStatusText() {
-    switch (_connectionStatus) {
-      case ANZConnectionStatus.disconnected:
-        return "TIM: Disconnected";
-      case ANZConnectionStatus.loggedIn:
-        return "TIM: Logged In";
-      case ANZConnectionStatus.loggedOut:
-        return "TIM: Logged Out";
-    }
-  }
-
-  String getTransactionStatusText() {
-    switch (_transactionStatus) {
+      case ANZUnpairStatus.failed:
+        return "Unpair Failed";
+      case ANZUnpairStatus.idle:
+        return "";
       case ANZTransactionStatus.idle:
         return "Idle";
       case ANZTransactionStatus.processing:
@@ -427,22 +442,34 @@ class AnzState extends ChangeNotifier {
         return "Completed";
       case ANZTransactionStatus.failed:
         return "Failed";
+      case ANZConnectionStatus.disconnected:
+        return "TIM: Disconnected";
+      case ANZConnectionStatus.loggedIn:
+        return "TIM: Logged In";
+      case ANZConnectionStatus.loggedOut:
+        return "TIM: Logged Out";
+      case ANZUnpairStatus.disposed:
+        return "Disposed";
+      default:
+        return "Unknown";
     }
   }
 
-  Color getStatusColor() {
-    switch (_status) {
-      case ANZTerminalStatus.disconnected:
+
+  Color getStatusColor(dynamic status) {
+    switch (status) {
+      case ANZPairStatus.disconnected:
         return Colors.red;
-      case ANZTerminalStatus.connecting:
-      case ANZTerminalStatus.loggingIn:
-      case ANZTerminalStatus.activating:
+      case ANZUnpairStatus.failed:
         return Colors.orange;
-      case ANZTerminalStatus.connected:
-      case ANZTerminalStatus.loggedIn:
-        return Colors.blue;
-      case ANZTerminalStatus.activated:
+      case ANZPairStatus.connected:
+      case ANZPairStatus.loggedIn:
+      case ANZPairStatus.activated:
+        return Colors.blue; 
+      case ANZUnpairStatus.disposed:
         return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -456,10 +483,12 @@ class AnzState extends ChangeNotifier {
         return Colors.green;
       case ANZTransactionStatus.failed:
         return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
-  bool get isReady => _status == ANZTerminalStatus.activated;
+  bool get isReady => _pairStatus == ANZPairStatus.activated;
   bool get isTransactionInProgress => _transactionStatus == ANZTransactionStatus.processing;
   bool get hasTransactionData => _lastTransaction != null;
 }

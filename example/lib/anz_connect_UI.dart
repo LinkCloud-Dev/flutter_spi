@@ -23,7 +23,7 @@ class AnzConnectUI extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.point_of_sale,
-                      color: anzState.getStatusColor(),
+                      color: anzState.getStatusColor(anzState.pairStatus),
                       size: 28,
                     ),
                     const SizedBox(width: 12),
@@ -42,10 +42,10 @@ class AnzConnectUI extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: anzState.getStatusColor().withOpacity(0.1),
+                    color: anzState.getStatusColor(anzState.pairStatus).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: anzState.getStatusColor().withOpacity(0.3),
+                      color: anzState.getStatusColor(anzState.pairStatus).withOpacity(0.3),
                       width: 1,
                     ),
                   ),
@@ -58,24 +58,24 @@ class AnzConnectUI extends StatelessWidget {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: anzState.getStatusColor(),
+                              color: anzState.getStatusColor(anzState.pairStatus),
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Status: ${anzState.getStatusText()}',
+                            'Status: ${anzState.getStatusText(anzState.pairStatus)}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: anzState.getStatusColor(),
+                              color: anzState.getStatusColor(anzState.pairStatus),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        anzState.getConnectionStatusText(),
+                        anzState.getStatusText(anzState.connectionStatus),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -88,33 +88,33 @@ class AnzConnectUI extends StatelessWidget {
 
                 // Connection steps indicator
                 _buildStepsIndicator(anzState),
-                const SizedBox(height: 20),
+                // const SizedBox(height: 20),
 
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: anzState.status.name == 'disconnected' 
-                            ? () => anzState.startConnection()
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: anzState.getStatusColor(),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          anzState.status.name == 'disconnected' 
-                              ? 'Connect Terminal'
-                              : 'Connecting...',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                // // Action buttons
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: ElevatedButton(
+                //         onPressed: anzState.status.name == 'disconnected' 
+                //             ? () => anzState.startConnection()
+                //             : null,
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: anzState.getStatusColor(anzState.pairStatus),
+                //           foregroundColor: Colors.white,
+                //           padding: const EdgeInsets.symmetric(vertical: 12),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(8),
+                //           ),
+                //         ),
+                //         child: Text(
+                //           anzState.status.name == 'disconnected' 
+                //               ? 'Connect Terminal'
+                //               : 'Connecting...',
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
                 const SizedBox(height: 12),
 
                 // Close button
@@ -132,10 +132,10 @@ class AnzConnectUI extends StatelessWidget {
 
   Widget _buildStepsIndicator(AnzState anzState) {
     final steps = [
-      {'name': 'Connect', 'status': 'disconnected'},
-      {'name': 'Login', 'status': 'connected'},
-      {'name': 'Activate', 'status': 'loggedIn'},
-      {'name': 'Ready', 'status': 'activated'},
+      {'name': 'Connect', 'status': ANZPairStatus.disconnected},
+      {'name': 'Login', 'status': ANZPairStatus.connected},
+      {'name': 'Activate', 'status': ANZPairStatus.loggedIn},
+      {'name': 'Ready', 'status': ANZPairStatus.activated},
     ];
 
     return Column(
@@ -154,8 +154,9 @@ class AnzConnectUI extends StatelessWidget {
           children: steps.asMap().entries.map((entry) {
             final index = entry.key;
             final step = entry.value;
-            final isCompleted = _isStepCompleted(anzState, step['status']!);
-            final isCurrent = _isCurrentStep(anzState, step['status']!);
+            final ANZPairStatus stepStatus = step['status'] as ANZPairStatus;
+            final isCompleted = _isStepCompleted(anzState, stepStatus);
+            final isCurrent = _isCurrentStep(anzState, stepStatus);
             
             return Expanded(
               child: Row(
@@ -182,7 +183,7 @@ class AnzConnectUI extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          step['name']!,
+                          step['name']!.toString(),
                           style: TextStyle(
                             fontSize: 10,
                             color: isCompleted || isCurrent 
@@ -211,35 +212,13 @@ class AnzConnectUI extends StatelessWidget {
     );
   }
 
-  bool _isStepCompleted(AnzState anzState, String stepStatus) {
-    switch (stepStatus) {
-      case 'disconnected':
-        return anzState.status.name != 'disconnected';
-      case 'connected':
-        return ['connected', 'loggingIn', 'loggedIn', 'activating', 'activated']
-            .contains(anzState.status.name);
-      case 'loggedIn':
-        return ['loggedIn', 'activating', 'activated']
-            .contains(anzState.status.name);
-      case 'activated':
-        return anzState.status.name == 'activated';
-      default:
-        return false;
-    }
+  bool _isStepCompleted(AnzState anzState, ANZPairStatus stepStatus) {
+    final currentIndex = ANZPairStatus.values.indexOf(anzState.pairStatus);
+    final stepIndex = ANZPairStatus.values.indexOf(stepStatus);
+    return currentIndex > stepIndex;
   }
 
-  bool _isCurrentStep(AnzState anzState, String stepStatus) {
-    switch (stepStatus) {
-      case 'disconnected':
-        return anzState.status.name == 'connecting';
-      case 'connected':
-        return anzState.status.name == 'loggingIn';
-      case 'loggedIn':
-        return anzState.status.name == 'activating';
-      case 'activated':
-        return anzState.status.name == 'activated';
-      default:
-        return false;
-    }
+  bool _isCurrentStep(AnzState anzState, ANZPairStatus stepStatus) {
+    return anzState.pairStatus == stepStatus;
   }
 }

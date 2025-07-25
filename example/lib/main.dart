@@ -9,6 +9,7 @@ import 'package:flutter_spi_example/spi_pair.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import 'ANZ_unpair.dart';
 import 'anz_connect_UI.dart';
 import 'anz_state.dart';
 import 'charge_dialog.dart';
@@ -253,15 +254,15 @@ class _HomeState extends State<Home> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: anzState.getStatusColor(),
+                      color: anzState.getStatusColor(anzState.pairStatus),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Status: ${anzState.getStatusText()}',
+                    'Status: ${anzState.getStatusText(anzState.pairStatus)}',
                     style: TextStyle(
                       fontSize: 16,
-                      color: anzState.getStatusColor(),
+                      color: anzState.getStatusColor(anzState.pairStatus),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -301,7 +302,26 @@ class _HomeState extends State<Home> {
                       ),
                     ],
                   ),
-                 
+                  if (anzState.pairStatus == ANZPairStatus.activated )
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12.0),
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          anzState.startDeactivate();
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const UnpairUI(),
+                          );
+                        },
+                        icon: const Icon(Icons.link_off),
+                        label: const Text('Unpair'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -234,6 +234,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             setSignatureFlowOnEftpos(call.argument("signatureFlowOnEftpos")!!, result)
         } else if (call.method == "setPrintMerchantCopy") {
             setPrintMerchantCopy(call.argument("printMerchantCopy")!!, result)
+        } else if (call.method == "timApiDisconnect") {
+            timApiDisconnect(result)
+        } else if (call.method == "timApiLogout") {
+            timApiLogout(result)
+        } else if (call.method == "timApiDeactivate") {
+            timApiDeactivate(result)
         } else  {
             result.notImplemented()
         }
@@ -982,8 +988,21 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 println("Not yet implemented")
             }
 
-            override fun deactivateCompleted(p0: TimEvent?, p1: DeactivateResponse?) {
-                println("Not yet implemented")
+            override fun deactivateCompleted(event: TimEvent?, response: DeactivateResponse?) {
+                println("✅ deactivateCompleted triggered")
+                val exception = event?.getException()
+                Handler(Looper.getMainLooper()).post {
+                    eventSink?.success(
+                        if (exception == null) {
+                            mapOf("type" to "deactivateCompleted", "status" to "success")
+                        } else {
+                            mapOf(
+                                "type" to "unpairError",
+                                "message" to "Deactivate failed: "+ (exception.errorMessage ?: "Unknown error")
+                            )
+                        }
+                    )
+                }
             }
 
             override fun dccRatesCompleted(p0: TimEvent?, p1: PrintData?) {
@@ -1026,8 +1045,21 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 }
             }
 
-            override fun logoutCompleted(p0: TimEvent?) {
-                println("Not yet implemented")
+            override fun logoutCompleted(event: TimEvent?) {
+                println("✅ logoutCompleted triggered")
+                val exception = event?.getException()
+                Handler(Looper.getMainLooper()).post {
+                    eventSink?.success(
+                        if (exception == null) {
+                            mapOf("type" to "logoutCompleted", "status" to "success")
+                        } else {
+                            mapOf(
+                                "type" to "unpairError",
+                                "message" to "Logout failed: "+ (exception.errorMessage ?: "Unknown error")
+                            )
+                        }
+                    )
+                }
             }
 
             override fun rebootCompleted(p0: TimEvent?) {
@@ -1144,21 +1176,42 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             }
 
             override fun disconnected(terminal: Terminal?, exception: TimException?) {
-                println("❌ Terminal disconnected")
-                
-                if (exception != null) {
-                    println("  - Error: ${exception.errorMessage}")
-                    println("  - Localized: ${exception.localizedMessage}")
-                }
-                
-                Handler(Looper.getMainLooper()).post {
-                    eventSink?.success(
-                        mapOf(
-                            "type" to "disconnected",
-                            "errorMessage" to (exception?.errorMessage ?: "Unknown error"),
-                            "localizedMessage" to (exception?.localizedMessage ?: "Connection lost")
+                println("✅ disconnected triggered")
+                if (terminal == null) {
+                     Handler(Looper.getMainLooper()).post {
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "disconnected",
+                                "status" to "failed",
+                                "message" to (exception?.errorMessage ?: "Unknown error")
+                            )
                         )
-                    )
+                    }
+                    return
+                }
+                try {
+                    val connectionStatus = terminal.getTerminalStatus().connectionStatus?.name ?: "Unknown"
+                    Handler(Looper.getMainLooper()).post {
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "disposed",
+                                "status" to "success",
+                                "connectionStatus" to connectionStatus
+                            )
+                        )
+                    }
+                    terminal?.dispose()
+                } catch (e: Exception) {
+                    println("❌ Error disposing terminal: ${e.message}")
+                        Handler(Looper.getMainLooper()).post {
+                            eventSink?.success(
+                                mapOf(
+                                    "type" to "disconnected",
+                                    "status" to "failed",
+                                    "message" to (e.localizedMessage ?: "Dispose failed")
+                                )
+                            )
+                        }
                 }
             }
 
@@ -1363,6 +1416,33 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         }
     }
 
+    private fun timApiDeactivate(result: Result) {
+        try {
+            mTim.deactivateAsync()
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("Deactivate_FAILED", e.localizedMessage, null)
+        }
+    }
+
+    private fun timApiLogout(result: Result) {
+        try {
+            mTim.logoutAsync()
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("Logout_FAILED", e.localizedMessage, null)
+        }
+    }
+
+    private fun timApiDisconnect(result: Result) {
+        try {
+            mTim.disconnectAsync()
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("Disconnect_FAILED", e.localizedMessage, null)
+        }
+    }
+
     private fun dummy(result: Result) {
         print("hello");
     }
@@ -1562,4 +1642,5 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             result.error("TEST_ERROR", "Failed to initialize TimAPI test: ${e.message}", null)
         }
     }
+
 }

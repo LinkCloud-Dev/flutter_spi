@@ -487,6 +487,15 @@ class FlutterSpi {
   static Future<void> timApiActivate() async {
     flutterSpi.timApiActivate();
   }
+  static Future<void> timApiDeactivate() async {
+    flutterSpi.timApiDeactivate();
+  }
+  static Future<void> timApiLogout() async {
+    flutterSpi.timApiLogout();
+  }
+  static Future<void> timApiDisconnect() async {
+    flutterSpi.timApiDisconnect();
+  }
 
   static Future<void> timApiCharge(double amount) async {
     flutterSpi.timApiCharge(amount);

@@ -87,9 +87,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<String> get getDeviceSN => throw UnimplementedError(); // no need
 
   @override
-  Future<List<Tenant>> getTenantsList(String apiKey, {String countryCode = "AU"}) {
+  Future<List<Tenant>> getTenantsList(String apiKey, {String countryCode = "AU"}) async{
     // no need
-    throw UnimplementedError();
+    return [];
   }
 
   @override
@@ -197,9 +197,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> setPromptForCustomerCopyOnEftpos(bool promptForCustomerCopyOnEftpos) {
+  Future<void> setPromptForCustomerCopyOnEftpos(bool promptForCustomerCopyOnEftpos) async{
     // no need
-    throw UnimplementedError();
+    return;
   }
 
   @override
@@ -214,9 +214,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> setSignatureFlowOnEftpos(bool signatureFlowOnEftpos) {
+  Future<void> setSignatureFlowOnEftpos(bool signatureFlowOnEftpos) async{
     // no need
-    throw UnimplementedError();
+    return;
   }
 
   @override
@@ -266,8 +266,8 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   // Public method for pairing (timApiInit)
   Future<void> timApiPairing({bool enablePrinting = false}) async { //for example
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '192.168.020.011', // 10.0.2.2 or 192.168.020.011 or 192.168.236.212
-      'posId': '25196219', //12345678 or 25196219
+      'eftposAddress': '10.0.2.2', // 10.0.2.2 or 192.168.020.011 or 192.168.236.212
+      'posId': '12345678', //12345678 or 25196219
       'port': 7784, //8115
       'enablePrinting': true, // For credentialing - control receipt printing
     });
@@ -320,6 +320,21 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
       'posRefId': 'test_reversal_${DateTime.now().millisecondsSinceEpoch}',
       'transSeq': transSeq,
     });
+  }
+
+  @override
+  Future<void> timApiDeactivate() async {
+    await _channel.invokeMethod('timApiDeactivate');
+  }
+
+  @override
+  Future<void> timApiDisconnect() async{
+    await _channel.invokeMethod('timApiDisconnect');
+  }
+
+  @override
+  Future<void> timApiLogout()async {
+    await _channel.invokeMethod('timApiLogout');
   }
 
   /*Future<void> timApiPrint(String ticket) async {
