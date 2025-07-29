@@ -148,7 +148,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             timApiDoRefRefund(
                 call.argument("posRefId")!!,
                 call.argument("amount")!!,
-                call.argument("acqTransRef")!!,
+                call.argument("sixTrxRefNum")!!,
                 result
             )
         } else if (call.method == "timApiDoBalance") {
@@ -878,7 +878,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         settings.setGuides(EnumSet.of(Guides.RETAIL))
         settings.setConnectionIPString(eftposAddress)
         settings.setConnectionIPPort(port ?: 7784)
+        settings.setIntegratorId("fc5bd2aa-d29d-4d7d-9d0b-8f8c7384a552")
+        settings.setEnableKeepAlive(true)
         settings.setAutoCommit(true)
+        settings.setGuides(EnumSet.of(Guides.RETAIL))
+        settings.setDcc(false)
+        settings.setTipAllowed(false)
 
         val logPath = context.filesDir.absolutePath + "/six_logs"
         settings.setLogDir(logPath)
@@ -1487,17 +1492,20 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         }
     }
 
-    private fun timApiDoRefRefund(posRefId: String?,amount: Double, acqTransRef: String?, result: Result) { //for reference refund
+    private fun timApiDoRefRefund(posRefId: String?, amount: Double, sixTrxRefNum: String?, result: Result) { //for reference refund
         try {
-            Log.d("TimAPI", "Starting reference refund with posRefId=$posRefId & acqTransRef=$acqTransRef amount=$amount")
+            Log.d("TimAPI", "Starting reference refund with posRefId=$posRefId, sixTrxRefNum=$sixTrxRefNum, amount=$amount")
 
             if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
 
-                // Build TransactionData and set acquirer reference
-                // TODO: Confirm required request structure
+                // Build TransactionData and set reference information
                 val txnData = TransactionData()
-                txnData.setAcqTransRef(acqTransRef)
+                
+                // Set six trx ref num
+                if (!sixTrxRefNum.isNullOrBlank()) {
+                    txnData.setSixTrxRefNum(sixTrxRefNum)
+                }
 
                 // Build TransactionRequest and set data
                 val request = TransactionRequest()
@@ -1593,6 +1601,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             settings.setConnectionIPPort(7784)
             settings.setAutoCommit(true)
             settings.setGuides(EnumSet.of(Guides.RETAIL))
+            settings.setDcc(false)
+            settings.setTipAllowed(false)
 
             val testTerminal = Terminal(settings)
             val testResults = HashMap<String, String>()
