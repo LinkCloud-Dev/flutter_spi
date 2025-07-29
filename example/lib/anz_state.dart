@@ -98,6 +98,10 @@ class AnzState extends ChangeNotifier {
 
   ANZUnpairStatus _unpairStatus = ANZUnpairStatus.idle;
   ANZUnpairStatus get unpairStatus => _unpairStatus;
+  
+  // 添加标志来跟踪是否正在进行 balance 操作
+  bool _isBalanceInProgress = false;
+  bool get isBalanceInProgress => _isBalanceInProgress;
 
   void init() {
     if (_initialized) return;
@@ -168,6 +172,7 @@ class AnzState extends ChangeNotifier {
 
   Future<void> startDeactivate() async {
     try {
+      _isBalanceInProgress = false; 
       await FlutterSpi.timApiDeactivate();
     } catch (e) {
       print('❌ Start deactivate failed: $e');
@@ -219,6 +224,32 @@ class AnzState extends ChangeNotifier {
     }
   }
 
+  Future<void> startReferenceRefund(
+    String posRefId, 
+    double amount, 
+    String sixTrxRefNum,
+  ) async {
+    if (_pairStatus != ANZPairStatus.activated) {
+      print("❌ Terminal not ready for reference refund");
+      return;
+    }
+
+    _resetTransactionState();
+
+    try {
+      _currentTransactionId = posRefId;
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiRefRefund(
+        amount: amount,
+        sixTrxRefNum: sixTrxRefNum,
+      );
+    } catch (e) {
+      print("❌ Start reference refund failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start reference refund: $e");
+    }
+  }
+
   Future<void> startBalance() async {
     if (_pairStatus != ANZPairStatus.activated) {
       print("❌ Terminal not ready for balance");
@@ -230,12 +261,14 @@ class AnzState extends ChangeNotifier {
     try {
       _currentTransactionId = "balance_${DateTime.now().millisecondsSinceEpoch}";
       _updateTransactionStatus(ANZTransactionStatus.processing);
+      _isBalanceInProgress = true;
       await FlutterSpi.timApiBalance();
       _updatePairStatus(ANZPairStatus.disconnected);
     } catch (e) {
       print("❌ Start balance failed: $e");
       _updateTransactionStatus(ANZTransactionStatus.failed);
       _lastTransaction = ANZTransactionData.error("Failed to start balance: $e");
+      _isBalanceInProgress = false; 
     }
   }
 
@@ -282,12 +315,22 @@ class AnzState extends ChangeNotifier {
           break;
         case 'balanceCompleted':
           print("✅ Balance completed: $eventMap");
+          _isBalanceInProgress = false; 
+          print("🔄 Balance operation finished, _isBalanceInProgress = $_isBalanceInProgress");
           break;
         case 'deactivateCompleted':
-          FlutterSpi.timApiLogout();
+          if (!_isBalanceInProgress) {
+            FlutterSpi.timApiLogout();
+          } else {
+            print("⏸️ Skipping unpair flow during balance operation");
+          }
           break;
         case 'logoutCompleted':
-          FlutterSpi.timApiDisconnect();
+          if (!_isBalanceInProgress) {
+            FlutterSpi.timApiDisconnect();
+          } else {
+            print("⏸️ Skipping unpair flow during balance operation");
+          }
           break;
         case 'disconnected':
           _handleDisconnected(eventMap);

@@ -51,11 +51,18 @@ class _HomeState extends State<Home> {
 
   List<String> _lastReceipts = [];
   bool _canPrint = false;
+  
+  // Reference Refund 输入框控制器
+  final TextEditingController _refundAmountController = TextEditingController();
+  final TextEditingController _sixTrxRefNumController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _initSpi();
+    
+    // 设置 Reference Refund 的默认测试值
+    _sixTrxRefNumController.text = '2:2:4:1234567800000110210';
   }
 
   void _initSpi() async {
@@ -65,6 +72,13 @@ class _HomeState extends State<Home> {
     await FlutterSpi.start();
     final anzState = Provider.of<AnzState>(context, listen: false);
     anzState.init();
+  }
+
+  @override
+  void dispose() {
+    _refundAmountController.dispose();
+    _sixTrxRefNumController.dispose();
+    super.dispose();
   }
 
   Future<void> _startTransaction(int amount, BuildContext context) async {
@@ -164,11 +178,22 @@ class _HomeState extends State<Home> {
   }
 
   void _timApiRefRefund(BuildContext context) async {
-    await FlutterSpi.timApiRefRefund();
+    final anzState = Provider.of<AnzState>(context, listen: false);
+    final amount = double.tryParse(_refundAmountController.text);
+    final sixTrxRefNum = _sixTrxRefNumController.text.trim();
+    
+    if (amount != null && amount > 0 && sixTrxRefNum.isNotEmpty) {
+      await anzState.startReferenceRefund(
+        'refund_${DateTime.now().millisecondsSinceEpoch}',
+        amount,
+        sixTrxRefNum,
+      );
+    }
   }
 
   void _timApiBalance(BuildContext context) async {
-    await FlutterSpi.timApiBalance();
+    final anzState = Provider.of<AnzState>(context, listen: false);
+    await anzState.startBalance();
   }
 
   void _timApiReversal(BuildContext context) async {
@@ -188,7 +213,8 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         title: const Text('Spi Demo'),
       ),
-      body: Center(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -230,15 +256,14 @@ class _HomeState extends State<Home> {
               onPressed: () => _getTenants(context),
               child: Text('Get Tenants'),
             ),
-            ElevatedButton(
-              onPressed: () => _test(context),
-              child: Text('Test'),
-            ),
-            ElevatedButton(
-              onPressed: () => _timApiPairing(context),
-              child: const Text('Init (TIM API)'),
-            ),
-            
+            // ElevatedButton(
+            //   onPressed: () => _test(context),
+            //   child: Text('Test'),
+            // ),
+            // ElevatedButton(
+            //   onPressed: () => _timApiPairing(context),
+            //   child: const Text('Init (TIM API)'),
+            // ),
             // ANZ Terminal section
             const SizedBox(height: 20),
             Container(
@@ -259,10 +284,17 @@ class _HomeState extends State<Home> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Status: ${anzState.getStatusText(anzState.pairStatus)}',
+                    'Pair Status: ${anzState.getStatusText(anzState.pairStatus)}',
                     style: TextStyle(
                       fontSize: 16,
                       color: anzState.getStatusColor(anzState.pairStatus),
+                    ),
+                  ),
+                  Text(
+                    'Connection Status: ${anzState.getStatusText(anzState.connectionStatus)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: anzState.getStatusColor(anzState.connectionStatus),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -302,7 +334,7 @@ class _HomeState extends State<Home> {
                       ),
                     ],
                   ),
-                  if (anzState.pairStatus == ANZPairStatus.activated )
+                  if (anzState.connectionStatus == ANZConnectionStatus.loggedIn )
                     Padding(
                       padding: const EdgeInsets.only(top: 12.0),
                       child: ElevatedButton.icon(
@@ -333,10 +365,60 @@ class _HomeState extends State<Home> {
               onPressed: () => _timApiRefund(context),
               child: const Text('Standard Refund (TIM API)'),
             ),
-            ElevatedButton(
-              onPressed: () => _timApiRefRefund(context),
-              child: const Text('Reference Refund (TIM API)'),
+            
+            // Reference Refund 输入框
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.orange),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Reference Refund Parameters',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _refundAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Amount (cents)',
+                      hintText: 'e.g., 1000 for \$10.00',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _sixTrxRefNumController,
+                    decoration: const InputDecoration(
+                      labelText: 'SixTrxRefNum',
+                      hintText: 'Six Transaction Reference Number',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _timApiRefRefund(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Reference Refund (TIM API)'),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => _timApiBalance(context),
               child: const Text('Balance (TIM API)'),

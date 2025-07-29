@@ -106,7 +106,10 @@ abstract class FlutterSpiPlatform {
 
   Future<void> timApiRefund(double amount);
 
-  Future<void> timApiRefRefund();
+  Future<void> timApiRefRefund({
+    required double amount,
+    required String sixTrxRefNum,
+  });
 
   Future<void> timApiBalance();
 

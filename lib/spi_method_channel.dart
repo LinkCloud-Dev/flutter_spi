@@ -300,7 +300,10 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
-  Future<void> timApiRefRefund() {
+  Future<void> timApiRefRefund({
+    required double amount,
+    required String sixTrxRefNum,
+  }) {
     // TODO: implement timApiRefRefund
     throw UnimplementedError();
   }

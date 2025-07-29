@@ -505,8 +505,14 @@ class FlutterSpi {
     flutterSpi.timApiRefund(amount);
   }
 
-  static Future<void> timApiRefRefund() async {
-    flutterSpi.timApiRefRefund();
+  static Future<void> timApiRefRefund({
+    required double amount,
+    required String sixTrxRefNum,
+  }) async {
+    flutterSpi.timApiRefRefund(
+      amount: amount,
+      sixTrxRefNum: sixTrxRefNum,
+    );
   }
 
   static Future<void> timApiBalance()async {
