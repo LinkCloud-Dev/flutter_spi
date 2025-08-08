@@ -27,6 +27,7 @@ dependencies:
   shared_preferences: ^2.0.8
   enum_to_string: ^2.0.1
   uuid: ^3.0.5
+  flutter_easyloading: ^3.0.5
 
 dev_dependencies:
   flutter_test:

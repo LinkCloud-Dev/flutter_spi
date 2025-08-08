@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spi/flutter_spi.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 enum ANZConnectionStatus {
   disconnected,    // TIM API: DISCONNECTED
@@ -167,6 +168,10 @@ class AnzState extends ChangeNotifier {
     } catch (e) {
       print("❌ Connect failed: $e");
       _updatePairStatus(ANZPairStatus.disconnected);
+      // 将错误信息保存到 transaction data 中，以便在UI中显示
+      _lastTransaction = ANZTransactionData.error("Connection failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      notifyListeners();
     }
   }
 
@@ -185,6 +190,12 @@ class AnzState extends ChangeNotifier {
     _updateTransactionStatus(ANZTransactionStatus.idle);
     _lastTransaction = null;
     _currentTransactionId = null;
+  }
+  
+  void clearError() {
+    _lastTransaction = null;
+    _updateTransactionStatus(ANZTransactionStatus.idle);
+    notifyListeners();
   }
   // Transaction methods
   Future<void> startTransaction(String posRefId, double amount) async {
@@ -454,11 +465,56 @@ class AnzState extends ChangeNotifier {
 
   void _handleError(Map<String, dynamic> event) {
     final message = event['message'] as String? ?? "Unknown error";
-    print("❌ TIM API 错误: $message");
+    final resultCode = event['resultCode'] as String?;
+    print("❌ TIM API 错误: $message (resultCode: $resultCode)");
+    
+    // 检查是否是通信相关的错误，这些错误可以忽略并自动重置状态
+    if (_isCommunicationError(message, resultCode)) {
+      print("🔄 检测到通信错误，自动重置状态: $message (resultCode: $resultCode)");
+      _resetStatusForCommunicationError();
+      return;
+    }
     
     _lastTransaction = ANZTransactionData.error(message);
     _updateTransactionStatus(ANZTransactionStatus.failed);
     _currentTransactionId = null;
+  }
+
+  bool _isCommunicationError(String message, String? resultCode) {
+    final communicationErrors = [
+      'API_CONNECT_FAIL_SERVER',
+      'API_CONNECT_FAIL_TERMINAL', 
+      'API_CONNECTION_LOST_SERVER',
+      'API_CONNECTION_LOST_TERMINAL',
+    ];
+    
+    // 优先检查 resultCode，如果存在的话
+    if (resultCode != null) {
+      return communicationErrors.contains(resultCode);
+    }
+    
+    // 如果没有 resultCode，则检查 message 中是否包含错误信息
+    return communicationErrors.any((error) => message.contains(error));
+  }
+
+  void _resetStatusForCommunicationError() {
+    // 重置所有状态到初始状态
+    _updatePairStatus(ANZPairStatus.disconnected);
+    _updateConnectionStatus(ANZConnectionStatus.disconnected);
+    _updateTransactionStatus(ANZTransactionStatus.idle); //TODO: check later
+    _updateUnpairStatus(ANZUnpairStatus.idle);
+    _currentTransactionId = null;
+    _lastTransaction = null;
+    _isBalanceInProgress = false;
+    
+    // 显示 EasyLoading 提示
+    EasyLoading.showToast(
+      "连接已断开，请重新连接",
+      duration: Duration(seconds: 3),
+    );
+    
+    // 通知UI更新
+    notifyListeners();
   }
 
 

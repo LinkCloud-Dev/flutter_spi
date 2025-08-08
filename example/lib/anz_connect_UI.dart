@@ -81,6 +81,41 @@ class AnzConnectUI extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                       ),
+                      // 显示错误信息
+                      if (anzState.lastTransaction?.errorMessage != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.red.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  anzState.lastTransaction!.errorMessage!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.red[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -117,10 +152,36 @@ class AnzConnectUI extends StatelessWidget {
                 // ),
                 const SizedBox(height: 12),
 
-                // Close button
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
+                // Action buttons
+                Row(
+                  children: [
+                    if (anzState.lastTransaction?.errorMessage != null) ...[
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            anzState.clearError();
+                            anzState.startConnection();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Retry Connection'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Close'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

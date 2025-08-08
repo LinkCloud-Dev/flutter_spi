@@ -81,7 +81,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     private var eventSink: EventChannel.EventSink? = null
 
     lateinit var mSpi: Spi
-    lateinit var mTim: com.six.timapi.Terminal
+    var mTim: com.six.timapi.Terminal? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         spiChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_spi")
@@ -927,7 +927,26 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         terminal.addListener(object : TerminalListener {
             override fun connectCompleted(event: TimEvent?) {
                 println("✅ connectCompleted triggered")
-                val exception = event?.getException()
+                
+                println("📊 Event: $event")
+                
+                // 检查 event 是否为 null
+                if (event == null) {
+                    println("❌ Connect failed: event is null")
+                    Handler(Looper.getMainLooper()).post {
+                        eventSink?.success(
+                            mapOf(
+                                "type" to "error",
+                                "message" to "Connect failed: event is null",
+                                "resultCode" to "UNKNOWN_ERROR"
+                            )
+                        )
+                    }
+                    return
+                }
+                
+                val exception = event.getException()
+                println("📊 Exception: $exception")
 
                 Handler(Looper.getMainLooper()).post {
                     eventSink?.success(
@@ -936,7 +955,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
-                                "message" to "Connect failed: ${exception.errorMessage ?: "Unknown error"}"
+                                "message" to "Connect failed: ${exception.errorMessage ?: "Unknown error"}",
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
                             )
                         }
                     )
@@ -953,7 +973,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
-                                "message" to "Activate failed: ${exception.errorMessage ?: "Unknown error"}"
+                                "message" to "Activate failed: ${exception.errorMessage ?: "Unknown error"}",
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
                             )
                         }
                     )
@@ -974,7 +995,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
-                                "message" to "Balance failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}"
+                                "message" to "Balance failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}",
+                                "resultCode" to (exception?.resultCode?.name ?: "UNKNOWN_ERROR")
                             )
                         }
                     )
@@ -1003,7 +1025,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "unpairError",
-                                "message" to "Deactivate failed: "+ (exception.errorMessage ?: "Unknown error")
+                                "message" to "Deactivate failed: "+ (exception.errorMessage ?: "Unknown error"),
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
                             )
                         }
                     )
@@ -1043,7 +1066,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
-                                "message" to "Login failed: ${exception.localizedMessage ?: "Unknown error"}"
+                                "message" to "Login failed: ${exception.localizedMessage ?: "Unknown error"}",
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
                             )
                         }
                     )
@@ -1060,7 +1084,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "unpairError",
-                                "message" to "Logout failed: "+ (exception.errorMessage ?: "Unknown error")
+                                "message" to "Logout failed: "+ (exception.errorMessage ?: "Unknown error"),
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
                             )
                         }
                     )
@@ -1141,7 +1166,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
-                                "message" to "Transaction failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}"
+                                "message" to "Transaction failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}",
+                                "resultCode" to (exception?.resultCode?.name ?: "UNKNOWN_ERROR")
                             )
                         }
                     )
@@ -1188,7 +1214,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                             mapOf(
                                 "type" to "disconnected",
                                 "status" to "failed",
-                                "message" to (exception?.errorMessage ?: "Unknown error")
+                                "message" to (exception?.errorMessage ?: "Unknown error"),
+                                "resultCode" to (exception?.resultCode?.name ?: "UNKNOWN_ERROR")
                             )
                         )
                     }
@@ -1206,6 +1233,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         )
                     }
                     terminal?.dispose()
+                    // 重置 mTim 变量，避免后续调用已销毁的实例
+                    mTim = null
                 } catch (e: Exception) {
                     println("❌ Error disposing terminal: ${e.message}")
                         Handler(Looper.getMainLooper()).post {
@@ -1213,7 +1242,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                                 mapOf(
                                     "type" to "disconnected",
                                     "status" to "failed",
-                                    "message" to (e.localizedMessage ?: "Dispose failed")
+                                    "message" to (e.localizedMessage ?: "Dispose failed"),
+                                    "resultCode" to "DISPOSE_FAILED"
                                 )
                             )
                         }
@@ -1363,14 +1393,24 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             println("......TIM API Init with eftposAddress=$eftposAddress, posId=$posId, enablePrinting=$enablePrinting")
 
+            // 如果已经有 Terminal 实例，先清理它
+            if (mTim != null) {
+                try {
+                    mTim?.dispose()
+                } catch (e: Exception) {
+                    println("⚠️ Warning: Failed to dispose existing terminal: ${e.message}")
+                }
+                mTim = null
+            }
+
             val settings = initTerminalSettings(eftposAddress, posId, port)
             mTim = Terminal(settings)
 
-            setupLoggerForTim(mTim)
+            setupLoggerForTim(mTim!!)
             if (enablePrinting) {
-                setPrintOptionsForTim(mTim)
+                setPrintOptionsForTim(mTim!!)
             }
-            addTerminalListeners(mTim)
+            addTerminalListeners(mTim!!)
 
             result.success(null)
         } catch (e: TimException) {
@@ -1380,15 +1420,25 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun timApiConnect(result: Result) {
         try {
-            if (mTim == null) {
-                result.error("Connect_FAILED", "Terminal not initialized. Please call init first.", null)
-                return
-            }
-            mTim.connectAsync()
+//            if (mTim == null) {
+//                result.error("Connect_FAILED", "Terminal not initialized. Please call init first.", null)
+//                return
+//            }
+            mTim?.connectAsync()
 
             result.success(null)
         } catch (e: TimException) {
-            result.error("Connect_FAILED", e.localizedMessage, null)
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Connect request pending - terminal is busy with another operation")
+                result.error("Connect_FAILED", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("Connect_FAILED", e.localizedMessage, null)
+            }
+        } catch (e: IllegalStateException) {
+            result.error("Connect_FAILED", "Terminal has been disposed. Please reinitialize: ${e.message}", null)
+        } catch (e: Exception) {
+            result.error("Connect_FAILED", "Unexpected error: ${e.message}", null)
         }
     }
 
@@ -1398,11 +1448,21 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 result.error("Login_FAILED", "Terminal not initialized. Please call init first.", null)
                 return
             }
-            mTim.loginAsync()
+            mTim?.loginAsync()
 
             result.success(null)
         } catch (e: TimException) {
-            result.error("Login_FAILED", e.localizedMessage, null)
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Login request pending - terminal is busy with another operation")
+                result.error("Login_FAILED", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("Login_FAILED", e.localizedMessage, null)
+            }
+        } catch (e: IllegalStateException) {
+            result.error("Login_FAILED", "Terminal has been disposed. Please reinitialize: ${e.message}", null)
+        } catch (e: Exception) {
+            result.error("Login_FAILED", "Unexpected error: ${e.message}", null)
         }
     }
 
@@ -1413,18 +1473,40 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 return
             }
 
-            mTim.activateAsync()
+            mTim?.activateAsync()
 
             result.success(null)
         } catch (e: TimException) {
-            result.error("Activate_FAILED", e.localizedMessage, null)
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Activate request pending - terminal is busy with another operation")
+                result.error("Activate_FAILED", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("Activate_FAILED", e.localizedMessage, null)
+            }
+        } catch (e: IllegalStateException) {
+            result.error("Activate_FAILED", "Terminal has been disposed. Please reinitialize: ${e.message}", null)
+        } catch (e: Exception) {
+            result.error("Activate_FAILED", "Unexpected error: ${e.message}", null)
         }
     }
 
     private fun timApiDeactivate(result: Result) {
         try {
-            mTim.deactivateAsync()
+            if (mTim == null) {
+                result.error("Deactivate_FAILED", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+            mTim?.deactivateAsync()
             result.success(null)
+        } catch (e: TimException) {
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Deactivate request pending - terminal is busy with another operation")
+                result.error("Deactivate_FAILED", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("Deactivate_FAILED", e.localizedMessage, null)
+            }
         } catch (e: Exception) {
             result.error("Deactivate_FAILED", e.localizedMessage, null)
         }
@@ -1432,8 +1514,20 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun timApiLogout(result: Result) {
         try {
-            mTim.logoutAsync()
+            if (mTim == null) {
+                result.error("Logout_FAILED", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+            mTim?.logoutAsync()
             result.success(null)
+        } catch (e: TimException) {
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Logout request pending - terminal is busy with another operation")
+                result.error("Logout_FAILED", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("Logout_FAILED", e.localizedMessage, null)
+            }
         } catch (e: Exception) {
             result.error("Logout_FAILED", e.localizedMessage, null)
         }
@@ -1441,8 +1535,20 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun timApiDisconnect(result: Result) {
         try {
-            mTim.disconnectAsync()
+            if (mTim == null) {
+                result.error("Disconnect_FAILED", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+            mTim?.disconnectAsync()
             result.success(null)
+        } catch (e: TimException) {
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Disconnect request pending - terminal is busy with another operation")
+                result.error("Disconnect_FAILED", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("Disconnect_FAILED", e.localizedMessage, null)
+            }
         } catch (e: Exception) {
             result.error("Disconnect_FAILED", e.localizedMessage, null)
         }
@@ -1456,16 +1562,29 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             Log.d("TimAPI", "Starting transaction with posRefId=$posRefId amount=$amount")
 
-            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+            if (mTim == null) {
+                result.error("TRANSACTION_ERROR", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+
+            if (mTim?.getTerminalStatus()?.getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 val transactionAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
 
                 // Use async
-                mTim.transactionAsync(TimapiTransactionType.PURCHASE, transactionAmount)
+                mTim?.transactionAsync(TimapiTransactionType.PURCHASE, transactionAmount)
 
                 // ⚠️ Don't return result.success(true) because transaction is not finished yet
                 result.success(null)  // Indicates "call was successfully sent", not "transaction completed"
             } else {
                 result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: TimException) {
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Transaction request pending - terminal is busy with another operation")
+                result.error("TRANSACTION_ERROR", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("TRANSACTION_ERROR", "Failed to start transaction: ${e.message}", null)
             }
         } catch (e: Exception) {
             result.error("TRANSACTION_ERROR", "Failed to start transaction: ${e.message}", null)
@@ -1477,15 +1596,28 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             Log.d("TimAPI", "Starting standard refund with posRefId=$posRefId amount=$amount")
 
-            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+            if (mTim == null) {
+                result.error("REFUND_ERROR", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+
+            if (mTim?.getTerminalStatus()?.getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
 
                 // ✅ Refund uses CREDIT 
-                mTim.transactionAsync(TimapiTransactionType.CREDIT, refundAmount)
+                mTim?.transactionAsync(TimapiTransactionType.CREDIT, refundAmount)
 
                 result.success(null)
             } else {
                 result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: TimException) {
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Refund request pending - terminal is busy with another operation")
+                result.error("REFUND_ERROR", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("REFUND_ERROR", "Failed to start refund: ${e.message}", null)
             }
         } catch (e: Exception) {
             result.error("REFUND_ERROR", "Failed to start refund: ${e.message}", null)
@@ -1496,7 +1628,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             Log.d("TimAPI", "Starting reference refund with posRefId=$posRefId, sixTrxRefNum=$sixTrxRefNum, amount=$amount")
 
-            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+            if (mTim == null) {
+                result.error("REFUND_ERROR", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+
+            if (mTim?.getTerminalStatus()?.getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
 
                 // Build TransactionData and set reference information
@@ -1513,11 +1650,19 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 request.setTransactionData(txnData)
 
                 // Initiate CREDIT type transaction (refund)
-                mTim.transactionAsync(TimapiTransactionType.CREDIT, request)
+                mTim?.transactionAsync(TimapiTransactionType.CREDIT, request)
 
                 result.success(null)
             } else {
                 result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: TimException) {
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Reference refund request pending - terminal is busy with another operation")
+                result.error("REFUND_ERROR", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("REFUND_ERROR", "Failed to start reference refund: ${e.message}", null)
             }
         } catch (e: Exception) {
             result.error("REFUND_ERROR", "Failed to start reference refund: ${e.message}", null)
@@ -1528,10 +1673,23 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             Log.d("TimAPI", "Starting balance with posRefId=$posRefId")
 
-            mTim.balanceAsync() // Asynchronously trigger Balance operation, automatically sends deactivate request first
+            if (mTim == null) {
+                result.error("BALANCE_ERROR", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+
+            mTim?.balanceAsync() // Asynchronously trigger Balance operation, automatically sends deactivate request first
 
             result.success(null)
 
+        } catch (e: TimException) {
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Balance request pending - terminal is busy with another operation")
+                result.error("BALANCE_ERROR", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("BALANCE_ERROR", "Failed to start balance: ${e.message}", null)
+            }
         } catch (e: Exception) {
             result.error("BALANCE_ERROR", "Failed to start balance: ${e.message}", null)
         }
@@ -1541,7 +1699,12 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             Log.d("TimAPI", "Starting reversal with posRefId=$posRefId, transSeq=$transSeq")
 
-            if (mTim.getTerminalStatus().getTransactionStatus() == TimapiTransactionStatus.IDLE) {
+            if (mTim == null) {
+                result.error("REVERSAL_ERROR", "Terminal not initialized. Please call init first.", null)
+                return
+            }
+
+            if (mTim?.getTerminalStatus()?.getTransactionStatus() == TimapiTransactionStatus.IDLE) {
                 //val reversalAmount = TimapiAmount(0.0, TimapiCurrency.AUD)
                 val txnData = TransactionData()
                 if (transSeq != null) {
@@ -1551,10 +1714,18 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 request.setTransactionData(txnData)
                 //request.setAmount(reversalAmount)
 
-                mTim.transactionAsync(TimapiTransactionType.REVERSAL, request)
+                mTim?.transactionAsync(TimapiTransactionType.REVERSAL, request)
                 result.success(null)
             } else {
                 result.error("TERMINAL_BUSY", "Terminal is busy processing another transaction", null)
+            }
+        } catch (e: TimException) {
+            // REQUEST_PENDING 表示终端正在处理其他请求，需要等待
+            if (e.resultCode?.name == "REQUEST_PENDING") {
+                println("⚠️ Reversal request pending - terminal is busy with another operation")
+                result.error("REVERSAL_ERROR", "Terminal is busy with another operation. Please try again later.", null)
+            } else {
+                result.error("REVERSAL_ERROR", "Failed to start reversal: ${e.message}", null)
             }
         } catch (e: Exception) {
             result.error("REVERSAL_ERROR", "Failed to start reversal: ${e.message}", null)
