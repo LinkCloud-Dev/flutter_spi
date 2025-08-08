@@ -987,11 +987,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
             override fun balanceCompleted(event: TimEvent?, data: BalanceResponse?) {
                 val exception = event?.getException()
-                
+
                 Handler(Looper.getMainLooper()).post {
                     eventSink?.success(
                         if (data != null) {
-                            mapOf("type" to "balanceCompleted")
+                            val receiptList = data.printData?.receipts?.mapNotNull { it?.value }?.filter { it.isNotBlank() } ?: emptyList()
+
+                            mapOf("type" to "balanceCompleted",
+                                "receipts" to receiptList)
                         } else {
                             mapOf(
                                 "type" to "error",
