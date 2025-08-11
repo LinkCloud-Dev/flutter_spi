@@ -27,21 +27,8 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     String? appKey,        // no need
     String? merchantId,    // no need
     String username = "default", // no need
-    bool enablePrinting = false, // For accreditation - control receipt printing
   }) async {
-    await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': eftposAddress,
-      'posId': posId,
-      'port': 7784,
-      'enablePrinting': enablePrinting,
-    });
-  }
-
-  Future<void> timApiStartTransaction(String posRefId, double amount) async {
-    await _channel.invokeMethod('timApiStartTransaction', {
-      'posRefId': posRefId,
-      'amount': amount,
-    });
+    throw UnimplementedError();
   }
 
   @override
@@ -241,66 +228,69 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     throw UnimplementedError();
   }
 
-  @override
-  Future<void> test() async {
-    // Call timApiInit with the stored parameters
-    await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '172.20.10.2',
-      'posId': '25196219',
-      'port': 7784,
-      'enablePrinting': false, // Disable printing for testing
-    });
 
-    await _channel.invokeMethod('timApiStartTransaction', {
-      'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
-      'amount': 5000, // Test amount of 10 cents
-    });
+  @override
+  Future<void> unpair() {
+    // TODO: implement unpair
+    throw UnimplementedError();
   }
 
   @override
-  Future<void> unpair() async {
-    // For TIM API, use the specific TIM API unpair method
-    await _channel.invokeMethod('timApiUnpair');
-  }
-
-  // Public method for pairing (timApiInit)
-  Future<void> timApiPairing({bool enablePrinting = false}) async { //for example
+  Future<void> timApiInit({
+    String? eftposAddress,
+    String? posId,
+    int? port,
+    bool enablePrinting = false,
+  }) async {
     await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': '10.0.2.2', // 10.0.2.2 or 192.168.020.011 or 192.168.236.212
-      'posId': '12345678', //12345678 or 25196219
-      'port': 7784, //8115
-      'enablePrinting': true, // For credentialing - control receipt printing
+      'eftposAddress': eftposAddress ??'192.168.020.009',
+      'posId': posId ?? '25196219',
+      'port': port ?? 7784,
+      'enablePrinting': enablePrinting,
     });
   }
 
+  //  @override
+  // Future<void> timApiPairing({bool enablePrinting = false}) async { //for example
+  //   await _channel.invokeMethod('timApiInit', {
+  //     'eftposAddress': '192.168.020.009', // 10.0.2.2 or 192.168.020.011 or 192.168.236.212
+  //     'posId': '25196219', //12345678 or 25196219
+  //     'port': 7784, //8115
+  //     'enablePrinting': enablePrinting, // For credentialing - control receipt printing
+  //   });
+  // }
 
-  Future<void> timApiConnect() async { //for example
+  @override
+  Future<void> timApiConnect() async {
     await _channel.invokeMethod('timApiConnect');
-
   }
+
+  @override
   Future<void> timApiLogin() async { //for example
     await _channel.invokeMethod('timApiLogin');
-
   }
+
+  @override
   Future<void> timApiActivate() async { //for example
     await _channel.invokeMethod('timApiActivate');
   }
 
   // Public method for charge (timApiStartTransaction)
+  @override
   Future<void> timApiCharge(double amount) async {
     await _channel.invokeMethod('timApiStartTransaction', {
       'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
       'amount': amount,
     });
   }
-
+  @override
   Future<void> timApiRefund(double amount) async { //for standard refund
     await _channel.invokeMethod('timApiDoRefund', {
       'posRefId': 'test_refund_${DateTime.now().millisecondsSinceEpoch}',
       'amount': amount,
     });
   }
-
+  @override
   Future<void> timApiRefRefund({
     required double amount,
     required String sixTrxRefNum,
@@ -311,18 +301,23 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
       'sixTrxRefNum': sixTrxRefNum, // Six交易参考号
     });
   }
-
+  @override
   Future<void> timApiBalance() async {
     await _channel.invokeMethod('timApiDoBalance', {
       'posRefId': 'test_Balance_${DateTime.now().millisecondsSinceEpoch}',
     });
   }
-
+  @override
   Future<void> timApiReversal({String? transSeq}) async {
     await _channel.invokeMethod('timApiDoReversal', {
       'posRefId': 'test_reversal_${DateTime.now().millisecondsSinceEpoch}',
       'transSeq': transSeq,
     });
+  }
+
+  @override
+  Future<String> getTerminalStatus() async {
+    return (await _channel.invokeMethod<String>('getTerminalStatus')) ?? "Unknown";
   }
 
   @override
@@ -339,6 +334,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> timApiLogout()async {
     await _channel.invokeMethod('timApiLogout');
   }
+
 
   /*Future<void> timApiPrint(String ticket) async {
     await _channel.invokeMethod('timApiPrint', {

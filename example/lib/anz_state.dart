@@ -303,6 +303,17 @@ class AnzState extends ChangeNotifier {
     }
   }
 
+  Future<void> getTerminalStatus() async {
+    try {
+      final status = await FlutterSpi.getTerminalStatus();
+      print('=== TERMINAL STATUS ===');
+      print(status);
+      print('======================');
+    } catch (e) {
+      print('❌ Failed to get terminal status: $e');
+    }
+  }
+
   void _subscribeTimEvents() {
     FlutterSpi.eventStream.listen((event) {
       final eventMap = Map<String, dynamic>.from(event);

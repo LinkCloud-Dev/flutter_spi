@@ -18,7 +18,6 @@ abstract class FlutterSpiPlatform {
         String? appKey,
         String? merchantId,
         String username = "default",
-        bool enablePrinting = false
       });
 
   Future<void> start();
@@ -98,9 +97,15 @@ abstract class FlutterSpiPlatform {
 
   Future<void> setPrintMerchantCopy(bool printMerchantCopy);
 
-  Future<void> test();
+  // TIM API
+  Future<void> timApiInit({
+    String? eftposAddress,
+    String? posId,
+    int? port,
+    bool enablePrinting = false,
+  });
 
-  Future<void> timApiPairing({bool enablePrinting = false});
+  // Future<void> timApiPairing({bool enablePrinting = false});
 
   Future<void> timApiCharge(double amount);
 
@@ -128,4 +133,6 @@ abstract class FlutterSpiPlatform {
   Future<void> timApiDisconnect();
 
   Future<void> timApiReversal({String? transSeq});
+
+  Future<String> getTerminalStatus();
 }

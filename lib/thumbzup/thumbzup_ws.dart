@@ -820,9 +820,15 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     // NOT NEEDED
   }
 
-  @override
-  Future<void> test() async {
-    // NOT NEEDED
+    @override
+  Future<void> timApiInit({
+    String? eftposAddress,
+    String? posId,
+    int? port,
+    bool enablePrinting = false,
+  }) {
+    // TODO: implement timApiInit
+    throw UnimplementedError();
   }
 
   @override
@@ -892,6 +898,12 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
   }
 
   @override
+  Future<String> getTerminalStatus() {
+    // TODO: implement getTerminalStatus
+    throw UnimplementedError();
+  }
+
+  @override
   Future<void> timApiDeactivate() {
     // TODO: implement timApiDeactivate
     throw UnimplementedError();
@@ -909,5 +921,4 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     throw UnimplementedError();
   }
 
-  
 }

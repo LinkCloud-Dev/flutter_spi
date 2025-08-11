@@ -240,6 +240,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             timApiLogout(result)
         } else if (call.method == "timApiDeactivate") {
             timApiDeactivate(result)
+        } else if (call.method == "getTerminalStatus") {
+            getTerminalStatus(result)
         } else  {
             result.notImplemented()
         }
@@ -1824,6 +1826,35 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         } catch (e: Exception) {
             Log.e("TimAPI_TEST", "Test initialization error: ${e.message}")
             result.error("TEST_ERROR", "Failed to initialize TimAPI test: ${e.message}", null)
+        }
+    }
+
+    private fun getTerminalStatus(result: Result) {
+        try {
+            if (mTim == null) {
+                result.error("TERMINAL_NOT_INITIALIZED", "Terminal is not initialized", null)
+                return
+            }
+
+            val terminalStatus = mTim!!.getTerminalStatus()
+            val statusInfo = mapOf(
+                "transactionStatus" to terminalStatus.transactionStatus.name,
+                "connectionStatus" to (terminalStatus.connectionStatus?.name ?: "Unknown"),
+                "managementStatus" to (terminalStatus.managementStatus?.name ?: "Unknown"),
+                "cardReaderStatus" to (terminalStatus.cardReaderStatus?.name ?: "Unknown"),
+                "sleepModeStatus" to (terminalStatus.sleepModeStatus?.name ?: "Unknown"),
+//                "receiptInformation" to terminalStatus.receiptInformation.toString(),
+//                "swUpdateAvailable" to terminalStatus.swUpdateAvailable.toString(),
+//                "ownRisk2ActivationStatus" to terminalStatus.ownRisk2ActivationStatus.toString(),
+                "displayContent" to (terminalStatus.displayContent?.joinToString(", ") ?: "None"),
+                "finalAmount" to (terminalStatus.finalAmount?.toString() ?: "None"),
+                "cardData" to (terminalStatus.cardData?.toString() ?: "None")
+            )
+
+            result.success(statusInfo.toString())
+        } catch (e: Exception) {
+            Log.e("TimAPI", "❌ Failed to get terminal status: ${e.message}")
+            result.error("TERMINAL_STATUS_ERROR", "Failed to get terminal status: ${e.message}", null)
         }
     }
 

@@ -29,7 +29,6 @@ class SpiMethodChannel implements FlutterSpiPlatform {
         String? appKey,
         String? merchantId,
         String username = "default",
-        bool enablePrinting = false
       }) async {
     await _channel.invokeMethod('init', {
       "posId": posId,
@@ -278,16 +277,27 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
+  Future<void> timApiInit({
+    String? eftposAddress,
+    String? posId,
+    int? port,
+    bool enablePrinting = false,
+  }) {
+    // TODO: implement timApiInit
+    throw UnimplementedError();
+  }
+
+  @override
   Future<void> timApiCharge(double amount) {
     // TODO: implement timApiCharge
     throw UnimplementedError();
   }
 
-  @override
-  Future<void> timApiPairing({bool enablePrinting = false}) {
-    // TODO: implement timApiPairing
-    throw UnimplementedError();
-  }
+  // @override
+  // Future<void> timApiPairing({bool enablePrinting = false}) {
+  //   // TODO: implement timApiPairing
+  //   throw UnimplementedError();
+  // }
 
   @override
   // TODO: implement eventStream
@@ -341,6 +351,12 @@ class SpiMethodChannel implements FlutterSpiPlatform {
   @override
   Future<void> timApiReversal({String? transSeq}) {
     // TODO: implement timApiReversal
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String> getTerminalStatus() {
+    // TODO: implement getTerminalStatus
     throw UnimplementedError();
   }
 

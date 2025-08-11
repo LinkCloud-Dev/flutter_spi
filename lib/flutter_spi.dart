@@ -289,13 +289,12 @@ class FlutterSpi {
     String? appKey, // ThumbzUp
     String? merchantId, // ThumbzUp
     String username = "default", // ThumbzUp
-    bool enablePrinting = false, // For accreditation - control receipt printing
   }) async {
     if (spiType == "THUMBZUP") {
       flutterSpi = ThumbzUpWebSocket();
     } else if (spiType == "WINDCAVE") {
     } else if (spiType == "ANZ") {
-      flutterSpi = TimApiMethodChannel();
+      // flutterSpi = TimApiMethodChannel();
     }else {
       flutterSpi = SpiMethodChannel();
     }
@@ -310,7 +309,6 @@ class FlutterSpi {
       appKey: appKey,
       merchantId: merchantId,
       username: username,
-      enablePrinting: enablePrinting,
     );
   }
 
@@ -471,13 +469,28 @@ class FlutterSpi {
     flutterSpi.setPrintMerchantCopy(printMerchantCopy);
   }
 
-  static Future<void> test() async {
-    flutterSpi.test();
+  // TIM API
+  static Future<void> timApiInit({
+    String? eftposAddress,
+    String? posId,
+    int? port,
+    bool enablePrinting = false,
+  }) async {
+    if (flutterSpi is! TimApiMethodChannel) {
+      flutterSpi = TimApiMethodChannel();
+    }
+    
+    flutterSpi.timApiInit(
+      eftposAddress: eftposAddress,
+      posId: posId,
+      port: port,
+      enablePrinting: enablePrinting,
+    );
   }
 
-  static Future<void> timApiPairing({bool enablePrinting = false}) async {
-    flutterSpi.timApiPairing(enablePrinting: enablePrinting);
-  }
+  // static Future<void> timApiPairing({bool enablePrinting = false}) async {
+  //   flutterSpi.timApiPairing(enablePrinting: enablePrinting);
+  // }
   static Future<void> timApiConnect() async {
     flutterSpi.timApiConnect();
   }
@@ -521,6 +534,10 @@ class FlutterSpi {
 
   static Future<void> timApiReversal({String? transSeq}) async {
     flutterSpi.timApiReversal(transSeq: transSeq);
+  }
+
+  static Future<String> getTerminalStatus() async {
+    return await flutterSpi.getTerminalStatus();
   }
 
   /*static Future<void> timApiPrint(String ticket)async {

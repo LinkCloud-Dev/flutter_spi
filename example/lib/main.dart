@@ -70,8 +70,8 @@ class _HomeState extends State<Home> {
     await spi.init();
     FlutterSpi.handleMethodCall(spi.subscribeSpiEvents);
     await FlutterSpi.start();
-    final anzState = Provider.of<AnzState>(context, listen: false);
-    anzState.init();
+    // final anzState = Provider.of<AnzState>(context, listen: false);
+    // anzState.init();
   }
 
   @override
@@ -135,9 +135,9 @@ class _HomeState extends State<Home> {
     }
   }
 
-  void _test(BuildContext context) async {
-    await FlutterSpi.test();
-  }
+  // void _test(BuildContext context) async {
+  //   await FlutterSpi.test();
+  // }
 
   Future<void> _showDialog<T>(
       {required BuildContext context, required Widget child}) async {
@@ -150,7 +150,9 @@ class _HomeState extends State<Home> {
 
   void _timApiPairing(BuildContext context) async {
     // For credentialing - disable printing by default
-    await FlutterSpi.timApiPairing(enablePrinting: false);
+    await FlutterSpi.timApiInit(enablePrinting: false);
+    final anzState = Provider.of<AnzState>(context, listen: false);
+    anzState.init();  
   }
 
   void _timApiCharge(BuildContext context) async {
@@ -364,6 +366,13 @@ class _HomeState extends State<Home> {
             ElevatedButton(
               onPressed: () => _timApiRefund(context),
               child: const Text('Standard Refund (TIM API)'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final anzState = Provider.of<AnzState>(context, listen: false);
+                anzState.getTerminalStatus();
+              },
+              child: const Text('Get Terminal Status'),
             ),
             
             // Reference Refund 输入框
