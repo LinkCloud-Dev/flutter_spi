@@ -234,6 +234,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     // TODO: implement unpair
     throw UnimplementedError();
   }
+  
+
+ // TIM API 
 
   @override
   Future<void> timApiInit({
@@ -242,104 +245,167 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     int? port,
     bool enablePrinting = false,
   }) async {
-    await _channel.invokeMethod('timApiInit', {
-      'eftposAddress': eftposAddress ??'192.168.020.009',
-      'posId': posId ?? '25196219',
-      'port': port ?? 7784,
-      'enablePrinting': enablePrinting,
-    });
+    try {
+      await _channel.invokeMethod('timApiInit', {
+        'eftposAddress': eftposAddress ??'10.0.2.2',//192.168.020.009
+        'posId': posId ?? '12345678',
+        'port': port ?? 7784,
+        'enablePrinting': enablePrinting,
+      });
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
-
-  //  @override
-  // Future<void> timApiPairing({bool enablePrinting = false}) async { //for example
-  //   await _channel.invokeMethod('timApiInit', {
-  //     'eftposAddress': '192.168.020.009', // 10.0.2.2 or 192.168.020.011 or 192.168.236.212
-  //     'posId': '25196219', //12345678 or 25196219
-  //     'port': 7784, //8115
-  //     'enablePrinting': enablePrinting, // For credentialing - control receipt printing
-  //   });
-  // }
 
   @override
   Future<void> timApiConnect() async {
-    await _channel.invokeMethod('timApiConnect');
+    try {
+      await _channel.invokeMethod('timApiConnect');
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   @override
   Future<void> timApiLogin() async { //for example
-    await _channel.invokeMethod('timApiLogin');
+    try {
+      await _channel.invokeMethod('timApiLogin');
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   @override
   Future<void> timApiActivate() async { //for example
-    await _channel.invokeMethod('timApiActivate');
+    try {
+      await _channel.invokeMethod('timApiActivate');
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  // Public method for charge (timApiStartTransaction)
   @override
   Future<void> timApiCharge(double amount) async {
-    await _channel.invokeMethod('timApiStartTransaction', {
-      'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
-      'amount': amount,
-    });
+    try {
+      await _channel.invokeMethod('timApiStartTransaction', {
+        'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
+        'amount': amount,
+      });
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
+
   @override
   Future<void> timApiRefund(double amount) async { //for standard refund
-    await _channel.invokeMethod('timApiDoRefund', {
-      'posRefId': 'test_refund_${DateTime.now().millisecondsSinceEpoch}',
-      'amount': amount,
-    });
+    try {
+      await _channel.invokeMethod('timApiDoRefund', {
+        'posRefId': 'test_refund_${DateTime.now().millisecondsSinceEpoch}',
+        'amount': amount,
+      });
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
+
   @override
   Future<void> timApiRefRefund({
     required double amount,
     required String sixTrxRefNum,
   }) async { //for reference refund
-    await _channel.invokeMethod('timApiDoRefRefund', {
-      'posRefId': 'test_refund_${DateTime.now().millisecondsSinceEpoch}',
-      'amount': amount, // 退款金额
-      'sixTrxRefNum': sixTrxRefNum, // Six交易参考号
-    });
+    try {
+      await _channel.invokeMethod('timApiDoRefRefund', {
+        'posRefId': 'test_refund_${DateTime.now().millisecondsSinceEpoch}',
+        'amount': amount, 
+        'sixTrxRefNum': sixTrxRefNum, // Six transaction reference number
+      });
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
+
   @override
   Future<void> timApiBalance() async {
-    await _channel.invokeMethod('timApiDoBalance', {
-      'posRefId': 'test_Balance_${DateTime.now().millisecondsSinceEpoch}',
-    });
+    try {
+      await _channel.invokeMethod('timApiDoBalance', {
+        'posRefId': 'test_Balance_${DateTime.now().millisecondsSinceEpoch}',
+      });
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
+  
   @override
   Future<void> timApiReversal({String? transSeq}) async {
-    await _channel.invokeMethod('timApiDoReversal', {
-      'posRefId': 'test_reversal_${DateTime.now().millisecondsSinceEpoch}',
-      'transSeq': transSeq,
-    });
+    try {
+      await _channel.invokeMethod('timApiDoReversal', {
+        'posRefId': 'test_reversal_${DateTime.now().millisecondsSinceEpoch}',
+        'transSeq': transSeq,
+      });
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   @override
   Future<String> getTerminalStatus() async {
-    return (await _channel.invokeMethod<String>('getTerminalStatus')) ?? "Unknown";
+    try {
+      return (await _channel.invokeMethod<String>('getTerminalStatus')) ?? "Unknown";
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   @override
   Future<void> timApiDeactivate() async {
-    await _channel.invokeMethod('timApiDeactivate');
+    try {
+      await _channel.invokeMethod('timApiDeactivate');
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   @override
   Future<void> timApiDisconnect() async{
-    await _channel.invokeMethod('timApiDisconnect');
+    try {
+      await _channel.invokeMethod('timApiDisconnect');
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   @override
   Future<void> timApiLogout()async {
-    await _channel.invokeMethod('timApiLogout');
+    try {
+      await _channel.invokeMethod('timApiLogout');
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
-
-
-  /*Future<void> timApiPrint(String ticket) async {
-    await _channel.invokeMethod('timApiPrint', {
-      'ticket': ticket,
-    });
-  }*/
-
 }

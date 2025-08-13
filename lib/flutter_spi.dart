@@ -480,7 +480,7 @@ class FlutterSpi {
       flutterSpi = TimApiMethodChannel();
     }
     
-    flutterSpi.timApiInit(
+    await flutterSpi.timApiInit(
       eftposAddress: eftposAddress,
       posId: posId,
       port: port,
@@ -488,59 +488,53 @@ class FlutterSpi {
     );
   }
 
-  // static Future<void> timApiPairing({bool enablePrinting = false}) async {
-  //   flutterSpi.timApiPairing(enablePrinting: enablePrinting);
-  // }
+
   static Future<void> timApiConnect() async {
-    flutterSpi.timApiConnect();
+    await flutterSpi.timApiConnect();
   }
   static Future<void> timApiLogin() async {
-    flutterSpi.timApiLogin();
+    await flutterSpi.timApiLogin();
   }
   static Future<void> timApiActivate() async {
-    flutterSpi.timApiActivate();
+    await flutterSpi.timApiActivate();
   }
   static Future<void> timApiDeactivate() async {
-    flutterSpi.timApiDeactivate();
+    await flutterSpi.timApiDeactivate();
   }
   static Future<void> timApiLogout() async {
-    flutterSpi.timApiLogout();
+    await flutterSpi.timApiLogout();
   }
   static Future<void> timApiDisconnect() async {
-    flutterSpi.timApiDisconnect();
+    await flutterSpi.timApiDisconnect();
   }
 
   static Future<void> timApiCharge(double amount) async {
-    flutterSpi.timApiCharge(amount);
+    await flutterSpi.timApiCharge(amount);
   }
 
   static Future<void> timApiRefund(double amount) async {
-    flutterSpi.timApiRefund(amount);
+    await flutterSpi.timApiRefund(amount);
   }
 
   static Future<void> timApiRefRefund({
     required double amount,
     required String sixTrxRefNum,
   }) async {
-    flutterSpi.timApiRefRefund(
+    await flutterSpi.timApiRefRefund(
       amount: amount,
       sixTrxRefNum: sixTrxRefNum,
     );
   }
 
   static Future<void> timApiBalance()async {
-    flutterSpi.timApiBalance();
+    await flutterSpi.timApiBalance();
   }
 
   static Future<void> timApiReversal({String? transSeq}) async {
-    flutterSpi.timApiReversal(transSeq: transSeq);
+    await flutterSpi.timApiReversal(transSeq: transSeq);
   }
 
   static Future<String> getTerminalStatus() async {
     return await flutterSpi.getTerminalStatus();
   }
-
-  /*static Future<void> timApiPrint(String ticket)async {
-    flutterSpi.timApiPrint(ticket);
-  }*/
 }
