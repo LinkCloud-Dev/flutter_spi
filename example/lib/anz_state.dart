@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
@@ -199,16 +200,21 @@ class AnzState extends ChangeNotifier {
   }
   // Transaction methods
   Future<void> startTransaction(String posRefId, double amount) async {
-    if (_pairStatus != ANZPairStatus.activated) { //TODO: check later
-      print("❌ Terminal not ready for transaction");
-      return;
-    }
-    _resetTransactionState();
+    // if (_pairStatus != ANZPairStatus.activated) { //TODO: check later
+    //   print("❌ Terminal not ready for transaction");
+    //   return;
+    // }
+    // _resetTransactionState();
     
     try {
       _currentTransactionId = posRefId;
       _updateTransactionStatus(ANZTransactionStatus.processing);
       await FlutterSpi.timApiCharge(amount);
+    } on PlatformException catch (e) {
+      print("❌ Start transaction PlatformException: ${e.code} - ${e.message}");
+      // TODO: Handle specific PlatformException codes
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Platform error: ${e.message}");
     } catch (e) {
       print("❌ Start transaction failed: $e");
       _updateTransactionStatus(ANZTransactionStatus.failed);
