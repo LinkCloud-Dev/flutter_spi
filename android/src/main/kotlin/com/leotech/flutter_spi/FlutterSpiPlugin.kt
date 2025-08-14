@@ -960,8 +960,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
+                                "source" to "activateCompleted",
                                 "message" to "Activate failed: ${exception.errorMessage ?: "Unknown error"}",
-                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
+                                "resultCode" to (exception?.resultCode?.name ?: "UNKNOWN_ERROR"),
+                                "localizedMessage" to (exception?.localizedMessage ?: "")
                             )
                         }
                     )
