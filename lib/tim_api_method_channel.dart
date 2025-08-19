@@ -44,13 +44,25 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   }
 
   @override
+  Future<void> dispose() async {
+ // no need
+    throw UnimplementedError();
+  }
+
+  @override
   Future<void> cancelTransaction() async {
     await _channel.invokeMethod('timApiCancelTransaction');
   }
 
   @override
-  Future<void> dispose() async {
-    await _channel.invokeMethod('timApiDispose');
+  Future<void> timApiDispose() async {
+    try {
+      await _channel.invokeMethod('timApiDispose');
+    } on PlatformException catch (e) {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   @override
@@ -252,9 +264,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
         'port': port ?? 7784,
         'enablePrinting': enablePrinting,
       });
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -263,9 +275,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> timApiConnect() async {
     try {
       await _channel.invokeMethod('timApiConnect');
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -274,9 +286,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> timApiLogin() async { //for example
     try {
       await _channel.invokeMethod('timApiLogin');
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -285,9 +297,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> timApiActivate() async { //for example
     try {
       await _channel.invokeMethod('timApiActivate');
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -299,9 +311,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
         'posRefId': 'test_transaction_${DateTime.now().millisecondsSinceEpoch}',
         'amount': amount,
       });
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -313,9 +325,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
         'posRefId': 'test_refund_${DateTime.now().millisecondsSinceEpoch}',
         'amount': amount,
       });
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -331,9 +343,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
         'amount': amount, 
         'sixTrxRefNum': sixTrxRefNum, // Six transaction reference number
       });
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -344,9 +356,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
       await _channel.invokeMethod('timApiDoBalance', {
         'posRefId': 'test_Balance_${DateTime.now().millisecondsSinceEpoch}',
       });
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -358,9 +370,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
         'posRefId': 'test_reversal_${DateTime.now().millisecondsSinceEpoch}',
         'transSeq': transSeq,
       });
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -369,9 +381,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<String> getTerminalStatus() async {
     try {
       return (await _channel.invokeMethod<String>('getTerminalStatus')) ?? "Unknown";
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -380,9 +392,9 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   Future<void> timApiDeactivate() async {
     try {
       await _channel.invokeMethod('timApiDeactivate');
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       rethrow;
-    } catch (e) {
+    } catch (_) {
       rethrow;
     }
   }

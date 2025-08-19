@@ -921,4 +921,9 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     throw UnimplementedError();
   }
 
+  @override
+  Future<void> timApiDispose() async {
+    // NOT NEEDED
+  }
+
 }

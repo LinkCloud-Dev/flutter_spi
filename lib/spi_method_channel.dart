@@ -378,5 +378,11 @@ class SpiMethodChannel implements FlutterSpiPlatform {
     throw UnimplementedError();
   }
 
+  @override
+  Future<void> timApiDispose() {
+    // TIM-specific only
+    throw UnimplementedError();
+  }
+
   
 }

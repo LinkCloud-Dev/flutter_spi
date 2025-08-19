@@ -942,8 +942,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
+                                "source" to "connectCompleted",
                                 "message" to "Connect failed: ${exception.errorMessage ?: "Unknown error"}",
-                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR"),
+                                "localizedMessage" to (exception?.localizedMessage ?: "")
                             )
                         }
                     )
@@ -987,8 +989,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
+                                "source" to "balanceCompleted",
                                 "message" to "Balance failed: ${exception?.errorMessage ?: "Unknown error (no data returned)"}",
-                                "resultCode" to (exception?.resultCode?.name ?: "UNKNOWN_ERROR")
+                                "resultCode" to (exception?.resultCode?.name ?: "UNKNOWN_ERROR"),
+                                "localizedMessage" to (exception?.localizedMessage ?: "")
                             )
                         }
                     )
@@ -1017,8 +1021,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "unpairError",
+                                "source" to "deactivateCompleted",
                                 "message" to "Deactivate failed: "+ (exception.errorMessage ?: "Unknown error"),
-                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR"),
+                                "localizedMessage" to (exception.localizedMessage ?: "")
                             )
                         }
                     )
@@ -1058,8 +1064,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "error",
+                                "source" to "loginCompleted",
                                 "message" to "Login failed: ${exception.localizedMessage ?: "Unknown error"}",
-                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR"),
+                                "localizedMessage" to (exception.localizedMessage ?: "")
                             )
                         }
                     )
@@ -1076,8 +1084,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                         } else {
                             mapOf(
                                 "type" to "unpairError",
+                                "source" to "logoutCompleted",
                                 "message" to "Logout failed: "+ (exception.errorMessage ?: "Unknown error"),
-                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR")
+                                "resultCode" to (exception.resultCode?.name ?: "UNKNOWN_ERROR"),
+                                "localizedMessage" to (exception.localizedMessage ?: "")
                             )
                         }
                     )
@@ -1203,8 +1213,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                             mapOf(
                                 "type" to "disconnected",
                                 "status" to "failed",
+                                "source" to "disconnected",
                                 "message" to (exception?.errorMessage ?: "Unknown error"),
-                                "resultCode" to (exception?.resultCode?.name ?: "UNKNOWN_ERROR")
+                                "resultCode" to (exception?.resultCode?.name ?: "UNKNOWN_ERROR"),
+                                "localizedMessage" to (exception?.localizedMessage ?: "")
                             )
                         )
                     }
@@ -1231,8 +1243,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                                 mapOf(
                                     "type" to "disconnected",
                                     "status" to "failed",
+                                    "source" to "disconnected",
                                     "message" to (e.localizedMessage ?: "Dispose failed"),
-                                    "resultCode" to "DISPOSE_FAILED"
+                                    "resultCode" to "DISPOSE_FAILED",
+                                    "localizedMessage" to (e.localizedMessage ?: "")
                                 )
                             )
                         }

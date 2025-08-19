@@ -470,16 +470,18 @@ class FlutterSpi {
   }
 
   // TIM API
+  static void useTimApi() {
+    if (flutterSpi is! TimApiMethodChannel) {
+      flutterSpi = TimApiMethodChannel();
+    }
+  }
+
   static Future<void> timApiInit({
     String? eftposAddress,
     String? posId,
     int? port,
     bool enablePrinting = false,
   }) async {
-    if (flutterSpi is! TimApiMethodChannel) {
-      flutterSpi = TimApiMethodChannel();
-    }
-    
     await flutterSpi.timApiInit(
       eftposAddress: eftposAddress,
       posId: posId,
@@ -536,5 +538,9 @@ class FlutterSpi {
 
   static Future<String> getTerminalStatus() async {
     return await flutterSpi.getTerminalStatus();
+  }
+
+  static Future<void> timApiDispose() async {
+    await flutterSpi.timApiDispose();
   }
 }

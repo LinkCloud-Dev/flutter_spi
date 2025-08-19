@@ -135,4 +135,6 @@ abstract class FlutterSpiPlatform {
   Future<void> timApiReversal({String? transSeq});
 
   Future<String> getTerminalStatus();
+
+  Future<void> timApiDispose();
 }
