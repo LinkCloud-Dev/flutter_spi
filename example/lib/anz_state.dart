@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spi/flutter_spi.dart';
@@ -16,42 +19,78 @@ enum ANZTransactionStatus {
   failed,         // 交易失败 (包括取消、错误等)
 }
 
+enum ANZUnpairStatus {
+  idle,
+  disposed,
+  failed,
+}
+
+enum ANZPairingFlowStatus { // Pairing Flow Status defined by LinkPOS
+  idle,          
+  connected,
+  loggedIn,
+  activated,      
+  
+  connecting,     
+  loggingIn,     
+  activating,    
+  failed,         
+}
 class ANZTransactionData {
   final String? posRefId;
-  final double? amount;
+  final int? amountInCents;
+  final int? amountExponent;
   final String? currency;
+  final int? surchargeAmount;
+  final int? surchargeExponent;
   final String? transactionType;
   final String? transRef;
   final String? transSeq;
-  final String? cardRef;
+  final String? acqId;
   final String? acqTransRef;
+  final String? sixTrxRefNum;
   final List<String>? receipts;
   final String? errorMessage;
 
   ANZTransactionData({
     this.posRefId,
-    this.amount,
+    this.amountInCents,
+    this.amountExponent,
     this.currency,
+    this.surchargeAmount,
+    this.surchargeExponent,
     this.transactionType,
     this.transRef,
     this.transSeq,
-    this.cardRef,
+    this.acqId,
     this.acqTransRef,
+    this.sixTrxRefNum,
     this.receipts,
     this.errorMessage,
   });
 
   factory ANZTransactionData.fromMap(Map<String, dynamic> map) {
+    // Calculate actual amounts using exponent
+    final amountInCents = map['amountInCents'] as int?;
+    final amountExponent = map['amountExponent'] as int?;
+
+    final surchargeAmount = map['surchargeAmount'] as int?;
+    final surchargeExponent = map['surchargeExponent'] as int?;
+
     return ANZTransactionData(
       posRefId: map['posRefId']?.toString(),
-      amount: map['amount']?.toDouble(),
+      amountInCents: amountInCents,
+      amountExponent: amountExponent,
       currency: map['currency']?.toString(),
+      surchargeAmount: surchargeAmount,
+      surchargeExponent: surchargeExponent,
       transactionType: map['transactionType']?.toString(),
       transRef: map['transRef']?.toString(),
       transSeq: map['transSeq']?.toString(),
-      cardRef: map['cardRef']?.toString(),
+      acqId: map['acqId']?.toString(),
       acqTransRef: map['acqTransRef']?.toString(),
-      receipts: map['receipts'] != null 
+      sixTrxRefNum: map['sixTrxRefNum']?.toString(),
+      receipts: map['receipts'] != null
           ? List<String>.from((map['receipts'] as List).map((item) => item.toString()))
           : null,
       errorMessage: map['errorMessage']?.toString(),
@@ -61,91 +100,111 @@ class ANZTransactionData {
   factory ANZTransactionData.error(String errorMessage) {
     return ANZTransactionData(errorMessage: errorMessage);
   }
-}
 
-enum ANZPairStatus {
-  disconnected, // 未连接
-  connected,    // 物理/网络已连，未登录
-  loggedIn,     // 已登录
-  activated,    // 终端就绪
-}
+  // Helper method to get formatted amount string
+  String? get formattedAmount {
+    if (amountInCents != null && amountExponent != null ) {
+      final actualAmount = amountInCents! / pow(10, amountExponent!);
+      return '${actualAmount.toStringAsFixed(2)}';
+    }
+    return null;
+  }
 
-enum ANZUnpairStatus {
-  idle,            // 未解绑
-  disposed,        // dispose完成
-  failed,          // 解绑失败
+  // Helper method to get formatted surcharge string
+  String? get formattedSurcharge {
+    if (surchargeAmount != null && surchargeExponent != null) {
+      final actualSurchargeAmount = surchargeAmount! / pow(10, surchargeExponent!);
+      return '${actualSurchargeAmount.toStringAsFixed(2)}';
+    }
+    return null;
+  }
 }
 
 class AnzState extends ChangeNotifier {
 
-  
-  // TIM API 的连接状态
   ANZConnectionStatus _connectionStatus = ANZConnectionStatus.disconnected;
   ANZConnectionStatus get connectionStatus => _connectionStatus;
   
-  // Transaction 相关状态
+  ANZPairingFlowStatus _pairingFlowStatus = ANZPairingFlowStatus.idle;
+  ANZPairingFlowStatus get pairingFlowStatus => _pairingFlowStatus;
+
   ANZTransactionStatus _transactionStatus = ANZTransactionStatus.idle;
   ANZTransactionStatus get transactionStatus => _transactionStatus;
   
   ANZTransactionData? _lastTransaction;
   ANZTransactionData? get lastTransaction => _lastTransaction;
   
-  String? _currentTransactionId;
-  String? get currentTransactionId => _currentTransactionId;
-  
-  bool _initialized = false;
-
-  ANZPairStatus _pairStatus = ANZPairStatus.disconnected;
-  ANZPairStatus get pairStatus => _pairStatus;
+  List<String>? _balanceReceipts;
+  List<String>? get balanceReceipts => _balanceReceipts;
 
   ANZUnpairStatus _unpairStatus = ANZUnpairStatus.idle;
   ANZUnpairStatus get unpairStatus => _unpairStatus;
+
+  // Idempotent guards
+  bool _eventsSubscribed = false;
+  StreamSubscription<dynamic>? _eventSubscription;
+
+    // 配对超时相关变量
+  // DateTime? _pairingStepStartTime; // tracked via timer only
+  static const int _pairingStepTimeoutSeconds = 60; // 1分钟超时
+  Timer? _pairingTimeoutTimer;
   
   // 添加标志来跟踪是否正在进行 balance 操作
   bool _isBalanceInProgress = false;
   bool get isBalanceInProgress => _isBalanceInProgress;
 
-  void init() {
-    if (_initialized) return;
-    _initialized = true;
+Future<void> initTerminal(context) async {
+    FlutterSpi.useTimApi();
+    
+    // If already logged in, skip timApiInit. Otherwise, ensure TIM API is initialised.
+    if (_connectionStatus == ANZConnectionStatus.loggedIn) {
+      print('⏭️ Already LOGGED_IN, skip timApiInit');
+    } else {
+      await FlutterSpi.timApiInit(
+      );
+      print('✅ TIM API initialised');
+    }
+
     _subscribeTimEvents();
   }
 
-  void initWhenNeeded() {
-    if (!_initialized) {
-      init();
+void _updatePairingFlowStatus(ANZPairingFlowStatus newStatus) {
+    if (_pairingFlowStatus != newStatus) {
+      print("🔄 Pairing flow status changed: ${_pairingFlowStatus.name} -> ${newStatus.name}");
+      _pairingFlowStatus = newStatus;
+      
+      _handlePairingStepTimeout(newStatus);
+      
+      notifyListeners();
     }
   }
 
-  // void syncWithSpiStatus(SpiStatus? spiStatus) {
-  //   if (spiStatus == null) {
-  //     _updatePairStatus(ANZPairStatus.disconnected);
-  //     return;
-  //   }
-  //
-  //   switch (spiStatus) {
-  //     case SpiStatus.UNPAIRED:
-  //     // UNPAIRED state always corresponds to disconnected
-  //       _updatePairStatus(ANZPairStatus.disconnected);
-  //       _updateUnpairStatus(ANZUnpairStatus.idle);
-  //       break;
-  //     case SpiStatus.PAIRED_CONNECTING:
-  //       _updatePairStatus(ANZPairStatus.connecting);
-  //       _updateUnpairStatus(ANZUnpairStatus.idle);
-  //       break;
-  //     case SpiStatus.PAIRED_CONNECTED:
-  //     // If SPI is connected, but ANZ hasn't completed the activation process, stay in the current state
-  //       if (_pairStatus == ANZPairStatus.disconnected) {
-  //         _updatePairStatus(ANZPairStatus.connected);
-  //         _updateUnpairStatus(ANZUnpairStatus.idle);
-  //       }
-  //       break;
-  //   }
-  // }
-
-  void _updatePairStatus(ANZPairStatus newStatus) {
-    _pairStatus = newStatus;
-    notifyListeners();
+  void _handlePairingStepTimeout(ANZPairingFlowStatus newStatus) {
+    // 取消之前的计时器
+    _pairingTimeoutTimer?.cancel();
+    _pairingTimeoutTimer = null;
+    
+    // 检查是否是需要计时的中间状态
+    final timeoutStates = [
+      ANZPairingFlowStatus.connecting,
+      ANZPairingFlowStatus.loggingIn,
+      ANZPairingFlowStatus.activating,
+    ];
+    
+    if (timeoutStates.contains(newStatus)) {
+      // 开始计时
+      _pairingTimeoutTimer = Timer(Duration(seconds: _pairingStepTimeoutSeconds), () {
+        print("⏰ Pairing step timeout: ${newStatus.name} exceeded ${_pairingStepTimeoutSeconds} seconds");
+        _updatePairingFlowStatus(ANZPairingFlowStatus.failed);
+        EasyLoading.showToast(
+          "Pairing step timeout: ${newStatus.name} exceeded ${_pairingStepTimeoutSeconds} seconds",
+          duration: Duration(seconds: 3),
+        );
+      });
+      print("⏰ Started timeout timer for ${newStatus.name} (${_pairingStepTimeoutSeconds}s)");
+    } else {
+      // 清除计时器
+    }
   }
 
   void _updateUnpairStatus(ANZUnpairStatus newStatus) {
@@ -163,22 +222,11 @@ class AnzState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> startConnection() async {
-    try {
-      await FlutterSpi.timApiConnect();
-    } catch (e) {
-      print("❌ Connect failed: $e");
-      _updatePairStatus(ANZPairStatus.disconnected);
-      // 将错误信息保存到 transaction data 中，以便在UI中显示
-      _lastTransaction = ANZTransactionData.error("Connection failed: $e");
-      _updateTransactionStatus(ANZTransactionStatus.failed);
-      notifyListeners();
-    }
-  }
-
+    // -----------------------------------------Unpairing Flow-----------------------------------------
+  // Unpairing flow: startDeactivate -> handleDeactivateCompleted -> handleLogoutCompleted -> handleDisposed
   Future<void> startDeactivate() async {
     try {
-      _isBalanceInProgress = false; 
+      _isBalanceInProgress = false;
       await FlutterSpi.timApiDeactivate();
     } catch (e) {
       print('❌ Start deactivate failed: $e');
@@ -186,142 +234,22 @@ class AnzState extends ChangeNotifier {
     }
   }
 
-
   void _resetTransactionState() {
     _updateTransactionStatus(ANZTransactionStatus.idle);
     _lastTransaction = null;
-    _currentTransactionId = null;
   }
-  
+
   void clearError() {
     _lastTransaction = null;
     _updateTransactionStatus(ANZTransactionStatus.idle);
     notifyListeners();
   }
-  // Transaction methods
-  Future<void> startTransaction(String posRefId, double amount) async {
-    // if (_pairStatus != ANZPairStatus.activated) { //TODO: check later
-    //   print("❌ Terminal not ready for transaction");
-    //   return;
-    // }
-    // _resetTransactionState();
-    
-    try {
-      _currentTransactionId = posRefId;
-      _updateTransactionStatus(ANZTransactionStatus.processing);
-      await FlutterSpi.timApiCharge(amount);
-    } on PlatformException catch (e) {
-      print("❌ Start transaction PlatformException: ${e.code} - ${e.message}");
-      // TODO: Handle specific PlatformException codes
-      _updateTransactionStatus(ANZTransactionStatus.failed);
-      _lastTransaction = ANZTransactionData.error("Platform error: ${e.message}");
-    } catch (e) {
-      print("❌ Start transaction failed: $e");
-      _updateTransactionStatus(ANZTransactionStatus.failed);
-      _lastTransaction = ANZTransactionData.error("Failed to start transaction: $e");
-    }
-  }
-
-  Future<void> startRefund(String posRefId, double amount) async {
-    if (_pairStatus != ANZPairStatus.activated) {
-      print("❌ Terminal not ready for refund");
-      return;
-    }
-
-    _resetTransactionState();
-
-    try {
-      _currentTransactionId = posRefId;
-      _updateTransactionStatus(ANZTransactionStatus.processing);
-      await FlutterSpi.timApiRefund(amount);
-    } catch (e) {
-      print("❌ Start refund failed: $e");
-      _updateTransactionStatus(ANZTransactionStatus.failed);
-      _lastTransaction = ANZTransactionData.error("Failed to start refund: $e");
-    }
-  }
-
-  Future<void> startReferenceRefund(
-    String posRefId, 
-    double amount, 
-    String sixTrxRefNum,
-  ) async {
-    if (_pairStatus != ANZPairStatus.activated) {
-      print("❌ Terminal not ready for reference refund");
-      return;
-    }
-
-    _resetTransactionState();
-
-    try {
-      _currentTransactionId = posRefId;
-      _updateTransactionStatus(ANZTransactionStatus.processing);
-      await FlutterSpi.timApiRefRefund(
-        amount: amount,
-        sixTrxRefNum: sixTrxRefNum,
-      );
-    } catch (e) {
-      print("❌ Start reference refund failed: $e");
-      _updateTransactionStatus(ANZTransactionStatus.failed);
-      _lastTransaction = ANZTransactionData.error("Failed to start reference refund: $e");
-    }
-  }
-
-  Future<void> startBalance() async {
-    if (_pairStatus != ANZPairStatus.activated) {
-      print("❌ Terminal not ready for balance");
-      return;
-    }
-
-    _resetTransactionState();
-
-    try {
-      _currentTransactionId = "balance_${DateTime.now().millisecondsSinceEpoch}";
-      _updateTransactionStatus(ANZTransactionStatus.processing);
-      _isBalanceInProgress = true;
-      await FlutterSpi.timApiBalance();
-      _updatePairStatus(ANZPairStatus.disconnected);
-    } catch (e) {
-      print("❌ Start balance failed: $e");
-      _updateTransactionStatus(ANZTransactionStatus.failed);
-      _lastTransaction = ANZTransactionData.error("Failed to start balance: $e");
-      _isBalanceInProgress = false; 
-    }
-  }
-
-  Future<void> startReversal() async {
-    if (_pairStatus != ANZPairStatus.activated) {
-      print("❌ Terminal not ready for reversal");
-      return;
-    }
-    if (_lastTransaction?.transSeq == null) {
-      print("❌ No previous transaction to reverse");
-      return;
-    }
-    try {
-      _currentTransactionId = "reversal_${DateTime.now().millisecondsSinceEpoch}";
-      _updateTransactionStatus(ANZTransactionStatus.processing);
-      await FlutterSpi.timApiReversal(transSeq: _lastTransaction!.transSeq!);
-    } catch (e) {
-      print("❌ Start reversal failed: $e");
-      _updateTransactionStatus(ANZTransactionStatus.failed);
-      _lastTransaction = ANZTransactionData.error("Failed to start reversal: $e");
-    }
-  }
-
-  Future<void> getTerminalStatus() async {
-    try {
-      final status = await FlutterSpi.getTerminalStatus();
-      print('=== TERMINAL STATUS ===');
-      print(status);
-      print('======================');
-    } catch (e) {
-      print('❌ Failed to get terminal status: $e');
-    }
-  }
+  // -----------------------------------------Event Subscription-----------------------------------------
 
   void _subscribeTimEvents() {
-    FlutterSpi.eventStream.listen((event) {
+    if (_eventsSubscribed) return;
+    _eventsSubscribed = true;
+    _eventSubscription = FlutterSpi.eventStream.listen((event) {
       final eventMap = Map<String, dynamic>.from(event);
       final eventType = eventMap['type'] as String?;
 
@@ -342,22 +270,17 @@ class AnzState extends ChangeNotifier {
           _handleTransactionCompleted(eventMap);
           break;
         case 'balanceCompleted':
-          print("✅ Balance completed: $eventMap");
-          _isBalanceInProgress = false; 
-          print("🔄 Balance operation finished, _isBalanceInProgress = $_isBalanceInProgress");
+          _handleBalanceCompleted(eventMap);
+          _isBalanceInProgress = false;
           break;
         case 'deactivateCompleted':
           if (!_isBalanceInProgress) {
             FlutterSpi.timApiLogout();
-          } else {
-            print("⏸️ Skipping unpair flow during balance operation");
           }
           break;
         case 'logoutCompleted':
           if (!_isBalanceInProgress) {
             FlutterSpi.timApiDisconnect();
-          } else {
-            print("⏸️ Skipping unpair flow during balance operation");
           }
           break;
         case 'disconnected':
@@ -380,55 +303,236 @@ class AnzState extends ChangeNotifier {
     });
   }
 
-  void _handleConnectCompleted(Map<String, dynamic> event)async {
-    if (event['status'] == 'success') {
-      _updatePairStatus(ANZPairStatus.connected);
-       await FlutterSpi.timApiLogin();
-    } else {
-      _updatePairStatus(ANZPairStatus.disconnected);
+
+  // -------------------------------------------------------------Pairing Flow-----------------------------------------------------------
+  // Pairing flow: startConnection -> handleConnectCompleted -> startLogin -> handleLoginCompleted -> startActivation -> handleActivateCompleted
+  
+
+
+  Future<void> startConnection() async { // the first step of pairing flow, trigger by Users in Eftpos setting or autoPair()
+    try {
+      print("✅ Starting connection...");
+      _updatePairingFlowStatus(ANZPairingFlowStatus.connecting);
+      await FlutterSpi.timApiConnect();
+    } catch (e) {
+      print("❌ Connect failed: $e");
+      _updatePairingFlowStatus(ANZPairingFlowStatus.failed);
+      await _requestCurrentStatus();
     }
   }
 
-  void _handleLoginCompleted(Map<String, dynamic> event) async{
-    if (event['status'] == 'success') {
-      _updatePairStatus(ANZPairStatus.loggedIn);
+  Future<void> startLogin() async { 
+    try {
+      print("✅ Starting login...");
+      _updatePairingFlowStatus(ANZPairingFlowStatus.loggingIn);
+      await FlutterSpi.timApiLogin();
+    } catch (e) {
+      print("❌ Login failed: $e");
+      _updatePairingFlowStatus(ANZPairingFlowStatus.failed);
+      await _requestCurrentStatus();
+    }
+  }
+
+  Future<void> startActivation() async { 
+    try {
+      print("✅ Starting activation...");
+      _updatePairingFlowStatus(ANZPairingFlowStatus.activating);
       await FlutterSpi.timApiActivate();
-    } else {
-      _updatePairStatus(ANZPairStatus.connected);
+    } catch (e) {
+      print("❌ Activation failed: $e");
+      _updatePairingFlowStatus(ANZPairingFlowStatus.failed);
+      await _requestCurrentStatus();
     }
   }
 
-  void _handleActivateCompleted(Map<String, dynamic> event) {
+
+  // Pairing flow event handlers
+  void _handleConnectCompleted(Map<String, dynamic> event) async {
     if (event['status'] == 'success') {
-      _updatePairStatus(ANZPairStatus.activated);
+
+      _updatePairingFlowStatus(ANZPairingFlowStatus.connected);
+      
+      await startLogin();
     } else {
-      _updatePairStatus(ANZPairStatus.loggedIn);
+      _updatePairingFlowStatus(ANZPairingFlowStatus.failed);
+      
+      await _requestCurrentStatus();
     }
   }
 
+  void _handleLoginCompleted(Map<String, dynamic> event) async {
+    if (event['status'] == 'success') {
+
+      _updatePairingFlowStatus(ANZPairingFlowStatus.loggedIn);
+      
+      await startActivation();
+    } else {
+      _updatePairingFlowStatus(ANZPairingFlowStatus.failed);
+      
+      await _requestCurrentStatus();
+    }
+  }
+
+  void _handleActivateCompleted(Map<String, dynamic> event) async {
+    if (event['status'] == 'success') {
+      _updatePairingFlowStatus(ANZPairingFlowStatus.activated);
+    } else {
+      _updatePairingFlowStatus(ANZPairingFlowStatus.failed);
+
+      await _requestCurrentStatus();
+    }
+  }
+
+
+
+  // Terminal status event handlers
   void _handleTerminalStatusChanged(Map<String, dynamic> event) {
     final connectionStatus = event['connectionStatus'] as String?;
-    
+
     print("📊 TIM API ConnectionStatus: $connectionStatus");
-    
+
     if (connectionStatus != null) {
       switch (connectionStatus) {
         case 'DISCONNECTED':
           _updateConnectionStatus(ANZConnectionStatus.disconnected);
-          _updatePairStatus(ANZPairStatus.disconnected);
+          // 只有在配对流程不在进行中时才重置为 idle
+          if (!isWaitingForPairingResult) {
+            _updatePairingFlowStatus(ANZPairingFlowStatus.idle);
+          }
           _updateUnpairStatus(ANZUnpairStatus.idle);
           break;
         case 'LOGGED_IN':
           _updateConnectionStatus(ANZConnectionStatus.loggedIn);
+          _updateUnpairStatus(ANZUnpairStatus.idle);
           break;
         case 'LOGGED_OUT':
           _updateConnectionStatus(ANZConnectionStatus.loggedOut);
-          _updatePairStatus(ANZPairStatus.disconnected);
+          if (!isWaitingForPairingResult) {
+            _updatePairingFlowStatus(ANZPairingFlowStatus.idle);
+          }
           _updateUnpairStatus(ANZUnpairStatus.idle);
           break;
         default:
           print("⚠️ Unknown TIM API connection status: $connectionStatus");
       }
+    }
+  }
+
+
+
+    // -------------------------------------------------------------Transaction Flow-----------------------------------------------------------
+  // Transaction methods: startTransaction, startRefund, startBalance, startReversal
+  Future<void> startTransaction(String posRefId, double amount) async {
+    if (_connectionStatus != ANZConnectionStatus.loggedIn) { //TODO: check later
+      _lastTransaction = ANZTransactionData.error("Terminal not ready for transaction");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      EasyLoading.showToast( 
+        "Terminal not ready for transaction",
+        duration: Duration(seconds: 3),
+      );
+      return;
+    }
+    _resetTransactionState();
+
+    try {
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiCharge(amount);
+    } catch (e) {
+      print("❌ Start transaction failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start transaction: $e");
+      print("   Error type: ${e.runtimeType}");
+      print("   Error message: $e");
+      print("   Stack trace: ${e is Error ? e.stackTrace : 'No stack trace available'}");
+    }
+  }
+
+  Future<void> startRefund(String posRefId, double amount) async {
+    if (_connectionStatus != ANZConnectionStatus.loggedIn) {
+      print("❌ Terminal not ready for refund");
+      return;
+    }
+
+    _resetTransactionState();
+
+    try {
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiRefund(amount);
+    } catch (e) {
+      print("❌ Start refund failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start refund: $e");
+    }
+  }
+  
+  Future<void> startReferenceRefund(
+    String posRefId, 
+    double amount, 
+    String sixTrxRefNum,
+  ) async {
+    if (_pairingFlowStatus != ANZPairingFlowStatus.activated) {
+      print("❌ Terminal not ready for reference refund");
+      return;
+    }
+
+    _resetTransactionState();
+
+    try {
+      // _currentTransactionId = posRefId;
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiRefRefund(
+        amount: amount,
+        sixTrxRefNum: sixTrxRefNum,
+      );
+    } catch (e) {
+      print("❌ Start reference refund failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start reference refund: $e");
+    }
+  }
+
+
+  Future<void> startBalance() async {
+    if (_connectionStatus != ANZConnectionStatus.loggedIn) {
+      EasyLoading.showToast(
+        "Terminal not ready for balance",
+        duration: Duration(seconds: 3),
+      );
+      return;
+    }
+
+    _resetTransactionState();
+
+    try {
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      _isBalanceInProgress = true;
+      await FlutterSpi.timApiBalance();
+    } catch (e) {
+      print("❌ Start balance failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start balance: $e");
+      _isBalanceInProgress = false;
+      await _requestCurrentStatus();
+      notifyListeners();
+    }
+  }
+
+  Future<void> startReversal() async {
+    if (_pairingFlowStatus != ANZPairingFlowStatus.activated) {
+      print("❌ Terminal not ready for reversal");
+      return;
+    }
+    if (_lastTransaction?.transSeq == null) {
+      print("❌ No previous transaction to reverse");
+      return;
+    }
+    try {
+      _updateTransactionStatus(ANZTransactionStatus.processing);
+      await FlutterSpi.timApiReversal(transSeq: _lastTransaction!.transSeq!);
+    } catch (e) {
+      print("❌ Start reversal failed: $e");
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      _lastTransaction = ANZTransactionData.error("Failed to start reversal: $e");
     }
   }
 
@@ -442,16 +546,20 @@ class AnzState extends ChangeNotifier {
     // _currentTransactionId = null;
   }
 
-  void _handleDisposed(Map<String, dynamic> event) {
-      if (event['status'] == 'success') {
-        _updateUnpairStatus(ANZUnpairStatus.disposed);
-        _updateConnectionStatus(ANZConnectionStatus.disconnected);
-        _updatePairStatus(ANZPairStatus.disconnected);
-        _currentTransactionId = null;
-      } else {
-        _updateUnpairStatus(ANZUnpairStatus.failed);
-      } 
+  // Unpairing flow event handlers
+  Future<void> _handleDisposed(Map<String, dynamic> event) async {
+    if (event['status'] == 'success') {
+      _updateUnpairStatus(ANZUnpairStatus.disposed);
+      _updateConnectionStatus(ANZConnectionStatus.disconnected);
+      _updatePairingFlowStatus(ANZPairingFlowStatus.idle);
+      _lastTransaction = null;
+      // next initTerminal will check connectionStatus and re-initialize if needed
+
+    } else {
+      _updateUnpairStatus(ANZUnpairStatus.failed);
+      await _requestCurrentStatus();
       notifyListeners();
+    }
   }
 
   void _handleTransactionCompleted(Map<String, dynamic> event) {
@@ -459,19 +567,22 @@ class AnzState extends ChangeNotifier {
     
     try {
       print("🔍 Parsing transaction data:");
-      print("  - posRefId: ${event['posRefId']} (${event['posRefId']?.runtimeType})");
-      print("  - amount: ${event['amount']} (${event['amount']?.runtimeType})");
+      print("  - amountInCents: ${event['amountInCents']} (${event['amountInCents']?.runtimeType})");
+      print("  - amountExponent: ${event['amountExponent']} (${event['amountExponent']?.runtimeType})");
       print("  - currency: ${event['currency']} (${event['currency']?.runtimeType})");
+      print("  - surchargeAmount: ${event['surchargeAmount']} (${event['surchargeAmount']?.runtimeType})");
+      print("  - surchargeExponent: ${event['surchargeExponent']} (${event['surchargeExponent']?.runtimeType})");
       print("  - transactionType: ${event['transactionType']} (${event['transactionType']?.runtimeType})");
       print("  - transRef: ${event['transRef']} (${event['transRef']?.runtimeType})");
       print("  - transSeq: ${event['transSeq']} (${event['transSeq']?.runtimeType})");
-      print("  - cardRef: ${event['cardRef']} (${event['cardRef']?.runtimeType})");
+      print("  - acqId: ${event['acqId']} (${event['acqId']?.runtimeType})");
       print("  - acqTransRef: ${event['acqTransRef']} (${event['acqTransRef']?.runtimeType})");
+      print("  - sixTrxRefNum: ${event['sixTrxRefNum']} (${event['sixTrxRefNum']?.runtimeType})");
       print("  - receipts: ${event['receipts']} (${event['receipts']?.runtimeType})");
       
       _lastTransaction = ANZTransactionData.fromMap(event);
       _updateTransactionStatus(ANZTransactionStatus.completed);
-      _currentTransactionId = null;
+      // _currentTransactionId = null;
     } catch (e) {
       print("❌ Error parsing transaction data: $e");
       print("❌ Stack trace: ${StackTrace.current}");
@@ -480,71 +591,174 @@ class AnzState extends ChangeNotifier {
     }
   }
 
-  void _handleError(Map<String, dynamic> event) {
-    final message = event['message'] as String? ?? "Unknown error";
-    final resultCode = event['resultCode'] as String?;
-    print("❌ TIM API 错误: $message (resultCode: $resultCode)");
-    
-    // 检查是否是通信相关的错误，这些错误可以忽略并自动重置状态
-    if (_isCommunicationError(message, resultCode)) {
-      print("🔄 检测到通信错误，自动重置状态: $message (resultCode: $resultCode)");
-      _resetStatusForCommunicationError();
-      return;
+
+
+    // -------------------------------------------------------------Balance Flow-----------------------------------------------------------
+  void _handleBalanceCompleted(Map<String, dynamic> event) {
+    print("✅ Balance completed: $event");
+    print("  - receipts: ${event['receipts']} (${event['receipts']?.runtimeType})");
+
+    // 存储收据信息
+    final receipts = event['receipts'] as List<dynamic>?;
+    if (receipts != null && receipts.isNotEmpty) {
+      _balanceReceipts = receipts.map((receipt) => receipt.toString()).toList();
+      notifyListeners();
     }
-    
-    _lastTransaction = ANZTransactionData.error(message);
-    _updateTransactionStatus(ANZTransactionStatus.failed);
-    _currentTransactionId = null;
   }
 
-  bool _isCommunicationError(String message, String? resultCode) {
-    final communicationErrors = [
-      'API_CONNECT_FAIL_SERVER',
-      'API_CONNECT_FAIL_TERMINAL', 
-      'API_CONNECTION_LOST_SERVER',
-      'API_CONNECTION_LOST_TERMINAL',
-    ];
-    
-    // 优先检查 resultCode，如果存在的话
-    if (resultCode != null) {
-      return communicationErrors.contains(resultCode);
-    }
-    
-    // 如果没有 resultCode，则检查 message 中是否包含错误信息
-    return communicationErrors.any((error) => message.contains(error));
-  }
-
-  void _resetStatusForCommunicationError() {
-    // 重置所有状态到初始状态
-    _updatePairStatus(ANZPairStatus.disconnected);
-    _updateConnectionStatus(ANZConnectionStatus.disconnected);
-    _updateTransactionStatus(ANZTransactionStatus.idle); //TODO: check later
-    _updateUnpairStatus(ANZUnpairStatus.idle);
-    _currentTransactionId = null;
-    _lastTransaction = null;
-    _isBalanceInProgress = false;
-    
-    // 显示 EasyLoading 提示
-    EasyLoading.showToast(
-      "连接已断开，请重新连接",
-      duration: Duration(seconds: 3),
-    );
-    
-    // 通知UI更新
+  void clearBalanceReceipts() {
+    _balanceReceipts = null;
     notifyListeners();
   }
 
 
+  void _handleError(Map<String, dynamic> event) {
+    final source = event['source'] as String?;
+    final message = event['message'] as String? ?? "Unknown error";
+    final resultCode = event['resultCode'] as String?;
+    final localizedMessage = event['localizedMessage'] as String?;
+    print('.......show localizedMessage${localizedMessage}');
+
+
+    if (_isCommunicationError(message, resultCode)) {
+      print("🔄 检测到communication错误，自动重置状态: $message (resultCode: $resultCode)");
+      _resetStatusForCommunicationError(message);
+    }
+
+    // Here only showing error, do not dealing with any status change
+    if (_isRequestError(message, resultCode)) {
+      print("🔄 检测到request错误: $message (resultCode: $resultCode)");
+      EasyLoading.showToast(
+        "${localizedMessage.toString()}，please check terminal.",
+        duration: Duration(seconds: 3),
+      );
+    }
+
+    if (source == 'transactionCompleted') {
+      print("🔄 检测到transactionCompleted错误: $message (resultCode: $resultCode)");
+      _lastTransaction = ANZTransactionData.error(message);
+      _updateTransactionStatus(ANZTransactionStatus.failed);
+      // return;
+    }
+
+    // Other errors
+    EasyLoading.showToast(
+      "${localizedMessage.toString()}",
+      duration: Duration(seconds: 3),
+    );
+    print('.......show localizedMessage${localizedMessage}');
+  }
+
+
+  bool _isCommunicationError(String message, String? resultCode) {
+    final communicationErrors = [
+      'API_CONNECT_FAIL_SERVER',
+      'API_CONNECT_FAIL_TERMINAL',
+      'API_CONNECTION_LOST_SERVER',
+      'API_CONNECTION_LOST_TERMINAL',
+    ];
+
+    if (resultCode != null) {
+      return communicationErrors.contains(resultCode);
+    }
+    return communicationErrors.any((error) => message.contains(error));
+  }
+
+  bool _isRequestError(String message, String? resultCode) {
+    final requestErrors = [
+      'REQUEST_PENDING',
+    ];
+
+    if (resultCode != null) {
+      return requestErrors.contains(resultCode);
+    }
+    return requestErrors.any((error) => message.contains(error));
+  }
+
+  Future<void> getTerminalStatus() async {
+    await _requestCurrentStatus();
+  }
+
+Future<void> _requestCurrentStatus() async {
+    try {
+
+      final status = await FlutterSpi.getTerminalStatus();
+      print("🔍 Current terminal status: $status");
+      _updateStatusFromTerminalResponse(status);
+      
+    } catch (e) {
+      print("❌ Failed to request current status: $e");
+      _updatePairingFlowStatus(ANZPairingFlowStatus.idle);
+      _updateConnectionStatus(ANZConnectionStatus.disconnected);
+    }
+  }
+
+  void _updateStatusFromTerminalResponse(String statusString) {
+    // 从状态字符串中提取 connectionStatus
+    // 示例: "transactionStatus=IDLE, connectionStatus=DISCONNECTED, managementStatus=CLOSED, ..."
+    
+    String? connectionStatus;
+    
+    // 查找 connectionStatus 的值
+    final connectionStatusMatch = RegExp(r'connectionStatus=([^,\s]+)').firstMatch(statusString);
+    if (connectionStatusMatch != null) {
+      connectionStatus = connectionStatusMatch.group(1);
+    }
+
+    switch (connectionStatus?.toUpperCase()) {
+      case 'LOGGED_IN':
+        _updateConnectionStatus(ANZConnectionStatus.loggedIn);
+        break;
+      case 'LOGGED_OUT':
+        _updateConnectionStatus(ANZConnectionStatus.loggedOut);
+        break;
+      case 'DISCONNECTED':
+      default:
+        _updateConnectionStatus(ANZConnectionStatus.disconnected);
+        break;
+    }
+  }
+
+  void _resetStatusForCommunicationError([String? errorMessage]) {
+    _updatePairingFlowStatus(ANZPairingFlowStatus.failed);
+    _updateConnectionStatus(ANZConnectionStatus.disconnected);
+    _updateTransactionStatus(ANZTransactionStatus.idle); //TODO: check later
+    _updateUnpairStatus(ANZUnpairStatus.idle);
+    _lastTransaction = null;
+    _isBalanceInProgress = false;
+
+    final displayMessage = errorMessage != null && errorMessage.isNotEmpty
+        ? "连接错误: $errorMessage"
+        : "连接已断开，请重新连接";
+    
+    EasyLoading.showToast(
+      displayMessage,
+      duration: Duration(seconds: 3),
+    );
+
+    _requestCurrentStatus();
+    
+    notifyListeners();
+  }
+
   // Helper methods for UI
   String getStatusText(dynamic status) {
     switch (status) {
-      case ANZPairStatus.disconnected:
-        return "Disconnected";
-      case ANZPairStatus.connected:
+      case ANZPairingFlowStatus.idle:
+        return "Idle";
+      case ANZPairingFlowStatus.connecting:
+        return "Connecting";
+      case ANZPairingFlowStatus.loggingIn:
+        return "Logging In";
+      case ANZPairingFlowStatus.activating:
+        return "Activating";
+      case ANZPairingFlowStatus.failed:
+        return "Failed";
+      case ANZPairingFlowStatus.connected:
         return "Connected";
-      case ANZPairStatus.loggedIn:
+      case ANZPairingFlowStatus.loggedIn:
         return "Logged In";
-      case ANZPairStatus.activated:
+      case ANZPairingFlowStatus.activated:
         return "Activated";
       case ANZUnpairStatus.failed:
         return "Unpair Failed";
@@ -559,11 +773,11 @@ class AnzState extends ChangeNotifier {
       case ANZTransactionStatus.failed:
         return "Failed";
       case ANZConnectionStatus.disconnected:
-        return "TIM: Disconnected";
+        return "Disconnected";
       case ANZConnectionStatus.loggedIn:
-        return "TIM: Logged In";
+        return "Logged In";
       case ANZConnectionStatus.loggedOut:
-        return "TIM: Logged Out";
+        return "Logged Out";
       case ANZUnpairStatus.disposed:
         return "Disposed";
       default:
@@ -571,19 +785,30 @@ class AnzState extends ChangeNotifier {
     }
   }
 
-
   Color getStatusColor(dynamic status) {
     switch (status) {
-      case ANZPairStatus.disconnected:
+      case ANZPairingFlowStatus.idle:
+        return Colors.grey;
+      case ANZPairingFlowStatus.connecting:
+      case ANZPairingFlowStatus.loggingIn:
+      case ANZPairingFlowStatus.activating:
+        return Colors.orange;
+      case ANZPairingFlowStatus.failed:
         return Colors.red;
       case ANZUnpairStatus.failed:
-        return Colors.orange;
-      case ANZPairStatus.connected:
-      case ANZPairStatus.loggedIn:
-      case ANZPairStatus.activated:
-        return Colors.blue; 
+        return Colors.red;
+      case ANZPairingFlowStatus.connected:
+      case ANZPairingFlowStatus.loggedIn:
+        return Colors.blue;
+      case ANZPairingFlowStatus.activated:
       case ANZUnpairStatus.disposed:
         return Colors.green;
+      case ANZConnectionStatus.disconnected:
+        return Colors.red;
+      case ANZConnectionStatus.loggedIn:
+        return Colors.green;
+      case ANZConnectionStatus.loggedOut:
+        return Colors.orange;
       default:
         return Colors.grey;
     }
@@ -604,7 +829,49 @@ class AnzState extends ChangeNotifier {
     }
   }
 
-  bool get isReady => _pairStatus == ANZPairStatus.activated;
+  // 检查终端是否准备好处理交易
+  bool get isReady => _pairingFlowStatus == ANZPairingFlowStatus.activated;
+  
+  // 检查是否有交易正在进行中
   bool get isTransactionInProgress => _transactionStatus == ANZTransactionStatus.processing;
+  
+  // 检查是否有交易数据
   bool get hasTransactionData => _lastTransaction != null;
+  
+  // 检查是否正在等待配对结果
+  bool get isWaitingForPairingResult {
+    // 如果配对成功、失败或空闲，不在等待
+    if (_pairingFlowStatus == ANZPairingFlowStatus.activated || 
+        _pairingFlowStatus == ANZPairingFlowStatus.failed ||
+        _pairingFlowStatus == ANZPairingFlowStatus.idle) {
+      return false;
+    }
+    
+    // 其他情况都在等待配对结果
+    return true;
+  }
+  
+  // 保持向后兼容
+  bool get isWaitingForConnectionResult => isWaitingForPairingResult;
+
+  String getCurrentLoadingStatus() {
+    switch (_pairingFlowStatus) {
+      case ANZPairingFlowStatus.connecting:
+        return "Connecting...";
+      case ANZPairingFlowStatus.loggingIn:
+        return "Logging in...";
+      case ANZPairingFlowStatus.activating:
+        return "Activating...";
+      default:
+        return "";
+    }
+  }
+
+  @override
+  void dispose() {
+    _pairingTimeoutTimer?.cancel();
+    _eventSubscription?.cancel();
+    _eventsSubscribed = false;
+    super.dispose();
+  }
 }

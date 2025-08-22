@@ -119,7 +119,7 @@ class _ChargeDialogState extends State<ChargeDialog> {
             children: [
               const Text('Amount:'),
               Text(
-                '\$15.00',
+                transaction?.formattedAmount ?? 'N/A',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -141,36 +141,18 @@ class _ChargeDialogState extends State<ChargeDialog> {
             ),
             const SizedBox(height: 8),
           ],
-          if (transaction?.transRef != null) ...[
+          if (transaction?.surchargeAmount != null) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Reference:'),
-                Expanded(
-                  child: Text(
-                    transaction!.transRef!,
-                    style: const TextStyle(fontSize: 12),
-                    textAlign: TextAlign.right,
-                  ),
+                const Text('Surcharge:'),
+                Text(
+                  transaction!.formattedSurcharge!,
+                  style: const TextStyle(fontSize: 12),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-          ],
-          if (transaction?.cardRef != null) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Card:'),
-                Expanded(
-                  child: Text(
-                    transaction!.cardRef!,
-                    style: const TextStyle(fontSize: 12),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            ),
           ],
         ],
       ),

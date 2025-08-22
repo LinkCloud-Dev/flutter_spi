@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'anz_state.dart';
 
 class AnzConnectUI extends StatelessWidget {
@@ -18,21 +19,32 @@ class AnzConnectUI extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
+                // Header with close button
                 Row(
                   children: [
                     Icon(
                       Icons.point_of_sale,
-                      color: anzState.getStatusColor(anzState.pairStatus),
+                      color: anzState.getStatusColor(anzState.pairingFlowStatus),
                       size: 28,
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'ANZ Terminal Connection',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    const Expanded(
+                      child: Text(
+                        'ANZ Terminal Pairing Progress',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                    ),
+                    // Close button (X) in top right corner
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.black,
+                      ),
+                      tooltip: 'Close',
                     ),
                   ],
                 ),
@@ -42,10 +54,10 @@ class AnzConnectUI extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: anzState.getStatusColor(anzState.pairStatus).withOpacity(0.1),
+                    color: anzState.getStatusColor(anzState.pairingFlowStatus).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: anzState.getStatusColor(anzState.pairStatus).withOpacity(0.3),
+                      color: anzState.getStatusColor(anzState.pairingFlowStatus).withOpacity(0.3),
                       width: 1,
                     ),
                   ),
@@ -58,17 +70,17 @@ class AnzConnectUI extends StatelessWidget {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: anzState.getStatusColor(anzState.pairStatus),
+                              color: anzState.getStatusColor(anzState.pairingFlowStatus),
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Status: ${anzState.getStatusText(anzState.pairStatus)}',
+                            'Pair Status: ${anzState.getStatusText(anzState.pairingFlowStatus)}${anzState.isWaitingForPairingResult ? ' (${anzState.getCurrentLoadingStatus()})' : ''}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: anzState.getStatusColor(anzState.pairStatus),
+                              color: anzState.getStatusColor(anzState.pairingFlowStatus),
                             ),
                           ),
                         ],
@@ -81,41 +93,6 @@ class AnzConnectUI extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                       ),
-                      // 显示错误信息
-                      if (anzState.lastTransaction?.errorMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.red.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: Colors.red,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  anzState.lastTransaction!.errorMessage!,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.red[700],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -123,66 +100,8 @@ class AnzConnectUI extends StatelessWidget {
 
                 // Connection steps indicator
                 _buildStepsIndicator(anzState),
-                // const SizedBox(height: 20),
 
-                // // Action buttons
-                // Row(
-                //   children: [
-                //     Expanded(
-                //       child: ElevatedButton(
-                //         onPressed: anzState.status.name == 'disconnected' 
-                //             ? () => anzState.startConnection()
-                //             : null,
-                //         style: ElevatedButton.styleFrom(
-                //           backgroundColor: anzState.getStatusColor(anzState.pairStatus),
-                //           foregroundColor: Colors.white,
-                //           padding: const EdgeInsets.symmetric(vertical: 12),
-                //           shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(8),
-                //           ),
-                //         ),
-                //         child: Text(
-                //           anzState.status.name == 'disconnected' 
-                //               ? 'Connect Terminal'
-                //               : 'Connecting...',
-                //         ),
-                //       ),
-                //     ),
-                //   ],
-                // ),
                 const SizedBox(height: 12),
-
-                // Action buttons
-                Row(
-                  children: [
-                    if (anzState.lastTransaction?.errorMessage != null) ...[
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            anzState.clearError();
-                            anzState.startConnection();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text('Retry Connection'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Close'),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -193,11 +112,39 @@ class AnzConnectUI extends StatelessWidget {
 
   Widget _buildStepsIndicator(AnzState anzState) {
     final steps = [
-      {'name': 'Connect', 'status': ANZPairStatus.disconnected},
-      {'name': 'Login', 'status': ANZPairStatus.connected},
-      {'name': 'Activate', 'status': ANZPairStatus.loggedIn},
-      {'name': 'Ready', 'status': ANZPairStatus.activated},
+      {'name': 'Connect', 'status': ANZPairingFlowStatus.idle, 'flowStatus': ANZPairingFlowStatus.connecting},
+      {'name': 'Login', 'status': ANZPairingFlowStatus.connected, 'flowStatus': ANZPairingFlowStatus.loggingIn},
+      {'name': 'Activate', 'status': ANZPairingFlowStatus.loggedIn, 'flowStatus': ANZPairingFlowStatus.activating},
+      {'name': 'Ready', 'status': ANZPairingFlowStatus.activated, 'flowStatus': ANZPairingFlowStatus.activated},
     ];
+
+    ANZPairingFlowStatus currentStepStatus;
+    switch (anzState.pairingFlowStatus) {
+      case ANZPairingFlowStatus.idle:
+        currentStepStatus = ANZPairingFlowStatus.idle;
+        break;
+      case ANZPairingFlowStatus.connected:
+        currentStepStatus = ANZPairingFlowStatus.connected;
+        break;
+      case ANZPairingFlowStatus.loggedIn:
+        currentStepStatus = ANZPairingFlowStatus.loggedIn;
+        break;
+      case ANZPairingFlowStatus.activated:
+        currentStepStatus = ANZPairingFlowStatus.activated;
+        break;
+      case ANZPairingFlowStatus.connecting:
+        currentStepStatus = ANZPairingFlowStatus.connecting;
+        break;
+      case ANZPairingFlowStatus.loggingIn:
+        currentStepStatus = ANZPairingFlowStatus.loggingIn;
+        break;
+      case ANZPairingFlowStatus.activating:
+        currentStepStatus = ANZPairingFlowStatus.activating;
+        break;
+      case ANZPairingFlowStatus.failed:
+        currentStepStatus = ANZPairingFlowStatus.failed;
+        break;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,10 +162,12 @@ class AnzConnectUI extends StatelessWidget {
           children: steps.asMap().entries.map((entry) {
             final index = entry.key;
             final step = entry.value;
-            final ANZPairStatus stepStatus = step['status'] as ANZPairStatus;
-            final isCompleted = _isStepCompleted(anzState, stepStatus);
-            final isCurrent = _isCurrentStep(anzState, stepStatus);
-            
+            final ANZPairingFlowStatus stepStatus = step['status'] as ANZPairingFlowStatus;
+            final ANZPairingFlowStatus flowStatus = step['flowStatus'] as ANZPairingFlowStatus;
+
+            final isCompleted = _isStepCompleted(currentStepStatus, stepStatus);
+            final isCurrent = _isCurrentStep(anzState.pairingFlowStatus, stepStatus);
+
             return Expanded(
               child: Row(
                 children: [
@@ -229,26 +178,26 @@ class AnzConnectUI extends StatelessWidget {
                           width: 24,
                           height: 24,
                           decoration: BoxDecoration(
-                            color: isCompleted 
-                                ? Colors.green 
-                                : isCurrent 
-                                    ? Colors.orange 
-                                    : Colors.grey[300],
+                            color: isCompleted
+                                ? Colors.green
+                                : isCurrent
+                                ? Colors.orange
+                                : Colors.grey[300],
                             shape: BoxShape.circle,
                           ),
-                          child: isCompleted 
+                          child: isCompleted
                               ? const Icon(Icons.check, color: Colors.white, size: 16)
-                              : isCurrent 
-                                  ? const Icon(Icons.hourglass_empty, color: Colors.white, size: 16)
-                                  : null,
+                              : isCurrent
+                              ? const Icon(Icons.hourglass_empty, color: Colors.white, size: 16)
+                              : null,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          step['name']!.toString(),
+                          anzState.pairingFlowStatus == flowStatus ? anzState.getCurrentLoadingStatus() : step['name']!.toString(),
                           style: TextStyle(
                             fontSize: 10,
-                            color: isCompleted || isCurrent 
-                                ? Colors.black87 
+                            color: isCompleted || isCurrent
+                                ? Colors.black87
                                 : Colors.grey[500],
                             fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
                           ),
@@ -273,13 +222,53 @@ class AnzConnectUI extends StatelessWidget {
     );
   }
 
-  bool _isStepCompleted(AnzState anzState, ANZPairStatus stepStatus) {
-    final currentIndex = ANZPairStatus.values.indexOf(anzState.pairStatus);
-    final stepIndex = ANZPairStatus.values.indexOf(stepStatus);
-    return currentIndex > stepIndex;
+  bool _isStepCompleted(ANZPairingFlowStatus currentStatus, ANZPairingFlowStatus stepStatus) {
+    // 定义配对流程的正确顺序
+    final flowOrder = [
+      ANZPairingFlowStatus.idle,
+      ANZPairingFlowStatus.connecting,
+      ANZPairingFlowStatus.connected,
+      ANZPairingFlowStatus.loggingIn,
+      ANZPairingFlowStatus.loggedIn,
+      ANZPairingFlowStatus.activating,
+      ANZPairingFlowStatus.activated,
+    ];
+    
+    final currentIndex = flowOrder.indexOf(currentStatus);
+    final stepIndex = flowOrder.indexOf(stepStatus);
+    
+    // 如果当前状态在流程中，且当前状态索引大于步骤索引，则步骤已完成
+    if (currentIndex != -1 && stepIndex != -1) {
+      return currentIndex > stepIndex;
+    }
+    
+    // 如果当前状态是 activated，则所有步骤都已完成
+    if (currentStatus == ANZPairingFlowStatus.activated) {
+      return stepStatus != ANZPairingFlowStatus.activated;
+    }
+    
+    return false;
   }
 
-  bool _isCurrentStep(AnzState anzState, ANZPairStatus stepStatus) {
-    return anzState.pairStatus == stepStatus;
+  bool _isCurrentStep(ANZPairingFlowStatus pairingFlowStatus, ANZPairingFlowStatus stepStatus) {
+    // 根据配对流程状态判断当前步骤
+    switch (pairingFlowStatus) {
+      case ANZPairingFlowStatus.connecting:
+        return stepStatus == ANZPairingFlowStatus.idle; // Connect 步骤
+      case ANZPairingFlowStatus.connected:
+        return stepStatus == ANZPairingFlowStatus.connected; // Connect 已完成
+      case ANZPairingFlowStatus.loggingIn:
+        return stepStatus == ANZPairingFlowStatus.connected; // Login 步骤
+      case ANZPairingFlowStatus.loggedIn:
+        return stepStatus == ANZPairingFlowStatus.loggedIn; // Login 已完成
+      case ANZPairingFlowStatus.activating:
+        return stepStatus == ANZPairingFlowStatus.loggedIn; // Activate 步骤
+      case ANZPairingFlowStatus.activated:
+        return stepStatus == ANZPairingFlowStatus.activated; // Ready 步骤
+      case ANZPairingFlowStatus.failed:
+        return false; // 失败时不高亮任何步骤
+      case ANZPairingFlowStatus.idle:
+        return false; // 空闲时不高亮任何步骤
+    }
   }
 }

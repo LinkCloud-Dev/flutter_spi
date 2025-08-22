@@ -150,9 +150,9 @@ class _HomeState extends State<Home> {
 
   void _timApiPairing(BuildContext context) async {
     // For credentialing - disable printing by default
-    await FlutterSpi.timApiInit(enablePrinting: false);
+    // await FlutterSpi.timApiInit(enablePrinting: false);
     final anzState = Provider.of<AnzState>(context, listen: false);
-    anzState.init();  
+    anzState.initTerminal(context);  
   }
 
   void _timApiCharge(BuildContext context) async {
@@ -281,15 +281,15 @@ class _HomeState extends State<Home> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: anzState.getStatusColor(anzState.pairStatus),
+                      color: anzState.getStatusColor(anzState.pairingFlowStatus),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Pair Status: ${anzState.getStatusText(anzState.pairStatus)}',
+                    'Pair Status: ${anzState.getStatusText(anzState.pairingFlowStatus)}',
                     style: TextStyle(
                       fontSize: 16,
-                      color: anzState.getStatusColor(anzState.pairStatus),
+                      color: anzState.getStatusColor(anzState.pairingFlowStatus),
                     ),
                   ),
                   Text(
