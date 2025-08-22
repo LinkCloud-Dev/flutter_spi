@@ -1146,18 +1146,21 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                     eventSink?.success(
                         if (data != null && exception == null) {
                             // Extract transaction data
-                            val transInfo = data.transactionInformation
                             val receiptList = data.printData?.receipts?.mapNotNull { it?.value }?.filter { it.isNotBlank() } ?: emptyList()
                             
                             mapOf(
                                 "type" to "transactionCompleted",
-                                "amount" to data.amount.amount,
+                                "amountInCents" to data.amount.amount,
+                                "amountExponent" to data.amount.exponent,
                                 "currency" to data.amount.currency.name,
+                                "surchargeAmount" to data.amountSurcharge?.amount,
+                                "surchargeExponent" to data.amountSurcharge?.exponent,
                                 "transactionType" to data.transactionType.name,
-                                "transRef" to transInfo?.transRef,
-                                "transSeq" to transInfo?.transSeq,
-                                "cardRef" to transInfo?.cardId,
-                                "acqTransRef" to transInfo?.acqTransRef,
+                                "transRef" to data.transactionInformation?.transRef,
+                                "transSeq" to data.transactionInformation?.transSeq,
+                                "acqId" to data.transactionInformation?.acqId,
+                                "acqTransRef" to data.transactionInformation?.acqTransRef,
+                                "sixTrxRefNum" to data.transactionInformation?.sixTrxRefNum,                                
                                 "receipts" to receiptList
                             )
                         } else {
