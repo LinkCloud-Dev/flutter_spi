@@ -982,10 +982,21 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 Handler(Looper.getMainLooper()).post {
                     eventSink?.success(
                         if (data != null) {
-                            val receiptList = data.printData?.receipts?.mapNotNull { it?.value }?.filter { it.isNotBlank() } ?: emptyList()
+                            val receiptDetails = data.printData?.receipts
+                                .orEmpty()
+                                .filterNotNull()
+                                .filter { it.value?.isNotBlank() == true }
+                                .map { r ->
+                                    mapOf(
+                                        "recipient" to (r.recipient?.name ?: "UNKNOWN"),
+                                        "value" to (r.value ?: "")
+                                    )
+                                }
 
-                            mapOf("type" to "balanceCompleted",
-                                "receipts" to receiptList)
+                            mapOf(
+                                "type" to "balanceCompleted",
+                                "receipts" to receiptDetails
+                            )
                         } else {
                             mapOf(
                                 "type" to "error",
@@ -1146,8 +1157,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                     eventSink?.success(
                         if (data != null && exception == null) {
                             // Extract transaction data
-                            val receiptList = data.printData?.receipts?.mapNotNull { it?.value }?.filter { it.isNotBlank() } ?: emptyList()
-                            
+                            val receiptDetails = data.printData?.receipts
+                                .orEmpty()
+                                .filterNotNull()
+                                .filter { it.value?.isNotBlank() == true }
+                                .map { r ->
+                                    mapOf(
+                                        "recipient" to (r.recipient?.name ?: "UNKNOWN"),
+                                        "value" to (r.value ?: "")
+                                    )
+                                }
+
                             mapOf(
                                 "type" to "transactionCompleted",
                                 "amountInCents" to data.amount.amount,
@@ -1160,8 +1180,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                                 "transSeq" to data.transactionInformation?.transSeq,
                                 "acqId" to data.transactionInformation?.acqId,
                                 "acqTransRef" to data.transactionInformation?.acqTransRef,
-                                "sixTrxRefNum" to data.transactionInformation?.sixTrxRefNum,                                
-                                "receipts" to receiptList
+                                "sixTrxRefNum" to data.transactionInformation?.sixTrxRefNum,
+                                "receipts" to receiptDetails
                             )
                         } else {
                             mapOf(
