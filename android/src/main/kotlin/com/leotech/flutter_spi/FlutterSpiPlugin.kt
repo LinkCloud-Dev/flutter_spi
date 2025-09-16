@@ -238,6 +238,8 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             timApiLogout(result)
         } else if (call.method == "timApiDeactivate") {
             timApiDeactivate(result)
+        } else if (call.method == "timApiCancel") {
+            timApiCancel(result)
         } else if (call.method == "getTerminalStatus") {
             getTerminalStatus(result)
         } else  {
@@ -1550,6 +1552,23 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
             val errorCode = when (e) {
                 is TimException -> e.resultCode?.name ?: "TIM_EXCEPTION"
                 else -> "Disconnect_FAILED"
+            }
+            result.error(errorCode, e.message ?: "Unknown error", null)
+        }
+    }
+
+    private fun timApiCancel(result: Result) {
+        try {
+            if (mTim == null) {
+                result.error("TERMINAL_NOT_INITIALIZED", "Terminal not initialized.", null)
+                return
+            }
+            mTim?.cancel()
+            result.success(null)
+        } catch (e: Exception) {
+            val errorCode = when (e) {
+                is TimException -> e.resultCode?.name ?: "TIM_EXCEPTION"
+                else -> "CANCEL_FAILED"
             }
             result.error(errorCode, e.message ?: "Unknown error", null)
         }

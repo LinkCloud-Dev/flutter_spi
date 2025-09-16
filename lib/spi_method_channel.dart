@@ -384,5 +384,11 @@ class SpiMethodChannel implements FlutterSpiPlatform {
     throw UnimplementedError();
   }
 
+  @override
+  Future<void> timApiCancel() {
+    // TODO: implement timApiCancel
+    throw UnimplementedError();
+  }
+
   
 }

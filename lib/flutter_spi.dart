@@ -543,4 +543,8 @@ class FlutterSpi {
   static Future<void> timApiDispose() async {
     await flutterSpi.timApiDispose();
   }
+
+  static Future<void> timApiCancel() async {
+    await flutterSpi.timApiCancel();
+  }
 }

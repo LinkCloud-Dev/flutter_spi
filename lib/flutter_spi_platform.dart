@@ -137,4 +137,6 @@ abstract class FlutterSpiPlatform {
   Future<String> getTerminalStatus();
 
   Future<void> timApiDispose();
+
+  Future<void> timApiCancel();
 }

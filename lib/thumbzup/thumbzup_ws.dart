@@ -926,4 +926,10 @@ class ThumbzUpWebSocket implements FlutterSpiPlatform {
     // NOT NEEDED
   }
 
+  @override
+  Future<void> timApiCancel() {
+    // TODO: implement timApiCancel
+    throw UnimplementedError();
+  }
+
 }

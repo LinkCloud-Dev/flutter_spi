@@ -203,6 +203,15 @@ class _HomeState extends State<Home> {
     await anzState.startReversal();
   }
 
+  void _timApiAbort(BuildContext context) async {
+    try {
+      await FlutterSpi.timApiCancel();
+      print('Transaction aborted successfully');
+    } catch (e) {
+      print('Failed to abort transaction: $e');
+    }
+  }
+
   /*void _timApiPrint(String ticket) async {
     await FlutterSpi.timApiPrint(ticket);
   }*/
@@ -435,6 +444,14 @@ class _HomeState extends State<Home> {
             ElevatedButton(
               onPressed: () => _timApiReversal(context),
               child: const Text('Reversal (TIM API)'),
+            ),
+            ElevatedButton(
+              onPressed: () => _timApiAbort(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Abort Transaction (TIM API)'),
             ),
             /*ElevatedButton( // Function disallowed in API
               onPressed: _canPrint
