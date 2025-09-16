@@ -49,7 +49,8 @@ class ANZTransactionData {
   final String? acqId;
   final String? acqTransRef;
   final String? sixTrxRefNum;
-  final List<String>? receipts;
+  // Structured receipts: each has { recipient, value }
+  final List<Map<String, String>>? receipts;
   final String? errorMessage;
 
   ANZTransactionData({
@@ -91,7 +92,16 @@ class ANZTransactionData {
       acqTransRef: map['acqTransRef']?.toString(),
       sixTrxRefNum: map['sixTrxRefNum']?.toString(),
       receipts: map['receipts'] != null
-          ? List<String>.from((map['receipts'] as List).map((item) => item.toString()))
+          ? (map['receipts'] as List)
+              .where((e) => e != null)
+              .map((e) {
+                final m = Map<String, dynamic>.from(e as Map);
+                return {
+                  'recipient': (m['recipient'] ?? '').toString(),
+                  'value': (m['value'] ?? '').toString(),
+                };
+              })
+              .toList()
           : null,
       errorMessage: map['errorMessage']?.toString(),
     );
@@ -134,8 +144,8 @@ class AnzState extends ChangeNotifier {
   ANZTransactionData? _lastTransaction;
   ANZTransactionData? get lastTransaction => _lastTransaction;
   
-  List<String>? _balanceReceipts;
-  List<String>? get balanceReceipts => _balanceReceipts;
+  List<Map<String, String>>? _balanceReceipts;
+  List<Map<String, String>>? get balanceReceipts => _balanceReceipts;
 
   ANZUnpairStatus _unpairStatus = ANZUnpairStatus.idle;
   ANZUnpairStatus get unpairStatus => _unpairStatus;
@@ -598,10 +608,16 @@ void _updatePairingFlowStatus(ANZPairingFlowStatus newStatus) {
     print("✅ Balance completed: $event");
     print("  - receipts: ${event['receipts']} (${event['receipts']?.runtimeType})");
 
-    // 存储收据信息
+    // 存储结构化收据信息
     final receipts = event['receipts'] as List<dynamic>?;
     if (receipts != null && receipts.isNotEmpty) {
-      _balanceReceipts = receipts.map((receipt) => receipt.toString()).toList();
+      _balanceReceipts = receipts.map((e) {
+        final m = Map<String, dynamic>.from(e as Map);
+        return {
+          'recipient': (m['recipient'] ?? '').toString(),
+          'value': (m['value'] ?? '').toString(),
+        };
+      }).toList();
       notifyListeners();
     }
   }
