@@ -420,4 +420,15 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
       rethrow;
     }
   }
+
+  @override
+  Future<void> timApiCancel() async {
+    try {
+      await _channel.invokeMethod('timApiCancel');
+    } on PlatformException catch (_) {
+      rethrow;
+    } catch (_) {
+      rethrow;
+    }
+  }
 }
