@@ -95,8 +95,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         eventChannel.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 eventSink = events
-                println("✅ EventChannel onListen triggered")
-
+                println("✅ SPI(TimApi) EventChannel onListen triggered")
                     }
 
             override fun onCancel(arguments: Any?) {
@@ -160,10 +159,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 call.argument("transSeq"),
                 result
             )
-        /*}else if (call.method == "timApiPrint") {
-            timApiPrint(
-                call.argument("ticket")!!,
-                result)*/
         }else if (call.method == "timApiStartListening") {
             dummy(result)
         } else if (call.method == "setPosId") {
@@ -249,6 +244,21 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         spiChannel.setMethodCallHandler(null)
+        timApiChannel.setMethodCallHandler(null)
+        
+        try {
+            mTim?.let { terminal ->
+                try {
+                    terminal.disconnectAsync()
+                    Thread.sleep(200)
+                } catch (e: Exception) {
+                    Log.w("FlutterSpiPlugin", "Error disconnecting in onDetachedFromEngine: ${e.message}")
+                }
+            }
+            mTim = null
+        } catch (e: Exception) {
+            Log.e("FlutterSpiPlugin", "Error in onDetachedFromEngine cleanup: ${e.message}")
+        }
     }
 
     private fun invokeFlutterMethod(flutterMethod: String, message: Any?) {
@@ -1419,8 +1429,6 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
     private fun timApiInit(eftposAddress: String?, posId: String?, port: Int?, enablePrinting: Boolean, result: Result) {
         try {
-            println("......TIM API Init with eftposAddress=$eftposAddress, posId=$posId, enablePrinting=$enablePrinting")
-
             if (mTim != null) {
                 mTim?.dispose()
                 mTim = null
