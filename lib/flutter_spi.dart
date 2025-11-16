@@ -285,16 +285,17 @@ class FlutterSpi {
     String? apiKey, // MX51
     String? tenantCode, // MX51
     Map<String, String>? secrets, // MX51, ThumbzUp
-    String? spiType, // MX51, ThumbzUp
+    String? spiType, // MX51, ThumbzUp, TIM API
     String? appKey, // ThumbzUp
     String? merchantId, // ThumbzUp
     String username = "default", // ThumbzUp
+    bool enablePrinting = false, // TIM API
   }) async {
     if (spiType == "THUMBZUP") {
       flutterSpi = ThumbzUpWebSocket();
     } else if (spiType == "WINDCAVE") {
     } else if (spiType == "ANZ") {
-      // flutterSpi = TimApiMethodChannel();
+      flutterSpi = TimApiMethodChannel();
     }else {
       flutterSpi = SpiMethodChannel();
     }
@@ -309,6 +310,7 @@ class FlutterSpi {
       appKey: appKey,
       merchantId: merchantId,
       username: username,
+      enablePrinting: enablePrinting,
     );
   }
 
@@ -467,27 +469,6 @@ class FlutterSpi {
 
   static Future<void> setPrintMerchantCopy(bool printMerchantCopy) async {
     flutterSpi.setPrintMerchantCopy(printMerchantCopy);
-  }
-
-  // TIM API
-  static void useTimApi() {
-    if (flutterSpi is! TimApiMethodChannel) {
-      flutterSpi = TimApiMethodChannel();
-    }
-  }
-
-  static Future<void> timApiInit({
-    String? eftposAddress,
-    String? posId,
-    int? port,
-    bool enablePrinting = false,
-  }) async {
-    await flutterSpi.timApiInit(
-      eftposAddress: eftposAddress,
-      posId: posId,
-      port: port,
-      enablePrinting: enablePrinting,
-    );
   }
 
 

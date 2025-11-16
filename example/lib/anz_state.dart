@@ -163,14 +163,14 @@ class AnzState extends ChangeNotifier {
   bool _isBalanceInProgress = false;
   bool get isBalanceInProgress => _isBalanceInProgress;
 
-Future<void> initTerminal(context) async {
-    FlutterSpi.useTimApi();
-    
+Future<void> initTerminal(context) async {    
     // If already logged in, skip timApiInit. Otherwise, ensure TIM API is initialised.
     if (_connectionStatus == ANZConnectionStatus.loggedIn) {
       print('⏭️ Already LOGGED_IN, skip timApiInit');
     } else {
-      await FlutterSpi.timApiInit(
+      await FlutterSpi.init(
+        spiType: "ANZ",
+        enablePrinting: false,
       );
       print('✅ TIM API initialised');
     }

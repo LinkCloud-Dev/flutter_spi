@@ -27,8 +27,14 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
     String? appKey,        // no need
     String? merchantId,    // no need
     String username = "default", // no need
+    bool enablePrinting = false,
   }) async {
-    throw UnimplementedError();
+    await _channel.invokeMethod('timApiInit', {
+        'eftposAddress': eftposAddress ??'10.0.2.2',//192.168.020.009
+        'posId': posId ?? '12345678',
+        'port': port ?? 7784,
+        'enablePrinting': enablePrinting,
+      });
   }
 
   @override
@@ -45,7 +51,7 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
 
   @override
   Future<void> dispose() async {
- // no need
+    // no need
     throw UnimplementedError();
   }
 
@@ -249,27 +255,6 @@ class TimApiMethodChannel implements FlutterSpiPlatform {
   
 
  // TIM API 
-
-  @override
-  Future<void> timApiInit({
-    String? eftposAddress,
-    String? posId,
-    int? port,
-    bool enablePrinting = false,
-  }) async {
-    try {
-      await _channel.invokeMethod('timApiInit', {
-        'eftposAddress': eftposAddress ??'10.0.2.2',//192.168.020.009
-        'posId': posId ?? '12345678',
-        'port': port ?? 7784,
-        'enablePrinting': enablePrinting,
-      });
-    } on PlatformException catch (_) {
-      rethrow;
-    } catch (_) {
-      rethrow;
-    }
-  }
 
   @override
   Future<void> timApiConnect() async {

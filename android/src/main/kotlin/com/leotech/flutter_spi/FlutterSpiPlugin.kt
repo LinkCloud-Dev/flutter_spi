@@ -80,7 +80,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var eventChannel: EventChannel
     private var eventSink: EventChannel.EventSink? = null
 
-    lateinit var mSpi: Spi
+    var mSpi: Spi? = null  
     var mTim: com.six.timapi.Terminal? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -279,13 +279,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     fun init(posId: String, serialNumber: String, eftposAddress: String, apiKey: String, tenantCode: String, secrets: HashMap<String, String>?, result: Result) {
-        var initialized = true
-        try {
-            mSpi
-        } catch (e: UninitializedPropertyAccessException) {
-            initialized = false
-        }
-        if (initialized) {
+        if (mSpi != null) {
             result.error("INITIALIZED", "Initialized Already.", null)
             return
         }
@@ -293,10 +287,10 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         try {
             mSpi = Spi(posId, serialNumber, eftposAddress, if (secrets.isNullOrEmpty()) null else Secrets(secrets!!.get("encKey"), secrets!!.get("hmacKey")))
             val pInfo: PackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
-            mSpi.setPosInfo("LinkPOS", pInfo.versionName)
-            mSpi.setAutoAddressResolution(false);
-            mSpi.setDeviceApiKey(apiKey);
-            mSpi.setTenantCode(tenantCode);
+            mSpi!!.setPosInfo("LinkPOS", pInfo.versionName)
+            mSpi!!.setAutoAddressResolution(false);
+            mSpi!!.setDeviceApiKey(apiKey);
+            mSpi!!.setTenantCode(tenantCode);
             setStatusChangedHandler()
             setPairingFlowStateChangedHandler()
             setTxFlowStateChangedHandler()
@@ -311,7 +305,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Subscribe to this event to know when the status has changed.
      */
     private fun setStatusChangedHandler() {
-        mSpi.setStatusChangedHandler {
+        mSpi!!.setStatusChangedHandler {
             invokeFlutterMethod("statusChanged", it?.name)
         }
     }
@@ -320,7 +314,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Subscribe to this event to know when the current pairing flow state has changed.
      */
     private fun setPairingFlowStateChangedHandler() {
-        mSpi.setPairingFlowStateChangedHandler {
+        mSpi!!.setPairingFlowStateChangedHandler {
             invokeFlutterMethod("pairingFlowStateChanged", mapPairingFlowState(it))
         }
     }
@@ -329,7 +323,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Subscribe to this event to know when the current pairing flow state changes
      */
     private fun setTxFlowStateChangedHandler() {
-        mSpi.setTxFlowStateChangedHandler {
+        mSpi!!.setTxFlowStateChangedHandler {
             invokeFlutterMethod("txFlowStateChanged", mapTransactionState(it))
         }
     }
@@ -342,7 +336,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * You then need to persist the secrets safely so you can instantiate SPI with them next time around.
      */
     private fun setSecretsChangedHandler() {
-        mSpi.setSecretsChangedHandler {
+        mSpi!!.setSecretsChangedHandler {
             invokeFlutterMethod("secretsChanged", mapSecrets(it))
         }
     }
@@ -355,7 +349,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Most importantly, it connects to the EFTPOS server if it has secrets.
      */
     fun start(result: Result) {
-        mSpi.start()
+        mSpi!!.start()
         result.success(null)
     }
 
@@ -364,21 +358,21 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Can only be called in the unpaired state.
      */
     fun setPosId(id: String, result: Result) {
-        result.handleResult(mSpi.setPosId(id), result)
+        result.handleResult(mSpi!!.setPosId(id), result)
     }
 
     /**
      * Allows you to set the serial number.
      */
     fun setSerialNumber(serialNumber: String, result: Result) {
-        result.handleResult(mSpi.setSerialNumber(serialNumber), result)
+        result.handleResult(mSpi!!.setSerialNumber(serialNumber), result)
     }
 
     /**
      * Allows you to enable/disable auto address resolution.
      */
     fun setAutoAddressResolution(autoAddressResolution: Boolean, result: Result) {
-        result.handleResult(mSpi.setAutoAddressResolution(autoAddressResolution), result)
+        result.handleResult(mSpi!!.setAutoAddressResolution(autoAddressResolution), result)
     }
 
     /**
@@ -387,14 +381,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * of the PIN pad. Make sure you disable auto address resolution before calling this function.
      */
     fun setEftposAddress(address: String, result: Result) {
-        result.handleResult(mSpi.setEftposAddress(address), result)
+        result.handleResult(mSpi!!.setEftposAddress(address), result)
     }
 
     /**
      * Allows you to set the acquirer code.
      */
     fun setTenantCode(tenantCode: String, result: Result) {
-        result.handleResult(mSpi.setTenantCode(tenantCode), result)
+        result.handleResult(mSpi!!.setTenantCode(tenantCode), result)
     }
 
     /**
@@ -407,7 +401,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @param posVersion  Version string of the POS itself.
      */
     fun setPosInfo(posVendorId: String, posVersion: String, result: Result) {
-        mSpi.setPosInfo(posVendorId, posVersion)
+        mSpi!!.setPosInfo(posVendorId, posVersion)
         result.success(null)
     }
 
@@ -436,7 +430,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @promise.resolve(Status value [SpiStatus].
      */
     fun getCurrentStatus(result: Result) {
-        result.success(mSpi.currentStatus.name)
+        result.success(mSpi!!.currentStatus.name)
     }
 
     /**
@@ -445,25 +439,25 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @promise.resolve(Current flow value [SpiFlow].
      */
     fun getCurrentFlow(result: Result) {
-        result.success(mSpi.currentFlow.name)
+        result.success(mSpi!!.currentFlow.name)
     }
 
     /**
      * When current flow is [SpiFlow.PAIRING], this represents the state of the pairing process.
      */
     fun getCurrentPairingFlowState(result: Result) {
-        result.success(mapPairingFlowState(mSpi.currentPairingFlowState))
+        result.success(mapPairingFlowState(mSpi!!.currentPairingFlowState))
     }
 
     /**
      * When current flow is [SpiFlow.TRANSACTION], this represents the state of the transaction process.
      */
     fun getCurrentTxFlowState(result: Result) {
-        result.success(mapTransactionState(mSpi.currentTxFlowState))
+        result.success(mapTransactionState(mSpi!!.currentTxFlowState))
     }
 
     fun getConfig(result: Result) {
-        result.success(mapSpiConfig(mSpi.config))
+        result.success(mapSpiConfig(mSpi!!.config))
     }
 
     /**
@@ -477,7 +471,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * `false` means current flow was not finished yet.
      */
     fun ackFlowEndedAndBackToIdle(result: Result) {
-        result.handleResult(mSpi.ackFlowEndedAndBackToIdle(), result)
+        result.handleResult(mSpi!!.ackFlowEndedAndBackToIdle(), result)
     }
 
 
@@ -493,14 +487,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @promise.resolve(Whether pairing has initiated or not.
      */
     fun pair(result: Result) {
-        result.handleResult(mSpi.pair(), result)
+        result.handleResult(mSpi!!.pair(), result)
     }
 
     /**
      * Call this when your user clicks 'Yes' to confirm the pairing code on your screen matches the one on the EFTPOS.
      */
     fun pairingConfirmCode(result: Result) {
-        mSpi.pairingConfirmCode()
+        mSpi!!.pairingConfirmCode()
         result.success(null)
     }
 
@@ -508,7 +502,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Call this if your user clicks 'Cancel' or 'No' during the pairing process.
      */
     fun pairingCancel(result: Result) {
-        mSpi.pairingCancel()
+        mSpi!!.pairingCancel()
         result.success(null)
     }
 
@@ -523,7 +517,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Call this only if you are not yet in the [SpiStatus.UNPAIRED] state.
      */
     fun unpair(result: Result) {
-        result.handleResult(mSpi.unpair(), result)
+        result.handleResult(mSpi!!.unpair(), result)
     }
 
 
@@ -541,7 +535,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     fun initiatePurchaseTx(posRefId: String, purchaseAmount: Int, tipAmount: Int, cashoutAmount: Int, promptForCashout: Boolean, result: Result) {
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
-        result.handleResult(mSpi.initiatePurchaseTx(posRefId, purchaseAmount, tipAmount, cashoutAmount, promptForCashout, TransactionOptions()), result)
+        result.handleResult(mSpi!!.initiatePurchaseTx(posRefId, purchaseAmount, tipAmount, cashoutAmount, promptForCashout, TransactionOptions()), result)
     }
 
     /**
@@ -557,7 +551,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     fun initiateRefundTx(posRefId: String, refundAmount: Int, result: Result) {
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
-        result.handleResult(mSpi.initiateRefundTx(posRefId, refundAmount), result)
+        result.handleResult(mSpi!!.initiateRefundTx(posRefId, refundAmount), result)
     }
 
     /**
@@ -567,7 +561,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @promise.resolve(MidTxResult - false only if you called it in the wrong state.
      */
     fun acceptSignature(accepted: Boolean, result: Result) {
-        result.handleResult(mSpi.acceptSignature(accepted), result)
+        result.handleResult(mSpi!!.acceptSignature(accepted), result)
     }
 
     /**
@@ -580,7 +574,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @promise.resolve(Whether code has a valid format or not.
      */
     fun submitAuthCode(authCode: String, result: Result) {
-        result.handleResult(mSpi.submitAuthCode(authCode), result)
+        result.handleResult(mSpi!!.submitAuthCode(authCode), result)
     }
 
     /**
@@ -595,7 +589,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @promise.resolve(MidTxResult - false only if you called it in the wrong state.
      */
     fun cancelTransaction(result: Result) {
-        result.handleResult(mSpi.cancelTransaction(), result)
+        result.handleResult(mSpi!!.cancelTransaction(), result)
     }
 
     /**
@@ -608,7 +602,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @param amountCents Amount in cents to cash out.
      */
     fun initiateCashoutOnlyTx(posRefId: String, amountCents: Int, result: Result) {
-        result.handleResult(mSpi.initiateCashoutOnlyTx(posRefId, amountCents), result)
+        result.handleResult(mSpi!!.initiateCashoutOnlyTx(posRefId, amountCents), result)
     }
 
     /**
@@ -618,7 +612,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @param amountCents Amount in cents
      */
     fun initiateMotoPurchaseTx(posRefId: String, amountCents: Int, result: Result) {
-        result.handleResult(mSpi.initiateMotoPurchaseTx(posRefId, amountCents), result)
+        result.handleResult(mSpi!!.initiateMotoPurchaseTx(posRefId, amountCents), result)
     }
 
     /**
@@ -630,14 +624,14 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     fun initiateSettleTx(id: String, result: Result) {
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
-        result.handleResult(mSpi.initiateSettleTx(id), result)
+        result.handleResult(mSpi!!.initiateSettleTx(id), result)
     }
 
     /**
      * Initiates settlement enquiry operation.
      */
     fun initiateSettlementEnquiry(posRefId: String, result: Result) {
-        result.handleResult(mSpi.initiateSettlementEnquiry(posRefId), result)
+        result.handleResult(mSpi!!.initiateSettlementEnquiry(posRefId), result)
     }
 
     /**
@@ -648,7 +642,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Be subscribed to [.setTxFlowStateChangedHandler] to get updates on the process.
      */
     fun initiateGetLastTx(result: Result) {
-        result.handleResult(mSpi.initiateGetLastTx(), result)
+        result.handleResult(mSpi!!.initiateGetLastTx(), result)
     }
 
     /**
@@ -662,7 +656,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * @param txType   The transaction type.
      */
     fun initiateRecovery(posRefId: String, txType: String, result: Result) {
-        result.handleResult( mSpi.initiateRecovery(
+        result.handleResult( mSpi!!.initiateRecovery(
                 posRefId,
                 TransactionType.valueOf(txType)
         ), result)
@@ -673,8 +667,18 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
      * Call this method when finished with SPI, e.g. when closing the application.
      */
     fun dispose(result: Result) {
-        mSpi.dispose()
-        result.success(null)
+        if (mSpi != null) {
+            try {
+                mSpi?.dispose()
+                mSpi = null 
+                result.success(null)
+            } catch (e: Exception) {
+                result.error("DISPOSE_ERROR", "Failed to dispose: ${e.message}", null)
+            }
+        } else {
+            println("⚠️ [FlutterSpiPlugin] mSpi is already null, nothing to dispose")
+            result.success(null)
+        }
     }
 
     fun getDeviceSN(result: Result) {
@@ -701,17 +705,17 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     fun setPromptForCustomerCopyOnEftpos(promptForCustomerCopyOnEftpos: Boolean, result: Result) {
-        mSpi.config.isPromptForCustomerCopyOnEftpos = promptForCustomerCopyOnEftpos
+        mSpi!!.config.isPromptForCustomerCopyOnEftpos = promptForCustomerCopyOnEftpos
         result.success(null)
     }
 
     fun setSignatureFlowOnEftpos(signatureFlowOnEftpos: Boolean, result: Result) {
-        mSpi.config.isSignatureFlowOnEftpos = signatureFlowOnEftpos
+        mSpi!!.config.isSignatureFlowOnEftpos = signatureFlowOnEftpos
         result.success(null)
     }
 
     fun setPrintMerchantCopy(printMerchantCopy: Boolean, result: Result) {
-        mSpi.config.isPrintMerchantCopy = printMerchantCopy
+        mSpi!!.config.isPrintMerchantCopy = printMerchantCopy
         result.success(null)
     }
 

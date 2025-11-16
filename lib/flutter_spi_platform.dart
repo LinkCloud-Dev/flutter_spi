@@ -18,6 +18,7 @@ abstract class FlutterSpiPlatform {
         String? appKey,
         String? merchantId,
         String username = "default",
+        bool enablePrinting = false,
       });
 
   Future<void> start();
@@ -96,16 +97,6 @@ abstract class FlutterSpiPlatform {
   Future<void> setSignatureFlowOnEftpos(bool signatureFlowOnEftpos);
 
   Future<void> setPrintMerchantCopy(bool printMerchantCopy);
-
-  // TIM API
-  Future<void> timApiInit({
-    String? eftposAddress,
-    String? posId,
-    int? port,
-    bool enablePrinting = false,
-  });
-
-  // Future<void> timApiPairing({bool enablePrinting = false});
 
   Future<void> timApiCharge(double amount);
 
