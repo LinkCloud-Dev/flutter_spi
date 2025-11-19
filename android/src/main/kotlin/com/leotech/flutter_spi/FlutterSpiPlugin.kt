@@ -900,6 +900,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
         settings.setGuides(EnumSet.of(Guides.RETAIL))
         settings.setDcc(false)
         settings.setTipAllowed(false)
+        settings.setConnectTimeout(15)
 
         val logPath = context.filesDir.absolutePath + "/six_logs"
         settings.setLogDir(logPath)
