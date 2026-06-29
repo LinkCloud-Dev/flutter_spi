@@ -1600,7 +1600,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 return
             }
 
-            val transactionAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
+            val transactionAmount = TimapiAmount(Math.round(amount) / 100.0, TimapiCurrency.AUD)
             mTim?.transactionAsync(TimapiTransactionType.PURCHASE, transactionAmount)
 
             result.success(null)
@@ -1623,7 +1623,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 return
             }
 
-            val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
+            val refundAmount = TimapiAmount(Math.round(amount) / 100.0, TimapiCurrency.AUD)
 
             // Refund uses CREDIT
             mTim?.transactionAsync(TimapiTransactionType.CREDIT, refundAmount)
@@ -1648,7 +1648,7 @@ class FlutterSpiPlugin: FlutterPlugin, MethodCallHandler {
                 return
             }
 
-            val refundAmount = TimapiAmount(amount / 100.0, TimapiCurrency.AUD)
+            val refundAmount = TimapiAmount(Math.round(amount) / 100.0, TimapiCurrency.AUD)
 
             // Build TransactionData and set reference information
             val txnData = TransactionData()
